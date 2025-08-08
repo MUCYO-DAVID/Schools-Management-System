@@ -22,14 +22,31 @@ export default function Contact() {
     e.preventDefault()
     setIsSubmitting(true)
 
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      console.log('▶️ sending', formData);
+      const backend = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:5000';
+      await fetch(`${backend}/api/contacts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
 
-    setIsSubmitting(false)
-    setSubmitted(true)
-    setFormData({ name: "", email: "", subject: "", message: "" })
+      const response = await fetch(`${backend}/api/contacts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      if (!response.ok) throw new Error("Failed to send message")
 
-    setTimeout(() => setSubmitted(false), 3000)
+      setSubmitted(true)
+      setFormData({ name: "", email: "", subject: "", message: "" })
+    } catch (error) {
+      console.error(error)
+      alert("Unable to send message. Please try again later.")
+    } finally {
+      setIsSubmitting(false)
+      setTimeout(() => setSubmitted(false), 3000)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -209,3 +226,4 @@ export default function Contact() {
     </div>
   )
 }
+console.log("➡️  POST to", process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:5000/api/contacts");
