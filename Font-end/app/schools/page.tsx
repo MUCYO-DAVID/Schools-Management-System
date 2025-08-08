@@ -7,6 +7,7 @@ import { useLanguage } from "../providers/LanguageProvider"
 import type { School } from "../types"
 import SchoolModal from "../components/SchoolModal"
 import DeleteConfirmModal from "../components/DeleteConfirmModal"
+import React, { useEffect } from 'react';
 
 const initialSchools: School[] = [
   {
@@ -65,25 +66,99 @@ export default function Schools() {
     setDeletingSchool(school)
   }
 
-  const confirmDelete = () => {
-    if (deletingSchool) {
-      setSchools(schools.filter((s) => s.id !== deletingSchool.id))
-      setDeletingSchool(null)
+  const confirmDelete = async () => {
+    if (!deletingSchool) return;
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/schools/${deletingSchool.id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete school');
+      setSchools((prev) => prev.filter((s) => s.id !== deletingSchool.id));
+      setDeletingSchool(null);
+    } catch (error) {
+      alert('Unable to delete school. Please try again later.');
     }
-  }
+  };
 
-  const handleSaveSchool = (schoolData: Omit<School, "id">) => {
-    if (editingSchool) {
-      setSchools(schools.map((s) => (s.id === editingSchool.id ? { ...schoolData, id: editingSchool.id } : s)))
-    } else {
-      const newSchool: School = {
+  const handleSaveSchool = async (schoolData: Omit<School, "id">) => {
+    try {
+      const schoolWithId = {
         ...schoolData,
-        id: Date.now().toString(),
-      }
-      setSchools([...schools, newSchool])
+        id: crypto.randomUUID(),
+        name_rw: schoolData.nameRw, // Map to backend field
+      };
+      delete schoolWithId.nameRw; // Remove camelCase field
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/schools`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(schoolWithId),
+      });
+      if (!response.ok) throw new Error('Failed to add school');
+      const newSchool = await response.json();
+      setSchools((prev) => [...prev, newSchool]);
+      setIsModalOpen(false);
+    } catch (error) {
+      alert('Unable to add school. Please try again later.');
     }
-    setIsModalOpen(false)
-  }
+  };
+
+  const handleUpdateSchool = async (schoolData: Omit<School, "id">) => {
+    if (!editingSchool) return;
+    try {
+      const schoolToUpdate = {
+        ...schoolData,
+        name_rw: schoolData.nameRw,
+      };
+      delete schoolToUpdate.nameRw;
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/schools/${editingSchool.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(schoolToUpdate),
+      });
+      if (!response.ok) throw new Error('Failed to update school');
+      const updatedSchool = await response.json();
+      setSchools((prev) => prev.map((s) => (s.id === updatedSchool.id ? updatedSchool : s)));
+      setIsModalOpen(false);
+      setEditingSchool(null);
+    } catch (error) {
+      alert('Unable to update school. Please try again later.');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/schools`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(formData),
+          });
+  
+          if (!response.ok) throw new Error('Failed to add school');
+  
+          const newSchool = await response.json();
+          setSchools((prev) => [...prev, newSchool]); // Update the UI with the new school
+      } catch (error) {
+          console.error('Error adding school:', error);
+          alert('Unable to add school. Please try again later.');
+      }
+  };
+
+  useEffect(() => {
+      const fetchSchools = async () => {
+          try {
+              const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/schools`);
+              if (!response.ok) throw new Error('Failed to fetch schools');
+  
+              const schoolsData = await response.json();
+              setSchools(schoolsData);
+          } catch (error) {
+              console.error('Error fetching schools:', error);
+          }
+      };
+  
+      fetchSchools();
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -100,7 +175,7 @@ export default function Schools() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
             {/* Search */}
-            <div className="relative flex-1 max-w-md">
+            <div className="relative flex-1 w-full lg:max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
@@ -112,13 +187,13 @@ export default function Schools() {
             </div>
 
             {/* Filters */}
-            <div className="flex gap-4 items-center">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row gap-4 items-center w-full lg:w-auto">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Filter className="w-5 h-5 text-gray-400" />
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value as any)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
                 >
                   <option value="All">{t("all")}</option>
                   <option value="Public">{t("public")}</option>
@@ -129,7 +204,7 @@ export default function Schools() {
               <select
                 value={filterLevel}
                 onChange={(e) => setFilterLevel(e.target.value as any)}
-                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full sm:w-auto"
               >
                 <option value="All">{t("all")}</option>
                 <option value="Primary">{t("primary")}</option>
@@ -138,7 +213,7 @@ export default function Schools() {
 
               <button
                 onClick={handleAddSchool}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors w-full sm:w-auto justify-center"
               >
                 <Plus className="w-5 h-5" />
                 {t("addSchool")}
@@ -148,7 +223,7 @@ export default function Schools() {
         </div>
 
         {/* Schools Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredSchools.map((school) => (
             <div
               key={school.id}
@@ -225,7 +300,7 @@ export default function Schools() {
 
         {/* Modals */}
         {isModalOpen && (
-          <SchoolModal school={editingSchool} onSave={handleSaveSchool} onClose={() => setIsModalOpen(false)} />
+          <SchoolModal school={editingSchool} onSave={editingSchool ? handleUpdateSchool : handleSaveSchool} onClose={() => setIsModalOpen(false)} />
         )}
 
         {deletingSchool && (
