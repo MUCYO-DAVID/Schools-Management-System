@@ -66,6 +66,7 @@ export default function SchoolModal({ school, onSave, onClose }: SchoolModalProp
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{t("schoolName")} (English)</label>
             <input
+              aria-label=""
               type="text"
               name="name"
               value={formData.name}
