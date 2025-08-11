@@ -9,32 +9,9 @@ import SchoolModal from "../components/SchoolModal"
 import DeleteConfirmModal from "../components/DeleteConfirmModal"
 import React, { useEffect } from 'react';
 
-const initialSchools: School[] = [
-  {
-    id: "1",
-    name: "Kigali International School",
-    nameRw: "Ishuri Mpuzamahanga rya Kigali",
-    location: "Kigali",
-    type: "Private",
-    level: "Primary & Secondary",
-    students: 450,
-    established: 2010,
-  },
-  {
-    id: "2",
-    name: "Rwanda Education Board School",
-    nameRw: "Ishuri rya REB",
-    location: "Musanze",
-    type: "Public",
-    level: "Secondary",
-    students: 680,
-    established: 2005,
-  },
-]
-
 export default function Schools() {
   const { t } = useLanguage()
-  const [schools, setSchools] = useState<School[]>(initialSchools)
+  const [schools, setSchools] = useState<School[]>([]) // Removed initialSchools
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState<"All" | "Public" | "Private">("All")
   const [filterLevel, setFilterLevel] = useState<"All" | "Primary" | "Secondary">("All")
@@ -125,24 +102,7 @@ export default function Schools() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/schools`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(formData),
-          });
-  
-          if (!response.ok) throw new Error('Failed to add school');
-  
-          const newSchool = await response.json();
-          setSchools((prev) => [...prev, newSchool]); // Update the UI with the new school
-      } catch (error) {
-          console.error('Error adding school:', error);
-          alert('Unable to add school. Please try again later.');
-      }
-  };
+  // Removed redundant handleSubmit function
 
   useEffect(() => {
       const fetchSchools = async () => {
