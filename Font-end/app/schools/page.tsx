@@ -1,124 +1,99 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Search, Plus, Edit, Trash2, Filter, MapPin, Users, Calendar } from "lucide-react"
-import Navigation from "../components/Navigation"
-import { useLanguage } from "../providers/LanguageProvider"
-import type { School } from "../types"
-import SchoolModal from "../components/SchoolModal"
-import DeleteConfirmModal from "../components/DeleteConfirmModal"
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from "react";
+import { Search, Plus, Edit, Trash2, Filter, MapPin, Users, Calendar } from "lucide-react";
+import Navigation from "../components/Navigation";
+import { useLanguage } from "../providers/LanguageProvider";
+import type { School } from "../types";
+import SchoolModal from "../components/SchoolModal";
+import DeleteConfirmModal from "../components/DeleteConfirmModal";
+import {
+  fetchSchools,
+  addSchool,
+  updateSchool,
+  deleteSchool,
+} from "@/api/school";
 
 export default function Schools() {
-  const { t } = useLanguage()
-  const [schools, setSchools] = useState<School[]>([]) // Removed initialSchools
-  const [searchTerm, setSearchTerm] = useState("")
-  const [filterType, setFilterType] = useState<"All" | "Public" | "Private">("All")
-  const [filterLevel, setFilterLevel] = useState<"All" | "Primary" | "Secondary">("All")
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingSchool, setEditingSchool] = useState<School | null>(null)
-  const [deletingSchool, setDeletingSchool] = useState<School | null>(null)
+  const { t } = useLanguage();
+  const [schools, setSchools] = useState<School[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState<"All" | "Public" | "Private">("All");
+  const [filterLevel, setFilterLevel] = useState<"All" | "Primary" | "Secondary">("All");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingSchool, setEditingSchool] = useState<School | null>(null);
+  const [deletingSchool, setDeletingSchool] = useState<School | null>(null);
+
+  useEffect(() => {
+    const loadSchools = async () => {
+      try {
+        const schoolsData = await fetchSchools();
+        setSchools(schoolsData);
+      } catch (error) {
+        console.error("Error fetching schools:", error);
+      }
+    };
+    loadSchools();
+  }, []);
 
   const filteredSchools = schools.filter((school) => {
     const matchesSearch =
       school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      school.location.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesType = filterType === "All" || school.type === filterType
-    const matchesLevel = filterLevel === "All" || school.level.includes(filterLevel)
+      school.location.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = filterType === "All" || school.type === filterType;
+    const matchesLevel = filterLevel === "All" || school.level.includes(filterLevel);
 
-    return matchesSearch && matchesType && matchesLevel
-  })
+    return matchesSearch && matchesType && matchesLevel;
+  });
 
   const handleAddSchool = () => {
-    setEditingSchool(null)
-    setIsModalOpen(true)
-  }
+    setEditingSchool(null);
+    setIsModalOpen(true);
+  };
 
   const handleEditSchool = (school: School) => {
-    setEditingSchool(school)
-    setIsModalOpen(true)
-  }
+    setEditingSchool(school);
+    setIsModalOpen(true);
+  };
 
   const handleDeleteSchool = (school: School) => {
-    setDeletingSchool(school)
-  }
+    setDeletingSchool(school);
+  };
 
   const confirmDelete = async () => {
     if (!deletingSchool) return;
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/schools/${deletingSchool.id}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) throw new Error('Failed to delete school');
+      await deleteSchool(deletingSchool.id);
       setSchools((prev) => prev.filter((s) => s.id !== deletingSchool.id));
       setDeletingSchool(null);
     } catch (error) {
-      alert('Unable to delete school. Please try again later.');
+      alert("Unable to delete school. Please try again later.");
     }
   };
 
   const handleSaveSchool = async (schoolData: Omit<School, "id">) => {
     try {
-      const schoolWithId = {
-        ...schoolData,
-        id: crypto.randomUUID(),
-        name_rw: schoolData.nameRw, // Map to backend field
-      };
-      delete schoolWithId.nameRw; // Remove camelCase field
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/schools`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(schoolWithId),
-      });
-      if (!response.ok) throw new Error('Failed to add school');
-      const newSchool = await response.json();
+      const newSchool = await addSchool(schoolData);
       setSchools((prev) => [...prev, newSchool]);
       setIsModalOpen(false);
     } catch (error) {
-      alert('Unable to add school. Please try again later.');
+      alert("Unable to add school. Please try again later.");
     }
   };
 
   const handleUpdateSchool = async (schoolData: Omit<School, "id">) => {
     if (!editingSchool) return;
     try {
-      const schoolToUpdate = {
-        ...schoolData,
-        name_rw: schoolData.nameRw,
-      };
-      delete schoolToUpdate.nameRw;
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/schools/${editingSchool.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(schoolToUpdate),
-      });
-      if (!response.ok) throw new Error('Failed to update school');
-      const updatedSchool = await response.json();
-      setSchools((prev) => prev.map((s) => (s.id === updatedSchool.id ? updatedSchool : s)));
+      const updatedSchool = await updateSchool(editingSchool.id, schoolData);
+      setSchools((prev) =>
+        prev.map((s) => (s.id === updatedSchool.id ? updatedSchool : s))
+      );
       setIsModalOpen(false);
       setEditingSchool(null);
     } catch (error) {
-      alert('Unable to update school. Please try again later.');
+      alert("Unable to update school. Please try again later.");
     }
   };
-
-  // Removed redundant handleSubmit function
-
-  useEffect(() => {
-      const fetchSchools = async () => {
-          try {
-              const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/schools`);
-              if (!response.ok) throw new Error('Failed to fetch schools');
-  
-              const schoolsData = await response.json();
-              setSchools(schoolsData);
-          } catch (error) {
-              console.error('Error fetching schools:', error);
-          }
-      };
-  
-      fetchSchools();
-  }, []);
 
   return (
     <div className="min-h-screen">
@@ -151,6 +126,7 @@ export default function Schools() {
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Filter className="w-5 h-5 text-gray-400" />
                 <select
+                  aria-label="Filter by Type"
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value as any)}
                   className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
@@ -162,6 +138,7 @@ export default function Schools() {
               </div>
 
               <select
+                aria-label="Filter by Type"
                 value={filterLevel}
                 onChange={(e) => setFilterLevel(e.target.value as any)}
                 className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full sm:w-auto"
@@ -272,5 +249,5 @@ export default function Schools() {
         )}
       </div>
     </div>
-  )
+  );
 }

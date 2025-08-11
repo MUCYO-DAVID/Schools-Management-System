@@ -1,39 +1,85 @@
 "use client"
 
-import { useState } from "react"
+import { useState,useEffect } from "react"
 import { BarChart3, Users, School, TrendingUp, Plus, Edit, Trash2, Eye } from "lucide-react"
 import Navigation from "../components/Navigation"
 import { useLanguage } from "../providers/LanguageProvider"
 import type { School as SchoolType } from "../types"
 
-const initialSchools: SchoolType[] = [
-  {
-    id: "1",
-    name: "Kigali International School",
-    nameRw: "Ishuri Mpuzamahanga rya Kigali",
-    location: "Kigali",
-    type: "Private",
-    level: "Primary & Secondary",
-    students: 450,
-    established: 2010,
-  },
-  {
-    id: "2",
-    name: "Rwanda Education Board School",
-    nameRw: "Ishuri rya REB",
-    location: "Musanze",
-    type: "Public",
-    level: "Secondary",
-    students: 680,
-    established: 2005,
-  },
-]
+import {
+  fetchSchools,
+  formatTimeAgo,
+  addSchool,
+  updateSchool,
+  deleteSchool,
+} from "@/api/school";
+import SchoolModal from "../components/SchoolModal"
 
 export default function AdminDashboard() {
   const { t } = useLanguage()
-  const [schools] = useState<SchoolType[]>(initialSchools)
+  const [schools,setSchools] = useState<SchoolType[]>([])
   const [activeTab, setActiveTab] = useState("overview")
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [editingSchool, setEditingSchool] = useState<SchoolType | null>(null);
+const [isModalOpen, setIsModalOpen] = useState(false);
 
+// Open modal for adding a new school
+const handleAddSchool = () => {
+  setEditingSchool(null); // no editing, new school
+  setIsModalOpen(true);
+};
+
+// Open modal for editing a school
+const handleUpdateSchool = async (schoolData: Omit<SchoolType, "id">) => {
+  if (!editingSchool) return;
+  // Combine id with updated data
+  await updateSchool(editingSchool.id, schoolData);
+  
+  setIsModalOpen(true);
+};
+
+// Delete school confirmation handler
+const handleDeleteSchool = async (id: string) => {
+  try {
+    await deleteSchool(id);
+    setSchools((prev) => prev.filter((s) => s.id !== id));
+  } catch (error) {
+    alert("Failed to delete school.");
+  }
+};
+
+// Save school handler for both add and update
+const handleSaveSchool = async (schoolData: Omit<SchoolType, "id">) => {
+  try {
+    if (editingSchool) {
+      
+      const updated = await updateSchool(editingSchool.id, schoolData);
+      setSchools((prev) =>
+        prev.map((s) => (s.id === updated.id ? updated : s))
+      );
+    } else {
+      
+      const added = await addSchool(schoolData);
+      setSchools((prev) => [...prev, added]);
+    }
+    setIsModalOpen(false);
+    setEditingSchool(null);
+  } catch (error) {
+    alert("Failed to save school.");
+  }
+};
+
+   useEffect(() => {
+    const loadSchools = async () => {
+      try {
+        const schoolsData = await fetchSchools();
+        setSchools(schoolsData);
+      } catch (error) {
+        console.error("Error fetching schools:", error);
+      }
+    };
+    loadSchools();
+  }, []);
   const totalStudents = schools.reduce((sum, school) => sum + school.students, 0)
   const publicSchools = schools.filter((s) => s.type === "Public").length
   const privateSchools = schools.filter((s) => s.type === "Private").length
@@ -68,13 +114,22 @@ export default function AdminDashboard() {
       change: "+15%",
     },
   ]
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/activities/recent`);
+        if (!res.ok) throw new Error("Failed to fetch activities");
+        const data = await res.json();
+        setRecentActivities(data);
+      } catch (error) {
+        console.error("Error loading activities:", error);
+      }
+    };
 
-  const recentActivities = [
-    { action: "New school registered", school: "Green Hills Academy", time: "2 hours ago" },
-    { action: "Student count updated", school: "Kigali International School", time: "4 hours ago" },
-    { action: "School information edited", school: "Rwanda Education Board School", time: "1 day ago" },
-    { action: "New admin user added", school: "System", time: "2 days ago" },
-  ]
+    fetchActivities();
+  }, []);
+
+
 
   return (
     <div className="min-h-screen">
@@ -135,19 +190,26 @@ export default function AdminDashboard() {
               <div className="space-y-6">
                 {/* Recent Activity */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-                  <div className="space-y-3">
-                    {recentActivities.map((activity, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div>
-                          <p className="font-medium text-gray-900">{activity.action}</p>
-                          <p className="text-sm text-gray-600">{activity.school}</p>
-                        </div>
-                        <span className="text-sm text-gray-500">{activity.time}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+      <div className="space-y-3">
+        {recentActivities.length === 0 ? (
+          <p className="text-gray-600">No recent activities</p>
+        ) : (
+          recentActivities.map(({ id, action, school, created_at }) => (
+            <div
+              key={id}
+              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+            >
+              <div>
+                <p className="font-medium text-gray-900">{action}</p>
+                <p className="text-sm text-gray-600">{school}</p>
+              </div>
+              <span className="text-sm text-gray-500">{formatTimeAgo(created_at)}</span>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
 
                 {/* Quick Actions */}
                 <div>
@@ -174,10 +236,13 @@ export default function AdminDashboard() {
               <div>
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-lg font-semibold text-gray-900">School Management</h3>
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
-                    <Plus className="w-4 h-4" />
-                    Add School
-                  </button>
+                  <button
+                                  onClick={handleAddSchool}
+                                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors w-full sm:w-auto justify-center"
+                                >
+                                  <Plus className="w-5 h-5" />
+                                  {t("addSchool")}
+                                </button>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -221,17 +286,38 @@ export default function AdminDashboard() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{school.students}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <div className="flex gap-2">
-                              <button className="text-blue-600 hover:text-blue-900">
-                                <Eye className="w-4 h-4" />
+                          <div className="flex gap-2">
+              <button
+               
+                className="text-blue-600 hover:text-blue-900"
+                aria-label={`View details of ${school.name}`}
+              >
+                <Eye className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => handleUpdateSchool(school)}
+                className="text-green-600 hover:text-green-900"
+                                aria-label={`Edit ${school.name}`}
+                    
+                              >
+                                
+                <Edit className="w-4 h-4" />
                               </button>
-                              <button className="text-green-600 hover:text-green-900">
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button className="text-red-600 hover:text-red-900">
+                              
+                              <button
+                                
+                                onClick={() => handleDeleteSchool(school.id)}
+                                
+                                className="text-red-600 hover:text-red-900"
+                                
+                                aria-label={`Delete ${school.name}`} 
+                              >
                                 <Trash2 className="w-4 h-4" />
+                                
                               </button>
-                            </div>
+                              
+                            </div> 
+                            
                           </td>
                         </tr>
                       ))}
@@ -302,6 +388,9 @@ export default function AdminDashboard() {
                 </div>
               </div>
             )}
+              {isModalOpen && (
+                      <SchoolModal school={editingSchool} onSave={editingSchool ? handleUpdateSchool : handleSaveSchool} onClose={() => setIsModalOpen(false)} />
+                    )}
           </div>
         </div>
       </div>
