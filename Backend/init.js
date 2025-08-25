@@ -1,6 +1,7 @@
 // init.js
 const Pool = require('./db/index');
-const  initializeDb  = require('./db/schema');
+const initializeDb = require('./db/schema');
+const seedSchools = require('./db/seed');
 
 const initDb = async () => {
   try {
@@ -10,6 +11,7 @@ const initDb = async () => {
     client.release();
 
     await initializeDb();
+    await seedSchools(); // Add this line to seed schools
   } catch (err) {
     console.error('Error during DB initialization:', err);
     process.exit(1); 

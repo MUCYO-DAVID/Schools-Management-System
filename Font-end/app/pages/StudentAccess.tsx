@@ -1,24 +1,105 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Search, MapPin, Users, Calendar, BookOpen, GraduationCap } from "lucide-react"
 import type { School } from "../types"
-import { useLanguage } from "../page"
+import { useLanguage } from "../providers/LanguageProvider"
+import { fetchSchools } from "@/api/school";
 
 interface StudentAccessProps {
-  schools: School[]
+  schools?: School[] // optional: if parent passes schools we use them, otherwise fetch from API
 }
 
-export default function StudentAccess({ schools }: StudentAccessProps) {
-  const { t, language } = useLanguage()
+export default function StudentAccess({ schools: initialSchools }: StudentAccessProps) {
+  const language = useLanguage() as unknown as { t: (key: string) => string, language: string }
+  const { t } = language
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null)
+  const [schools, setSchools] = useState<School[]>(initialSchools ?? [])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [errorDetails, setErrorDetails] = useState<string | null>(null)
+
+  // Fetch schools from backend if parent did not provide them
+  const loadSchools = useCallback(async () => {
+    if (initialSchools && initialSchools.length) return
+    setLoading(true)
+    setError(null)
+    setErrorDetails(null)
+    try {
+      // Prefer the shared API helper if available; fallback to direct URL if helper throws.
+      let data
+      try {
+        data = await fetchSchools()
+      } catch (helperErr) {
+        // helper failed — fallback to explicit fetch (keeps parity with Schools page)
+        console.warn("fetchSchools helper failed, falling back to direct fetch:", helperErr)
+        const res = await fetch("http://localhost:5000/api/schools")
+        if (!res.ok) {
+          const bodyText = await res.text().catch(() => "")
+          const msg = `Fetch error ${res.status} ${res.statusText} - ${bodyText}`
+          throw new Error(msg)
+        }
+        data = await res.json()
+      }
+
+      setSchools(Array.isArray(data) ? data : [])
+    } catch (err: any) {
+      // Surface full details to console and to UI for easier debugging
+      console.error("Failed to load schools (StudentAccess):", err)
+      setError("Unable to load schools")
+      setErrorDetails(err?.message ? String(err.message) : String(err))
+    } finally {
+      setLoading(false)
+    }
+  }, [initialSchools])
+
+  useEffect(() => {
+    let mounted = true
+    if (!mounted) return
+    loadSchools()
+    return () => {
+      mounted = false
+    }
+  }, [initialSchools, loadSchools])
 
   const filteredSchools = schools.filter(
     (school) =>
       school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       school.location.toLowerCase().includes(searchTerm.toLowerCase()),
   )
+
+  // show simple loading / error states inside the component
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center">Loading schools…</div>
+      </div>
+    )
+  }
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center text-red-600">
+          <div className="mb-2">{error}</div>
+          {errorDetails && (
+            <pre className="text-left whitespace-pre-wrap max-w-xl mx-auto bg-gray-100 p-3 rounded text-sm text-gray-700">
+              {errorDetails}
+            </pre>
+          )}
+          <div className="mt-4">
+            <button
+              onClick={() => loadSchools()}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              type="button"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -52,7 +133,7 @@ export default function StudentAccess({ schools }: StudentAccessProps) {
           >
             <div className="p-6">
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {language === "rw" ? school.nameRw : school.name}
+                {language.language === "rw" ? school.nameRw : school.name}
               </h3>
 
               <div className="space-y-3 mb-4">
@@ -113,7 +194,7 @@ export default function StudentAccess({ schools }: StudentAccessProps) {
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    {language === "rw" ? selectedSchool.nameRw : selectedSchool.name}
+                    {language.language === "rw" ? selectedSchool.nameRw : selectedSchool.name}
                   </h2>
                   <p className="text-gray-600">{selectedSchool.location}</p>
                 </div>

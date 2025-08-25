@@ -82,6 +82,8 @@ const translations = {
     comprehensiveSolutions: "Igisubizo cyuzuye cyo gucunga uburezi",
     registeredSchools: "Amashuri Yanditswe",
     districtsCovered: "Uturere Twakozweho",
+    FindinformationaboutschoolsacrossRwanda: "Shaka amakuru y' ishuri Mu gihugu cyose",
+
   },
 }
 

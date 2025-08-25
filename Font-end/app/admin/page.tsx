@@ -6,6 +6,7 @@ import Navigation from "../components/Navigation"
 import { useLanguage } from "../providers/LanguageProvider"
 import type { School as SchoolType } from "../types"
 
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   fetchSchools,
   formatTimeAgo,
@@ -15,13 +16,24 @@ import {
 } from "@/api/school";
 import SchoolModal from "../components/SchoolModal"
 
-export default function AdminDashboard() {
+export default function AdminDashboard(props) {
   const { t } = useLanguage()
   const [schools,setSchools] = useState<SchoolType[]>([])
   const [activeTab, setActiveTab] = useState("overview")
   const [recentActivities, setRecentActivities] = useState([]);
   const [editingSchool, setEditingSchool] = useState<SchoolType | null>(null);
-const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Next.js app router helpers
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // If a "tab" query param is present (e.g. /admin?tab=users), open that tab on load
+  useEffect(() => {
+    const tab = searchParams?.get?.("tab")
+    if (tab) setActiveTab(tab)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams?.toString?.()])
 
 // Open modal for adding a new school
 const handleAddSchool = () => {
@@ -29,6 +41,26 @@ const handleAddSchool = () => {
   setIsModalOpen(true);
 };
 
+// Add User handler — prompt for name and POST to /api/users, then open Users tab and update URL.
+const handleAddUser = async () => {
+  const name = window.prompt("Full name for the new user:")
+  if (!name) return
+  try {
+    const res = await fetch("/api/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    })
+    if (!res.ok) throw new Error("Failed to create user")
+    alert("User created")
+    setActiveTab("users")
+    router.push("/admin?tab=users")
+  } catch (err) {
+    console.error("Add user failed:", err)
+    alert("Failed to add user.")
+  }
+}
+ 
 // Open modal for editing a school
 const handleUpdateSchool = async (schoolData: Omit<SchoolType, "id">) => {
   if (!editingSchool) return;
@@ -164,8 +196,8 @@ const handleSaveSchool = async (schoolData: Omit<SchoolType, "id">) => {
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="border-b border-gray-200">
             <nav className="flex space-x-8 px-6">
-              {[
-                { id: "overview", label: "Overview" },
+             ={[
+
                 { id: "schools", label: "School Management" },
                 { id: "users", label: "User Management" },
                 { id: "reports", label: "Reports" },
@@ -215,15 +247,27 @@ const handleSaveSchool = async (schoolData: Omit<SchoolType, "id">) => {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <button className="flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                    <button
+                      type="button"
+                      onClick={() => { setActiveTab("schools"); router.push("/admin?tab=schools") }}
+                      className="flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                    >
                       <Plus className="w-5 h-5 text-blue-600" />
                       <span className="font-medium text-blue-900">Add New School</span>
                     </button>
-                    <button className="flex items-center gap-3 p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
+                    <button
+                      type="button"
+                      onClick={() => { setActiveTab("users"); router.push("/admin?tab=users") }}
+                      className="flex items-center gap-3 p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+                    >
                       <Users className="w-5 h-5 text-green-600" />
                       <span className="font-medium text-green-900">Manage Users</span>
                     </button>
-                    <button className="flex items-center gap-3 p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors">
+                    <button
+                      type="button"
+                      onClick={() => { setActiveTab("reports"); router.push("/admin?tab=reports") }}
+                      className="flex items-center gap-3 p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
+                    >
                       <BarChart3 className="w-5 h-5 text-purple-600" />
                       <span className="font-medium text-purple-900">View Reports</span>
                     </button>
@@ -331,7 +375,11 @@ const handleSaveSchool = async (schoolData: Omit<SchoolType, "id">) => {
               <div>
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-lg font-semibold text-gray-900">User Management</h3>
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+                  <button
+                    onClick={handleAddUser}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                    type="button"
+                  >
                     <Plus className="w-4 h-4" />
                     Add User
                   </button>
