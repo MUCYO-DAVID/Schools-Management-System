@@ -1,11 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, MapPin, Users, Calendar, BookOpen, GraduationCap } from "lucide-react"
 import Navigation from "../components/Navigation"
 import { useLanguage } from "../providers/LanguageProvider"
 import type { School } from "../types"
-
+import { fetchSchools } from "@/api/school"
 const initialSchools: School[] = [
   {
     id: "1",
@@ -31,7 +31,7 @@ const initialSchools: School[] = [
 
 export default function StudentAccess() {
   const { t, language } = useLanguage()
-  const [schools] = useState<School[]>(initialSchools)
+ const [schools, setSchools] = useState<School[]>([]);
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null)
 
@@ -41,6 +41,19 @@ export default function StudentAccess() {
       school.location.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
+  useEffect(()=>{
+    const loadSchools = async ()=>{
+      try{
+        const schoolsData = await fetchSchools();
+        setSchools(schoolsData);
+      }catch(error){
+        console.error("Error fetching:" , error)
+      }
+    
+    }
+    loadSchools();
+  },[]);
+    
   return (
     <div className="min-h-screen">
       <Navigation />
