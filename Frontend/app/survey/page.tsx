@@ -7,7 +7,7 @@ import Navigation from "../components/Navigation"
 export default function SurveyPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const schoolId = searchParams?.get("schoolId") || ""
+  const schoolId = typeof window !== 'undefined' ? searchParams?.get("schoolId") || "" : "";
   const [rating] = useState<number | null>(null) // rating already done on previous step
   const [wouldRecommend, setWouldRecommend] = useState<"yes" | "no" | "">("")
   const [comments, setComments] = useState("")

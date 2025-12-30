@@ -35,7 +35,7 @@ export default function SignInPage() {
       if (user.role === 'admin') {
         router.push('/admin');
       } else {
-        router.push('/schools');
+        router.push('/home');
       }
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred');

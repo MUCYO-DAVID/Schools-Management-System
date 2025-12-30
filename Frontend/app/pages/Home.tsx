@@ -19,7 +19,7 @@ export default function Home() {
   useEffect(() => {
     const loadTopSchools = async () => {
       try {
-        const data = await fetchTopSchools(4)
+        const data = await fetchTopSchools(5)
         setTopSchools(data)
       } catch (err) {
         console.error("Error loading top schools", err)

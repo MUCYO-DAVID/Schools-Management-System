@@ -1,5 +1,5 @@
 'use client';
-import { useState,useEffect } from "react"
+import { useState, useEffect } from "react"
 import { BarChart3, Users, School, TrendingUp, Plus, Edit, Trash2, Eye } from "lucide-react"
 import Navigation from "../components/Navigation"
 import { useLanguage } from "../providers/LanguageProvider"
@@ -18,7 +18,7 @@ import SchoolModal from "../components/SchoolModal"
 
 export default function AdminDashboard() {
   const { t } = useLanguage()
-  const [schools,setSchools] = useState<SchoolType[]>([])
+  const [schools, setSchools] = useState<SchoolType[]>([])
   const [activeTab, setActiveTab] = useState("overview")
   const [recentActivities, setRecentActivities] = useState([]);
   const [editingSchool, setEditingSchool] = useState<SchoolType | null>(null);
@@ -37,73 +37,76 @@ export default function AdminDashboard() {
 
   // If a "tab" query param is present (e.g. /admin?tab=users), open that tab on load
   useEffect(() => {
-    const tab = searchParams?.get?.("tab")
-    if (tab) setActiveTab(tab)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Only run this effect if searchParams is available (client-side)
+    if (searchParams) {
+      const tab = searchParams.get("tab");
+      if (tab) setActiveTab(tab);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams?.toString?.()])
 
-// Open modal for adding a new school
-const handleAddSchool = () => {
-  setEditingSchool(null); // no editing, new school
-  setIsModalOpen(true);
-};
+  // Open modal for adding a new school
+  const handleAddSchool = () => {
+    setEditingSchool(null); // no editing, new school
+    setIsModalOpen(true);
+  };
 
-// Add User handler — prompt for name and POST to /api/users, then open Users tab and update URL.
-const handleAddUser = async () => {
-  const name = window.prompt("Full name for the new user:")
-  if (!name) return
-  try {
-    const res = await fetch("/api/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    })
-    if (!res.ok) throw new Error("Failed to create user")
-    alert("User created")
-    setActiveTab("users")
-    router.push("/admin?tab=users")
-  } catch (err) {
-    console.error("Add user failed:", err)
-    alert("Failed to add user.")
-  }
-}
- 
-// Open modal for editing a school
-const handleUpdateSchool = (school: SchoolType) => {
-  setEditingSchool(school);
-  setIsModalOpen(true);
-};
-
-// Delete school confirmation handler
-const handleDeleteSchool = async (id: string) => {
-  try {
-    await deleteSchool(id);
-    setSchools((prev) => prev.filter((s) => s.id !== id));
-  } catch (error) {
-    alert("Failed to delete school.");
-  }
-};
-
-// Save school handler for both add and update
-const handleSaveSchool = async (schoolData: Omit<SchoolType, "id">, images: File[], imagesToDelete: string[]) => {
-  try {
-    if (editingSchool) {
-      const updated = await updateSchool(editingSchool.id, schoolData, images, imagesToDelete);
-      setSchools((prev) =>
-        prev.map((s) => (s.id === updated.id ? updated : s))
-      );
-    } else {
-      const added = await addSchool(schoolData, images);
-      setSchools((prev) => [...prev, added]);
+  // Add User handler — prompt for name and POST to /api/users, then open Users tab and update URL.
+  const handleAddUser = async () => {
+    const name = window.prompt("Full name for the new user:")
+    if (!name) return
+    try {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      })
+      if (!res.ok) throw new Error("Failed to create user")
+      alert("User created")
+      setActiveTab("users")
+      router.push("/admin?tab=users")
+    } catch (err) {
+      console.error("Add user failed:", err)
+      alert("Failed to add user.")
     }
-    setIsModalOpen(false);
-    setEditingSchool(null);
-  } catch (error) {
-    alert("Failed to save school.");
   }
-};
 
-   useEffect(() => {
+  // Open modal for editing a school
+  const handleUpdateSchool = (school: SchoolType) => {
+    setEditingSchool(school);
+    setIsModalOpen(true);
+  };
+
+  // Delete school confirmation handler
+  const handleDeleteSchool = async (id: string) => {
+    try {
+      await deleteSchool(id);
+      setSchools((prev) => prev.filter((s) => s.id !== id));
+    } catch (error) {
+      alert("Failed to delete school.");
+    }
+  };
+
+  // Save school handler for both add and update
+  const handleSaveSchool = async (schoolData: Omit<SchoolType, "id">, images: File[], imagesToDelete: string[]) => {
+    try {
+      if (editingSchool) {
+        const updated = await updateSchool(editingSchool.id, schoolData, images, imagesToDelete);
+        setSchools((prev) =>
+          prev.map((s) => (s.id === updated.id ? updated : s))
+        );
+      } else {
+        const added = await addSchool(schoolData, images);
+        setSchools((prev) => [...prev, added]);
+      }
+      setIsModalOpen(false);
+      setEditingSchool(null);
+    } catch (error) {
+      alert("Failed to save school.");
+    }
+  };
+
+  useEffect(() => {
     const loadSchools = async () => {
       try {
         const schoolsData = await fetchSchools();
@@ -208,11 +211,10 @@ const handleSaveSchool = async (schoolData: Omit<SchoolType, "id">, images: File
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === tab.id
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
                       ? "border-blue-500 text-blue-600"
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
+                    }`}
                 >
                   {tab.label}
                 </button>
@@ -225,26 +227,26 @@ const handleSaveSchool = async (schoolData: Omit<SchoolType, "id">, images: File
               <div className="space-y-6">
                 {/* Recent Activity */}
                 <div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-      <div className="space-y-3">
-        {recentActivities.length === 0 ? (
-          <p className="text-gray-600">No recent activities</p>
-        ) : (
-          recentActivities.map(({ id, action, school, created_at }) => (
-            <div
-              key={id}
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-            >
-              <div>
-                <p className="font-medium text-gray-900">{action}</p>
-                <p className="text-sm text-gray-600">{school}</p>
-              </div>
-              <span className="text-sm text-gray-500">{formatTimeAgo(created_at)}</span>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+                  <div className="space-y-3">
+                    {recentActivities.length === 0 ? (
+                      <p className="text-gray-600">No recent activities</p>
+                    ) : (
+                      recentActivities.map(({ id, action, school, created_at }) => (
+                        <div
+                          key={id}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        >
+                          <div>
+                            <p className="font-medium text-gray-900">{action}</p>
+                            <p className="text-sm text-gray-600">{school}</p>
+                          </div>
+                          <span className="text-sm text-gray-500">{formatTimeAgo(created_at)}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
 
                 {/* Quick Actions */}
                 <div>
@@ -284,12 +286,12 @@ const handleSaveSchool = async (schoolData: Omit<SchoolType, "id">, images: File
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-lg font-semibold text-gray-900">School Management</h3>
                   <button
-                                  onClick={handleAddSchool}
-                                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors w-full sm:w-auto justify-center"
-                                >
-                                  <Plus className="w-5 h-5" />
-                                  {t("addSchool")}
-                                </button>
+                    onClick={handleAddSchool}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors w-full sm:w-auto justify-center"
+                  >
+                    <Plus className="w-5 h-5" />
+                    {t("addSchool")}
+                  </button>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -324,47 +326,46 @@ const handleSaveSchool = async (schoolData: Omit<SchoolType, "id">, images: File
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span
-                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                school.type === "Public" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
-                              }`}
+                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${school.type === "Public" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
+                                }`}
                             >
                               {school.type}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{school.students}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex gap-2">
-              <button
-               
-                className="text-blue-600 hover:text-blue-900"
-                aria-label={`View details of ${school.name}`}
-              >
-                <Eye className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => handleUpdateSchool(school)}
-                className="text-green-600 hover:text-green-900"
-                                aria-label={`Edit ${school.name}`}
-                    
-                              >
-                                
-                <Edit className="w-4 h-4" />
-                              </button>
-                              
+                            <div className="flex gap-2">
                               <button
-                                
+
+                                className="text-blue-600 hover:text-blue-900"
+                                aria-label={`View details of ${school.name}`}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleUpdateSchool(school)}
+                                className="text-green-600 hover:text-green-900"
+                                aria-label={`Edit ${school.name}`}
+
+                              >
+
+                                <Edit className="w-4 h-4" />
+                              </button>
+
+                              <button
+
                                 onClick={() => handleDeleteSchool(school.id)}
-                                
+
                                 className="text-red-600 hover:text-red-900"
-                                
-                                aria-label={`Delete ${school.name}`} 
+
+                                aria-label={`Delete ${school.name}`}
                               >
                                 <Trash2 className="w-4 h-4" />
-                                
+
                               </button>
-                              
-                            </div> 
-                            
+
+                            </div>
+
                           </td>
                         </tr>
                       ))}
@@ -439,11 +440,11 @@ const handleSaveSchool = async (schoolData: Omit<SchoolType, "id">, images: File
                 </div>
               </div>
             )}
-              {isModalOpen && (
-                      <SchoolModal school={editingSchool} onSave={handleSaveSchool}
-                      onClose={() => setIsModalOpen(false)}
-                    />
-                    )}
+            {isModalOpen && (
+              <SchoolModal school={editingSchool} onSave={handleSaveSchool}
+                onClose={() => setIsModalOpen(false)}
+              />
+            )}
           </div>
         </div>
       </div>
