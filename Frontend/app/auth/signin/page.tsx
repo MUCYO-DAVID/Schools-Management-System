@@ -3,14 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../providers/AuthProvider';
 
 export default function SignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
-  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,13 +28,11 @@ export default function SignInPage() {
         throw new Error(errorData.message || 'Login failed');
       }
 
-      const { token, user } = await response.json();
-      login(token, user);
-      if (user.role === 'admin') {
-        router.push('/admin');
-      } else {
-        router.push('/home');
-      }
+      const data = await response.json();
+      // Store email for verification page
+      localStorage.setItem('userEmailForVerification', email);
+      // Redirect to verification page
+      router.push('/auth/verify-code');
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred');
     }
@@ -92,7 +88,7 @@ export default function SignInPage() {
               </label>
             </div>
 
-            
+
           </div>
           <div>
             <button

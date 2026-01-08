@@ -12,7 +12,7 @@ const initDb = async () => {
     await initializeDb();
   } catch (err) {
     console.error('Error during DB initialization:', err);
-    process.exit(1); 
+    // process.exit(1); 
   }
 };
 

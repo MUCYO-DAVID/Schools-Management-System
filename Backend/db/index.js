@@ -1,8 +1,6 @@
-//db/index.js
-
+// db/index.js
 const { Pool } = require('pg');
 require('dotenv').config();
-
 
 const pool = new Pool({
     user: process.env.DB_USER,
@@ -12,4 +10,13 @@ const pool = new Pool({
     port: process.env.DB_PORT,
 });
 
-module.exports = pool
+pool.on('connect', () => {
+    console.log('Connected to PostgreSQL');
+});
+
+pool.on('error', (err) => {
+    console.error('Unexpected PostgreSQL error', err);
+    process.exit(1);
+});
+
+module.exports = pool;
