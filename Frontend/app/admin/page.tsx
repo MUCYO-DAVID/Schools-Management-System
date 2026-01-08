@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from "react"
-import { BarChart3, Users, School, TrendingUp, Plus, Edit, Trash2, Eye } from "lucide-react"
+import { BarChart3, Users, School, TrendingUp, Plus, Edit, Trash2, Eye, Activity } from "lucide-react"
 import Navigation from "../components/Navigation"
 import { useLanguage } from "../providers/LanguageProvider"
 import type { School as SchoolType } from "../types"
@@ -15,6 +15,7 @@ import {
   deleteSchool,
 } from "@/api/school";
 import SchoolModal from "../components/SchoolModal"
+import SchoolRegistrationChart from "../components/SchoolRegistrationChart"
 
 export default function AdminDashboard() {
   const { t } = useLanguage()
@@ -30,8 +31,10 @@ export default function AdminDashboard() {
   const searchParams = useSearchParams()
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== "admin") {
-      router.push("/"); // Redirect to homepage if not admin
+    if (!isAuthenticated) {
+      router.push("/auth/signin"); // Redirect to signin if not authenticated
+    } else if (user?.role !== "admin") {
+      router.push("/home"); // Redirect to home if not admin
     }
   }, [isAuthenticated, user, router]);
 
@@ -169,9 +172,10 @@ export default function AdminDashboard() {
 
 
   const tabs = [
-    { id: "schools", label: "School Management" },
-    { id: "users", label: "User Management" },
-    { id: "reports", label: "Reports" },
+    { id: "overview", label: "Overview", icon: Activity },
+    { id: "schools", label: "School Management", icon: School },
+    { id: "users", label: "User Management", icon: Users },
+    { id: "reports", label: "Reports", icon: BarChart3 },
   ];
 
   return (
@@ -188,15 +192,18 @@ export default function AdminDashboard() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {stats.map((stat, index) => (
-            <div key={index} className="bg-white rounded-lg border border-gray-200 p-6">
+            <div key={index} className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                  <p className="text-sm text-green-600">{stat.change} from last month</p>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
+                  <p className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</p>
+                  <p className="text-sm text-green-600 flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3" />
+                    {stat.change} from last month
+                  </p>
                 </div>
-                <div className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center`}>
-                  <stat.icon className="w-6 h-6 text-white" />
+                <div className={`w-14 h-14 ${stat.color} rounded-xl flex items-center justify-center shadow-sm`}>
+                  <stat.icon className="w-7 h-7 text-white" />
                 </div>
               </div>
             </div>
@@ -205,77 +212,116 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+          <div className="border-b border-gray-200 bg-gray-50">
+            <nav className="flex space-x-1 px-6">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      router.push(`/admin?tab=${tab.id}`);
+                    }}
+                    className={`py-4 px-4 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors ${activeTab === tab.id
+                      ? "border-blue-500 text-blue-600 bg-white"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                      }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {tab.label}
+                  </button>
+                );
+              })}
             </nav>
           </div>
 
           <div className="p-6">
             {activeTab === "overview" && (
-              <div className="space-y-6">
-                {/* Recent Activity */}
+              <div className="space-y-8">
+                {/* School Registration Chart */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-                  <div className="space-y-3">
-                    {recentActivities.length === 0 ? (
-                      <p className="text-gray-600">No recent activities</p>
-                    ) : (
-                      recentActivities.map(({ id, action, school, created_at }) => (
-                        <div
-                          key={id}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                        >
-                          <div>
-                            <p className="font-medium text-gray-900">{action}</p>
-                            <p className="text-sm text-gray-600">{school}</p>
-                          </div>
-                          <span className="text-sm text-gray-500">{formatTimeAgo(created_at)}</span>
-                        </div>
-                      ))
-                    )}
-                  </div>
+                  <SchoolRegistrationChart schools={schools} />
                 </div>
 
-                {/* Quick Actions */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <button
-                      type="button"
-                      onClick={() => { setActiveTab("schools"); router.push("/admin?tab=schools") }}
-                      className="flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
-                    >
-                      <Plus className="w-5 h-5 text-blue-600" />
-                      <span className="font-medium text-blue-900">Add New School</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setActiveTab("users"); router.push("/admin?tab=users") }}
-                      className="flex items-center gap-3 p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
-                    >
-                      <Users className="w-5 h-5 text-green-600" />
-                      <span className="font-medium text-green-900">Manage Users</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setActiveTab("reports"); router.push("/admin?tab=reports") }}
-                      className="flex items-center gap-3 p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
-                    >
-                      <BarChart3 className="w-5 h-5 text-purple-600" />
-                      <span className="font-medium text-purple-900">View Reports</span>
-                    </button>
+                {/* Two Column Layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Recent Activity */}
+                  <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Activity className="w-5 h-5 text-blue-600" />
+                      <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
+                    </div>
+                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                      {recentActivities.length === 0 ? (
+                        <div className="text-center py-8">
+                          <Activity className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                          <p className="text-gray-500">No recent activities</p>
+                        </div>
+                      ) : (
+                        recentActivities.map(({ id, action, school, created_at }) => (
+                          <div
+                            key={id}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                          >
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-900">{action}</p>
+                              <p className="text-sm text-gray-600">{school}</p>
+                            </div>
+                            <span className="text-sm text-gray-500 whitespace-nowrap ml-4">{formatTimeAgo(created_at)}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Plus className="w-5 h-5 text-green-600" />
+                      <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => { setActiveTab("schools"); router.push("/admin?tab=schools") }}
+                        className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 rounded-lg transition-all shadow-sm hover:shadow-md"
+                      >
+                        <div className="p-2 bg-blue-600 rounded-lg">
+                          <Plus className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="text-left">
+                          <span className="font-semibold text-blue-900 block">Add New School</span>
+                          <span className="text-xs text-blue-700">Register a new school in the system</span>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setActiveTab("users"); router.push("/admin?tab=users") }}
+                        className="flex items-center gap-3 p-4 bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 rounded-lg transition-all shadow-sm hover:shadow-md"
+                      >
+                        <div className="p-2 bg-green-600 rounded-lg">
+                          <Users className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="text-left">
+                          <span className="font-semibold text-green-900 block">Manage Users</span>
+                          <span className="text-xs text-green-700">View and manage system users</span>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setActiveTab("reports"); router.push("/admin?tab=reports") }}
+                        className="flex items-center gap-3 p-4 bg-gradient-to-r from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-lg transition-all shadow-sm hover:shadow-md"
+                      >
+                        <div className="p-2 bg-purple-600 rounded-lg">
+                          <BarChart3 className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="text-left">
+                          <span className="font-semibold text-purple-900 block">View Reports</span>
+                          <span className="text-xs text-purple-700">Access detailed analytics and reports</span>
+                        </div>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -398,42 +444,59 @@ export default function AdminDashboard() {
             )}
 
             {activeTab === "reports" && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-6">Reports & Analytics</h3>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-6">Reports & Analytics</h3>
+                </div>
+
+                {/* School Registration Chart in Reports */}
+                <div className="mb-6">
+                  <SchoolRegistrationChart schools={schools} />
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-gray-50 rounded-lg p-6">
-                    <h4 className="font-medium text-gray-900 mb-4">School Distribution</h4>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Public Schools</span>
-                        <span className="font-medium">{publicSchools}</span>
+                  <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                    <div className="flex items-center gap-2 mb-4">
+                      <School className="w-5 h-5 text-blue-600" />
+                      <h4 className="font-semibold text-gray-900">School Distribution</h4>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center p-3 bg-white rounded-lg">
+                        <span className="text-gray-600 font-medium">Public Schools</span>
+                        <span className="font-bold text-blue-600 text-lg">{publicSchools}</span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Private Schools</span>
-                        <span className="font-medium">{privateSchools}</span>
+                      <div className="flex justify-between items-center p-3 bg-white rounded-lg">
+                        <span className="text-gray-600 font-medium">Private Schools</span>
+                        <span className="font-bold text-purple-600 text-lg">{privateSchools}</span>
                       </div>
-                      <div className="flex justify-between items-center border-t pt-3">
-                        <span className="font-medium text-gray-900">Total</span>
-                        <span className="font-bold">{schools.length}</span>
+                      <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg border-2 border-blue-200">
+                        <span className="font-bold text-gray-900">Total Schools</span>
+                        <span className="font-bold text-2xl text-gray-900">{schools.length}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-gray-50 rounded-lg p-6">
-                    <h4 className="font-medium text-gray-900 mb-4">Student Statistics</h4>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Average per School</span>
-                        <span className="font-medium">{Math.round(totalStudents / schools.length)}</span>
+                  <div className="bg-gradient-to-br from-green-50 to-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Users className="w-5 h-5 text-green-600" />
+                      <h4 className="font-semibold text-gray-900">Student Statistics</h4>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center p-3 bg-white rounded-lg">
+                        <span className="text-gray-600 font-medium">Average per School</span>
+                        <span className="font-bold text-green-600 text-lg">
+                          {schools.length > 0 ? Math.round(totalStudents / schools.length) : 0}
+                        </span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Largest School</span>
-                        <span className="font-medium">{Math.max(...schools.map((s) => s.students))}</span>
+                      <div className="flex justify-between items-center p-3 bg-white rounded-lg">
+                        <span className="text-gray-600 font-medium">Largest School</span>
+                        <span className="font-bold text-green-600 text-lg">
+                          {schools.length > 0 ? Math.max(...schools.map((s) => s.students)) : 0}
+                        </span>
                       </div>
-                      <div className="flex justify-between items-center border-t pt-3">
-                        <span className="font-medium text-gray-900">Total Students</span>
-                        <span className="font-bold">{totalStudents.toLocaleString()}</span>
+                      <div className="flex justify-between items-center p-3 bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg border-2 border-green-200">
+                        <span className="font-bold text-gray-900">Total Students</span>
+                        <span className="font-bold text-2xl text-gray-900">{totalStudents.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>

@@ -34,8 +34,8 @@ export default function Navigation() {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/home" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 via-yellow-400 to-green-500 rounded"></div>
-              <span className="text-white font-bold text-xl">Rwanda Schools</span>
+              <div className="w-7 h-7 bg-gradient-to-r from-blue-500 via-yellow-400 to-green-500 rounded"></div>
+              <span className="text-white font-bold text-base">Rwanda Schools</span>
             </Link>
           </div>
 
@@ -45,9 +45,8 @@ export default function Navigation() {
               <Link
                 key={item.path}
                 href={item.path}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActive(item.path) ? "bg-blue-700 text-white" : "text-blue-100 hover:bg-blue-800 hover:text-white"
-                }`}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive(item.path) ? "bg-blue-700 text-white" : "text-blue-100 hover:bg-blue-800 hover:text-white"
+                  }`}
               >
                 {item.label}
               </Link>
@@ -56,9 +55,9 @@ export default function Navigation() {
             {/* Language Toggle */}
             <button
               onClick={() => setLanguage(language === "en" ? "rw" : "en")}
-              className="flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium text-blue-100 hover:bg-blue-800 hover:text-white transition-colors"
+              className="flex items-center space-x-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-blue-100 hover:bg-blue-800 hover:text-white transition-colors"
             >
-              <Globe className="w-4 h-4" />
+              <Globe className="w-3.5 h-3.5" />
               <span>{language === "en" ? "RW" : "EN"}</span>
             </button>
           </div>
@@ -83,9 +82,8 @@ export default function Navigation() {
                   key={item.path}
                   href={item.path}
                   onClick={() => setIsOpen(false)}
-                  className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
-                    isActive(item.path) ? "bg-blue-700 text-white" : "text-blue-100 hover:bg-blue-800 hover:text-white"
-                  }`}
+                  className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${isActive(item.path) ? "bg-blue-700 text-white" : "text-blue-100 hover:bg-blue-800 hover:text-white"
+                    }`}
                 >
                   {item.label}
                 </Link>

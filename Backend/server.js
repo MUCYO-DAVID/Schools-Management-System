@@ -10,6 +10,8 @@ const contactsRouter = require('./routes/contacts')
 const authRouter = require('./routes/auth');
 const surveysRouter = require('./routes/surveys');
 const faqsRouter = require('./routes/faqs');
+const studentApplicationsRouter = require('./routes/studentApplications');
+const schoolDetailsRouter = require('./routes/schoolDetails');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -26,6 +28,8 @@ app.use('/api', contactsRouter);
 app.use('/api', authRouter);
 app.use('/api', surveysRouter);
 app.use('/api', faqsRouter);
+app.use('/api/student', studentApplicationsRouter);
+app.use('/api', schoolDetailsRouter);
 
 // Start server after DB init
 (async () => {

@@ -16,7 +16,7 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
-// User login - generates verification code instead of immediate token
+// User login - generates verification code for regular users, returns token directly for admins
 router.post('/auth/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -33,6 +33,41 @@ router.post('/auth/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid Credentials' });
     }
 
+    const userData = user.rows[0];
+    const isAdmin = userData.role === 'admin';
+
+    // If admin, skip 2FA and return token directly
+    if (isAdmin) {
+      const payload = {
+        user: {
+          id: userData.id,
+          role: userData.role,
+        },
+      };
+
+      jwt.sign(
+        payload,
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' },
+        (err, token) => {
+          if (err) {
+            console.error('JWT Sign Error:', err.message);
+            return res.status(500).json({ message: 'Token generation failed' });
+          }
+
+          const { id, first_name, last_name, email, role } = userData;
+          console.log('Admin login successful - token generated directly');
+          res.json({
+            token,
+            user: { id, first_name, last_name, email, role },
+            requiresVerification: false
+          });
+        }
+      );
+      return; // Exit early for admin
+    }
+
+    // For non-admin users, proceed with 2FA verification
     // Generate verification code
     const code = generateVerificationCode();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
@@ -67,7 +102,8 @@ router.post('/auth/login', async (req, res) => {
     }
 
     res.json({
-      message: 'Verification code sent to your email'
+      message: 'Verification code sent to your email',
+      requiresVerification: true
     });
   } catch (err) {
     console.error('Login Error:', err.message);

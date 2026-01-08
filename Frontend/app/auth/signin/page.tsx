@@ -3,12 +3,14 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../providers/AuthProvider';
 
 export default function SignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,10 +31,18 @@ export default function SignInPage() {
       }
 
       const data = await response.json();
-      // Store email for verification page
-      localStorage.setItem('userEmailForVerification', email);
-      // Redirect to verification page
-      router.push('/auth/verify-code');
+
+      // Check if admin login (has token and doesn't require verification)
+      if (data.token && !data.requiresVerification) {
+        // Admin login - skip 2FA
+        login(data.token, data.user);
+        // Redirect admin to dashboard
+        router.push('/admin');
+      } else {
+        // Regular user - requires 2FA verification
+        localStorage.setItem('userEmailForVerification', email);
+        router.push('/auth/verify-code');
+      }
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred');
     }

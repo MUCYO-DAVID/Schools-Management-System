@@ -11,6 +11,7 @@ export interface School {
   rating_total?: number
   rating_count?: number
   average_rating?: number
+  created_at?: string
 }
 
 export interface Student {
