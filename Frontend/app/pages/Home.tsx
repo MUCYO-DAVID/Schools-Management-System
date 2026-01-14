@@ -6,12 +6,14 @@ import { useRouter } from "next/navigation"
 import { School as SchoolIcon, Users, BookOpen, Award, Star } from "lucide-react"
 import Navigation from "../components/Navigation"
 import { useLanguage } from "../providers/LanguageProvider"
+import { useAuth } from "../providers/AuthProvider"
 import type { School } from "../types"
 import { fetchTopSchools, rateSchool } from "@/api/school"
 import SurveyCommentsFeed from "../components/SurveyCommentsFeed"
 
 export default function Home() {
   const { t } = useLanguage()
+  const { user } = useAuth()
   const router = useRouter()
   const [topSchools, setTopSchools] = useState<School[]>([])
   const [loading, setLoading] = useState(true)
@@ -53,7 +55,7 @@ export default function Home() {
     {
       icon: Users,
       title: "Student Access",
-      titleRw: "Abanyeshuri",
+      titleRw: "Abanyeshuri ",
       description: "Easy access to school information for students",
       descriptionRw: "Kubona amakuru y'ishuri byoroshye ku banyeshuri",
     },
@@ -83,18 +85,41 @@ export default function Home() {
             <h1 className="text-3xl md:text-4xl font-bold mb-4">{t("welcome")}</h1>
             <p className="text-base md:text-lg mb-6 text-blue-100">Empowering Education in Rwanda</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link
-                href="/schools"
-                className="bg-yellow-500 hover:bg-yellow-600 text-blue-900 px-6 py-2 rounded-lg text-sm font-semibold transition-colors"
-              >
-                {t("schools")}
-              </Link>
-              <Link
-                href="/student"
-                className="bg-transparent border-2 border-white hover:bg-white hover:text-blue-900 px-6 py-2 rounded-lg text-sm font-semibold transition-colors"
-              >
-                {t("student")}
-              </Link>
+              {/* Show Schools button (yellow) for leaders and admins only */}
+              {(user?.role === 'leader' || user?.role === 'admin') && (
+                <Link
+                  href="/schools"
+                  className="bg-yellow-500 hover:bg-yellow-600 text-blue-900 px-6 py-2 rounded-lg text-sm font-semibold transition-colors"
+                >
+                  {t("schools")}
+                </Link>
+              )}
+              {/* Show Student Access button (white with border) for students only */}
+              {user?.role === 'student' && (
+                <Link
+                  href="/student"
+                  className="bg-transparent border-2 border-white hover:bg-white hover:text-blue-900 px-6 py-2 rounded-lg text-sm font-semibold transition-colors"
+                >
+                  {t("student")}
+                </Link>
+              )}
+              {/* Show both buttons for unauthenticated users */}
+              {!user && (
+                <>
+                  <Link
+                    href="/schools"
+                    className="bg-yellow-500 hover:bg-yellow-600 text-blue-900 px-6 py-2 rounded-lg text-sm font-semibold transition-colors"
+                  >
+                    {t("schools")}
+                  </Link>
+                  <Link
+                    href="/student"
+                    className="bg-transparent border-2 border-white hover:bg-white hover:text-blue-900 px-6 py-2 rounded-lg text-sm font-semibold transition-colors"
+                  >
+                    {t("student")}
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

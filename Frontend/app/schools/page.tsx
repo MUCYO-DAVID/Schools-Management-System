@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Plus, Edit, Trash2, Filter, MapPin, Users, Calendar } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Filter, MapPin, Users, Calendar, Shield, AlertCircle } from "lucide-react";
 import Navigation from "../components/Navigation";
 import { useLanguage } from "../providers/LanguageProvider";
+import { useAuth } from "../providers/AuthProvider";
+import { useRouter } from "next/navigation";
 import type { School } from "../types";
 import SchoolModal from "../components/SchoolModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
@@ -16,6 +18,8 @@ import {
 
 export default function Schools() {
   const { t } = useLanguage();
+  const { user, isAuthenticated } = useAuth();
+  const router = useRouter();
   const [schools, setSchools] = useState<School[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"All" | "Public" | "Private">("All");
@@ -24,17 +28,39 @@ export default function Schools() {
   const [editingSchool, setEditingSchool] = useState<School | null>(null);
   const [deletingSchool, setDeletingSchool] = useState<School | null>(null);
 
+  // Check authentication and role on mount
   useEffect(() => {
-    const loadSchools = async () => {
-      try {
-        const schoolsData = await fetchSchools();
-        setSchools(schoolsData);
-      } catch (error) {
-        console.error("Error fetching schools:", error);
+    if (!isAuthenticated) {
+      router.push('/auth/signin');
+      return;
+    }
+    
+    // Only leaders and admins can access this page
+    if (user?.role !== 'leader' && user?.role !== 'admin') {
+      // Redirect students to student dashboard
+      if (user?.role === 'student') {
+        router.push('/student');
+      } else {
+        router.push('/home');
       }
-    };
-    loadSchools();
-  }, []);
+      return;
+    }
+  }, [isAuthenticated, user, router]);
+
+  useEffect(() => {
+    // Only load schools if user is authenticated and has proper role
+    if (isAuthenticated && (user?.role === 'leader' || user?.role === 'admin')) {
+      const loadSchools = async () => {
+        try {
+          const schoolsData = await fetchSchools();
+          setSchools(schoolsData);
+        } catch (error) {
+          console.error("Error fetching schools:", error);
+        }
+      };
+      loadSchools();
+    }
+  }, [isAuthenticated, user]);
 
   const filteredSchools = schools.filter((school) => {
     const matchesSearch =
@@ -97,6 +123,27 @@ export default function Schools() {
     }
   };
 
+  // Show access denied message if user doesn't have permission
+  if (!isAuthenticated || (user?.role !== 'leader' && user?.role !== 'admin')) {
+    return (
+      <div className="min-h-screen">
+        <Navigation />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
+            <AlertCircle className="w-16 h-16 mx-auto text-red-600 mb-4" />
+            <h2 className="text-2xl font-bold text-red-900 mb-2">Access Denied</h2>
+            <p className="text-red-700 mb-4">
+              This page is only accessible to school leaders and administrators.
+            </p>
+            <p className="text-red-600 text-sm">
+              If you are a student, please use the Student Access page to browse schools.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen">
       <Navigation />
@@ -104,8 +151,12 @@ export default function Schools() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">{t("schools")}</h1>
+          <div className="flex items-center gap-3 mb-4">
+            <Shield className="w-8 h-8 text-blue-600" />
+            <h1 className="text-3xl font-bold text-gray-900">{t("schools")}</h1>
+          </div>
           <p className="text-gray-600">Manage and view all registered schools in Rwanda</p>
+          <p className="text-sm text-gray-500 mt-1">Restricted to school leaders and administrators</p>
         </div>
 
         {/* Controls */}

@@ -35,6 +35,7 @@ router.post('/auth/login', async (req, res) => {
 
     const userData = user.rows[0];
     const isAdmin = userData.role === 'admin';
+    const isLeader = userData.role === 'leader';
 
     // If admin, skip 2FA and return token directly
     if (isAdmin) {
@@ -65,6 +66,17 @@ router.post('/auth/login', async (req, res) => {
         }
       );
       return; // Exit early for admin
+    }
+
+    // If leader, require special verification questions
+    if (isLeader) {
+      res.json({
+        message: 'Leader verification required',
+        requiresVerification: true,
+        requiresLeaderQuestions: true,
+        email: email
+      });
+      return; // Exit early for leader - they'll need to answer questions
     }
 
     // For non-admin users, proceed with 2FA verification
@@ -120,6 +132,11 @@ router.post('/auth/signup', async (req, res) => {
   const { first_name, last_name, email, password, role } = req.body;
 
   try {
+    // Validate role - only allow 'student' or 'leader' through signup
+    // Admin roles must be created manually or through admin panel
+    const validRoles = ['student', 'leader'];
+    const userRole = role && validRoles.includes(role.toLowerCase()) ? role.toLowerCase() : 'student';
+
     // Check if user already exists
     const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (existingUser.rows.length > 0) {
@@ -133,7 +150,7 @@ router.post('/auth/signup', async (req, res) => {
     // Save user to database (use password column from schema)
     const newUser = await pool.query(
       'INSERT INTO users (first_name, last_name, email, password, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, first_name, last_name, email, role',
-      [first_name, last_name, email, hashedPassword, role || 'student'] // Default role to student if not provided
+      [first_name, last_name, email, hashedPassword, userRole] // Use validated role
     );
 
     // Generate JWT
@@ -169,13 +186,81 @@ router.post('/auth/signup', async (req, res) => {
   }
 });
 
-// Verify code endpoint
+// Verify code endpoint - handles both regular 2FA and leader questions
 router.post('/auth/verify-code', async (req, res) => {
-  const { email, code } = req.body;
+  const { email, code, leaderAnswers } = req.body;
 
   try {
-    if (!email || !code) {
-      return res.status(400).json({ message: 'Email and code are required' });
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    // Get user information
+    const user = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (user.rows.length === 0) {
+      return res.status(400).json({ message: 'User not found' });
+    }
+
+    const userData = user.rows[0];
+    const isLeader = userData.role === 'leader';
+
+    // Handle leader verification with special questions
+    if (isLeader) {
+      if (!leaderAnswers) {
+        return res.status(400).json({ message: 'Leader verification answers are required' });
+      }
+
+      // Define expected answers for leader verification
+      // These should be questions that only a real school leader would know
+      const expectedAnswers = {
+        question1: 'school management', // What is your primary responsibility? (expected: school management/leadership)
+        question2: 'yes', // Are you authorized to manage school information? (expected: yes)
+      };
+
+      // Simple validation - in production, you might want more sophisticated checks
+      const answer1 = (leaderAnswers.answer1 || '').toLowerCase().trim();
+      const answer2 = (leaderAnswers.answer2 || '').toLowerCase().trim();
+
+      // Check if answers contain expected keywords
+      const answer1Valid = answer1.includes('school') || answer1.includes('management') || answer1.includes('lead') || answer1.includes('admin');
+      const answer2Valid = answer2 === 'yes' || answer2 === 'y' || answer2.includes('authorized') || answer2.includes('can');
+
+      if (!answer1Valid || !answer2Valid) {
+        return res.status(400).json({ message: 'Verification failed. Please provide correct answers to verify your leadership role.' });
+      }
+
+      // Leader verified - generate token
+      const payload = {
+        user: {
+          id: userData.id,
+          role: userData.role,
+        },
+      };
+
+      jwt.sign(
+        payload,
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' },
+        (err, token) => {
+          if (err) {
+            console.error('JWT Sign Error:', err.message);
+            return res.status(500).json({ message: 'Token generation failed' });
+          }
+
+          const { id, first_name, last_name, email, role } = userData;
+          console.log('Leader login successful after verification');
+          res.json({
+            token,
+            user: { id, first_name, last_name, email, role },
+          });
+        }
+      );
+      return;
+    }
+
+    // Regular user verification with code
+    if (!code) {
+      return res.status(400).json({ message: 'Verification code is required' });
     }
 
     // Find the verification code
@@ -196,20 +281,14 @@ router.post('/auth/verify-code', async (req, res) => {
       return res.status(400).json({ message: 'Verification code has expired' });
     }
 
-    // Get user information
-    const user = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-    if (user.rows.length === 0) {
-      return res.status(400).json({ message: 'User not found' });
-    }
-
     // Delete the used verification code
     await pool.query('DELETE FROM verification_codes WHERE email = $1', [email]);
 
     // Generate JWT token
     const payload = {
       user: {
-        id: user.rows[0].id,
-        role: user.rows[0].role,
+        id: userData.id,
+        role: userData.role,
       },
     };
 
@@ -223,7 +302,7 @@ router.post('/auth/verify-code', async (req, res) => {
           return res.status(500).json({ message: 'Token generation failed' });
         }
 
-        const { id, first_name, last_name, email, role } = user.rows[0];
+        const { id, first_name, last_name, email, role } = userData;
         res.json({
           token,
           user: { id, first_name, last_name, email, role },

@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FileText, Clock, CheckCircle, XCircle, Trash2, Eye } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { FileText, Clock, CheckCircle, XCircle, Trash2, Eye, Search, ArrowRight } from 'lucide-react';
 import { getStudentApplications, withdrawApplication, StudentApplication } from '../api/student';
 import { formatDistanceToNow } from 'date-fns';
 
 export default function StudentDashboard() {
+  const router = useRouter();
   const [applications, setApplications] = useState<StudentApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedApp, setSelectedApp] = useState<StudentApplication | null>(null);
@@ -80,7 +82,15 @@ export default function StudentDashboard() {
       <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
         <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
         <h3 className="text-lg font-semibold text-gray-900 mb-2">No Applications Yet</h3>
-        <p className="text-sm text-gray-600">Start by applying to a school from the student portal</p>
+        <p className="text-sm text-gray-600 mb-6">Start by applying to a school from the student portal</p>
+        <button
+          onClick={() => router.push('/student?tab=browse')}
+          className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm hover:shadow-md"
+        >
+          <Search className="w-5 h-5" />
+          Browse Schools & Apply Now
+          <ArrowRight className="w-5 h-5" />
+        </button>
       </div>
     );
   }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, MapPin, Users, GraduationCap, Star, FileText, MessageSquare } from "lucide-react"
+import { Search, MapPin, Users, GraduationCap, Star, FileText, MessageSquare, AlertCircle, Shield } from "lucide-react"
 import Navigation from "../components/Navigation"
 import { useLanguage } from "../providers/LanguageProvider"
 import { useAuth } from "../providers/AuthProvider"
@@ -11,12 +11,13 @@ import ApplicationForm from "../components/ApplicationForm"
 import StudentDashboard from "../components/StudentDashboard"
 import SchoolDetailsModal from "../components/SchoolDetailsModal"
 import SurveyCommentsFeed from "../components/SurveyCommentsFeed"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 
 export default function StudentAccess() {
   const { t, language } = useLanguage()
   const { isAuthenticated, user } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<'browse' | 'applications' | 'comments'>('browse')
   const [schools, setSchools] = useState<School[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -31,17 +32,43 @@ export default function StudentAccess() {
       school.location.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
+  // Check authentication and role on mount - only students can access
   useEffect(() => {
-    const loadSchools = async () => {
-      try {
-        const schoolsData = await fetchSchools()
-        setSchools(schoolsData)
-      } catch (error) {
-        console.error("Error fetching:", error)
+    if (isAuthenticated && user) {
+      // Leaders and admins should not access student page
+      if (user.role === 'leader') {
+        router.push('/schools')
+        return
+      }
+      if (user.role === 'admin') {
+        router.push('/admin')
+        return
       }
     }
-    loadSchools()
-  }, [])
+  }, [isAuthenticated, user, router])
+
+  useEffect(() => {
+    // Only load schools if user is a student or not authenticated (for browsing)
+    if (!isAuthenticated || user?.role === 'student') {
+      const loadSchools = async () => {
+        try {
+          const schoolsData = await fetchSchools()
+          setSchools(schoolsData)
+        } catch (error) {
+          console.error("Error fetching:", error)
+        }
+      }
+      loadSchools()
+    }
+  }, [isAuthenticated, user])
+
+  // Check for tab query parameter on mount
+  useEffect(() => {
+    const tabParam = searchParams?.get('tab')
+    if (tabParam && (tabParam === 'browse' || tabParam === 'applications' || tabParam === 'comments')) {
+      setActiveTab(tabParam as 'browse' | 'applications' | 'comments')
+    }
+  }, [searchParams])
 
   useEffect(() => {
     if (applicationSuccess) {
@@ -90,6 +117,43 @@ export default function StudentAccess() {
     { id: 'comments' as const, label: 'Comments', icon: MessageSquare },
   ]
 
+  // Show access denied message if user is a leader or admin
+  if (isAuthenticated && user && (user.role === 'leader' || user.role === 'admin')) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
+            <AlertCircle className="w-16 h-16 mx-auto text-red-600 mb-4" />
+            <h2 className="text-2xl font-bold text-red-900 mb-2">Access Denied</h2>
+            <p className="text-red-700 mb-4">
+              This page is only accessible to students.
+            </p>
+            <p className="text-red-600 text-sm mb-4">
+              School leaders and administrators cannot access the student portal to prevent conflicts of interest.
+            </p>
+            {user.role === 'leader' && (
+              <button
+                onClick={() => router.push('/schools')}
+                className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Go to Schools Management
+              </button>
+            )}
+            {user.role === 'admin' && (
+              <button
+                onClick={() => router.push('/admin')}
+                className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Go to Admin Dashboard
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
@@ -97,8 +161,12 @@ export default function StudentAccess() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">{t("student")} Portal</h1>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <GraduationCap className="w-8 h-8 text-blue-600" />
+            <h1 className="text-3xl font-bold text-gray-900">{t("student")} Portal</h1>
+          </div>
           <p className="text-gray-600">Find schools, apply, and share your feedback</p>
+          <p className="text-sm text-gray-500 mt-1">Restricted to students only</p>
         </div>
 
         {/* Tabs */}

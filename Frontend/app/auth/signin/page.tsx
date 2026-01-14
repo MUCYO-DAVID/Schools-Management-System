@@ -38,9 +38,15 @@ export default function SignInPage() {
         login(data.token, data.user);
         // Redirect admin to dashboard
         router.push('/admin');
-      } else {
-        // Regular user - requires 2FA verification
+      } else if (data.requiresLeaderQuestions) {
+        // Leader login - requires special verification questions
         localStorage.setItem('userEmailForVerification', email);
+        localStorage.setItem('requiresLeaderQuestions', 'true');
+        router.push('/auth/verify-code');
+      } else {
+        // Regular user (student) - requires 2FA verification
+        localStorage.setItem('userEmailForVerification', email);
+        localStorage.setItem('requiresLeaderQuestions', 'false');
         router.push('/auth/verify-code');
       }
     } catch (err: any) {

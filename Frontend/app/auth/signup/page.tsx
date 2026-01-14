@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../providers/AuthProvider';
 
 const SignUpPage = () => {
   const [firstName, setFirstName] = useState('');
@@ -10,9 +11,11 @@ const SignUpPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState<'student' | 'leader'>('student');
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +38,7 @@ const SignUpPage = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ first_name: firstName, last_name: lastName, email, password, role: 'student' }),
+        body: JSON.stringify({ first_name: firstName, last_name: lastName, email, password, role }),
       });
 
       console.log('Response received:', response);
@@ -45,8 +48,27 @@ const SignUpPage = () => {
         throw new Error(errorData.message || 'Registration failed');
       }
 
-      console.log('Registration successful, redirecting to login...');
-      router.push('/auth/login'); // Redirect to login page after successful registration
+      const data = await response.json();
+      console.log('Registration successful');
+
+      // Auto-login the user after successful registration
+      if (data.token && data.user) {
+        login(data.token, data.user);
+        
+        // Redirect based on role
+        if (data.user.role === 'admin') {
+          router.push('/admin');
+        } else if (data.user.role === 'leader') {
+          // Leaders need to verify, but they just signed up, so redirect to home
+          router.push('/home');
+        } else {
+          // Students go to student page
+          router.push('/student');
+        }
+      } else {
+        // Fallback: redirect to signin if no token
+        router.push('/auth/signin');
+      }
     } catch (err: any) {
       console.error('Registration error:', err);
       setError(err.message || 'An unexpected error occurred');
@@ -107,6 +129,26 @@ const SignUpPage = () => {
               onChange={(e) => setEmail(e.target.value)}
               required
             />
+            <div>
+              <label htmlFor="role" className="block text-sm font-medium text-gray-300 mb-2">
+                I am registering as:
+              </label>
+              <select
+                id="role"
+                value={role}
+                onChange={(e) => setRole(e.target.value as 'student' | 'leader')}
+                className="w-full p-3 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                required
+              >
+                <option value="student">Student</option>
+                <option value="leader">School Leader</option>
+              </select>
+              {role === 'leader' && (
+                <p className="mt-2 text-xs text-yellow-400">
+                  ⚠️ School leaders will need to verify their identity with additional questions during login.
+                </p>
+              )}
+            </div>
             <div className="relative">
               <input
                 type="password"

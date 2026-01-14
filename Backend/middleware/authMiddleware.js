@@ -34,4 +34,11 @@ const adminMiddleware = (req, res, next) => {
     next();
 };
 
-module.exports = { authMiddleware, adminMiddleware };
+const leaderMiddleware = (req, res, next) => {
+    if (!req.user || req.user.role !== 'leader') {
+        return res.status(403).json({ message: 'Access denied, school leader privileges required' });
+    }
+    next();
+};
+
+module.exports = { authMiddleware, adminMiddleware, leaderMiddleware };

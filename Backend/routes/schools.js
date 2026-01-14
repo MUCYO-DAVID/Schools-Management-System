@@ -5,6 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
 const router = express.Router();
 const pool = require('../db');
+const { authMiddleware, leaderMiddleware } = require('../middleware/authMiddleware');
 
 // Multer storage configuration for school images
 const storage = multer.diskStorage({
@@ -52,8 +53,8 @@ router.get('/schools/top', async (req, res) => {
   }
 });
 
-// Create school with optional images
-router.post('/schools', upload.array('images', 10), async (req, res) => {
+// Create school with optional images - requires leader role
+router.post('/schools', authMiddleware, leaderMiddleware, upload.array('images', 10), async (req, res) => {
   const {
     name,
     nameRw,
@@ -136,7 +137,7 @@ router.post('/schools/:id/rate', async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
-router.delete('/schools/:id', async (req, res) => {
+router.delete('/schools/:id', authMiddleware, leaderMiddleware, async (req, res) => {
     const { id } = req.params;
     try {
         const result = await pool.query('DELETE FROM schools WHERE id = $1 RETURNING *', [id]);
@@ -149,8 +150,8 @@ router.delete('/schools/:id', async (req, res) => {
         res.status(500).send('Server Error');
     }
 });
-// Update school with optional new images and deletions
-router.put('/schools/:id', upload.array('images', 10), async (req, res) => {
+// Update school with optional new images and deletions - requires leader role
+router.put('/schools/:id', authMiddleware, leaderMiddleware, upload.array('images', 10), async (req, res) => {
   const { id } = req.params;
   const {
     name,
