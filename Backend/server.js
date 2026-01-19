@@ -12,6 +12,7 @@ const surveysRouter = require('./routes/surveys');
 const faqsRouter = require('./routes/faqs');
 const studentApplicationsRouter = require('./routes/studentApplications');
 const schoolDetailsRouter = require('./routes/schoolDetails');
+const chatRouter = require('./routes/chat');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -30,6 +31,7 @@ app.use('/api', surveysRouter);
 app.use('/api', faqsRouter);
 app.use('/api/student', studentApplicationsRouter);
 app.use('/api', schoolDetailsRouter);
+app.use('/api', chatRouter);
 
 // Start server after DB init
 (async () => {

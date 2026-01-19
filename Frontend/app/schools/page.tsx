@@ -97,29 +97,23 @@ export default function Schools() {
     }
   };
 
-  const handleSaveSchool = async (schoolData: Omit<School, "id">, images: File[]) => {
+  const handleSaveSchool = async (schoolData: Omit<School, "id">, images: File[], imagesToDelete: string[]) => {
     try {
-      const newSchool = await addSchool(schoolData, images);
-      setSchools((prev) => [...prev, newSchool]);
-      setIsModalOpen(false);
-    } catch (error) {
-      alert("Unable to add school. Please try again later.");
-    }
-  };
-
-  const handleUpdateSchool = async (schoolData: Omit<School, "id">, images: File[]) => {
-    if (!editingSchool) return;
-    try {
-      // When editing from the schools page, treat all provided images as new,
-      // and do not request deletion of any existing ones.
-      const updatedSchool = await updateSchool(editingSchool.id, schoolData, images, []);
-      setSchools((prev) =>
-        prev.map((s) => (s.id === updatedSchool.id ? updatedSchool : s))
-      );
+      if (editingSchool) {
+        // Update existing school
+        const updatedSchool = await updateSchool(editingSchool.id, schoolData, images, imagesToDelete);
+        setSchools((prev) =>
+          prev.map((s) => (s.id === updatedSchool.id ? updatedSchool : s))
+        );
+      } else {
+        // Add new school
+        const newSchool = await addSchool(schoolData, images);
+        setSchools((prev) => [...prev, newSchool]);
+      }
       setIsModalOpen(false);
       setEditingSchool(null);
     } catch (error) {
-      alert("Unable to update school. Please try again later.");
+      alert("Unable to save school. Please try again later.");
     }
   };
 
@@ -290,7 +284,7 @@ export default function Schools() {
 
         {/* Modals */}
         {isModalOpen && (
-          <SchoolModal school={editingSchool} onSave={editingSchool ? handleUpdateSchool : handleSaveSchool} onClose={() => setIsModalOpen(false)} />
+          <SchoolModal school={editingSchool} onSave={handleSaveSchool} onClose={() => setIsModalOpen(false)} />
         )}
 
         {deletingSchool && (

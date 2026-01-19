@@ -111,7 +111,7 @@ export default function About() {
                 <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Story</h2>
                 <div className="space-y-4 text-gray-600">
                   <p>
-                    Founded in 2020, the Rwanda School Management System was born from a vision to digitize and
+                    Founded in 2020, the Rwanda School Bridge System (RSBS) was born from a vision to digitize and
                     modernize education management across the country.
                   </p>
                   <p>

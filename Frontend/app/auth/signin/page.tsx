@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../providers/AuthProvider';
@@ -32,21 +32,34 @@ export default function SignInPage() {
 
       const data = await response.json();
 
+      // Check for redirect - keep it for after verification
+      const redirectPath = localStorage.getItem('redirectAfterLogin');
+
       // Check if admin login (has token and doesn't require verification)
       if (data.token && !data.requiresVerification) {
         // Admin login - skip 2FA
         login(data.token, data.user);
-        // Redirect admin to dashboard
-        router.push('/admin');
+        // Remove redirect after using it for admin
+        localStorage.removeItem('redirectAfterLogin');
+        // Redirect admin to dashboard or saved redirect
+        router.push(redirectPath || '/admin');
       } else if (data.requiresLeaderQuestions) {
         // Leader login - requires special verification questions
         localStorage.setItem('userEmailForVerification', email);
         localStorage.setItem('requiresLeaderQuestions', 'true');
+        // Save redirect for after verification (don't remove redirectAfterLogin yet)
+        if (redirectPath) {
+          localStorage.setItem('redirectAfterVerification', redirectPath);
+        }
         router.push('/auth/verify-code');
       } else {
         // Regular user (student) - requires 2FA verification
         localStorage.setItem('userEmailForVerification', email);
         localStorage.setItem('requiresLeaderQuestions', 'false');
+        // Save redirect for after verification (don't remove redirectAfterLogin yet)
+        if (redirectPath) {
+          localStorage.setItem('redirectAfterVerification', redirectPath);
+        }
         router.push('/auth/verify-code');
       }
     } catch (err: any) {
@@ -54,8 +67,17 @@ export default function SignInPage() {
     }
   };
 
+  // Check for redirect parameter
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirect = urlParams.get('redirect');
+    if (redirect) {
+      localStorage.setItem('redirectAfterLogin', redirect);
+    }
+  }, []);
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#007A3D] via-[#FDB913] to-[#005BBB] p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-green-700 p-4">
       <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg">
         <div className="text-center mb-6">
           <h2 className="text-3xl font-extrabold text-gray-900">Sign in to your account</h2>

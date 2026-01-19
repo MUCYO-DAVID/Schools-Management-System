@@ -196,6 +196,14 @@ router.post('/surveys/:id/replies', authMiddleware.authMiddleware, async (req, r
   const { id } = req.params;
   const { reply_text } = req.body;
   const userId = req.user.id;
+  const userRole = req.user.role;
+
+  // Prevent leaders from replying to survey comments
+  if (userRole === 'leader') {
+    return res.status(403).json({ 
+      message: 'School leaders cannot reply to survey comments to maintain objectivity.' 
+    });
+  }
 
   if (!reply_text || reply_text.trim() === '') {
     return res.status(400).json({ message: 'Reply text is required' });

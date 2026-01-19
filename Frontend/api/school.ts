@@ -5,7 +5,13 @@ export const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost
 const API_URL = `${BASE_URL}/api`;
 
 export const fetchSchools = async (): Promise<School[]> => {
-  const response = await fetch(`${API_URL}/schools`);
+  const token = localStorage.getItem('token');
+  const headers: HeadersInit = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_URL}/schools`, { headers });
   if (!response.ok) {
     throw new Error("Failed to fetch schools");
   }
@@ -30,6 +36,7 @@ export const fetchSchools = async (): Promise<School[]> => {
 
     return {
       ...school,
+      nameRw: school.name_rw || school.nameRw || "",
       image_urls,
       rating_total,
       rating_count,
@@ -64,6 +71,7 @@ export const fetchTopSchools = async (limit = 4): Promise<School[]> => {
 
     return {
       ...school,
+      nameRw: school.name_rw || school.nameRw || "",
       image_urls,
       rating_total,
       rating_count,
@@ -81,8 +89,15 @@ export const addSchool = async (schoolData: Omit<School, "id">, images: File[]):
     formData.append("images", file);
   });
 
+  const token = localStorage.getItem('token');
+  const headers: HeadersInit = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_URL}/schools`, {
     method: "POST",
+    headers,
     body: formData,
   });
   if (!response.ok) {
@@ -108,8 +123,15 @@ export const updateSchool = async (
     formData.append("imagesToDelete", url);
   });
 
+  const token = localStorage.getItem('token');
+  const headers: HeadersInit = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_URL}/schools/${id}`, {
     method: "PUT",
+    headers,
     body: formData,
   });
   if (!response.ok) {
@@ -119,8 +141,15 @@ export const updateSchool = async (
 };
 
 export const deleteSchool = async (id: string): Promise<void> => {
+  const token = localStorage.getItem('token');
+  const headers: HeadersInit = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_URL}/schools/${id}`, {
     method: "DELETE",
+    headers,
   });
   if (!response.ok) {
     throw new Error("Failed to delete school");
@@ -128,13 +157,20 @@ export const deleteSchool = async (id: string): Promise<void> => {
 };
 
 export const rateSchool = async (id: string, rating: number) => {
+  const token = localStorage.getItem('token');
+  const headers: HeadersInit = { "Content-Type": "application/json" };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_URL}/schools/${id}/rate`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({ rating }),
   });
   if (!response.ok) {
-    throw new Error("Failed to rate school");
+    const errorData = await response.json();
+    throw new Error(errorData.message || "Failed to rate school");
   }
   return response.json();
 };

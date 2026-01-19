@@ -49,7 +49,7 @@ router.post('/auth/login', async (req, res) => {
       jwt.sign(
         payload,
         process.env.JWT_SECRET,
-        { expiresIn: '1h' },
+        { expiresIn: '7d' }, // Changed from 1h to 7 days for better UX
         (err, token) => {
           if (err) {
             console.error('JWT Sign Error:', err.message);
@@ -164,7 +164,7 @@ router.post('/auth/signup', async (req, res) => {
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: '1h' },
+      { expiresIn: '7d' }, // Changed from 1h to 7 days for better UX
       (err, token) => {
         if (err) {
           console.error('JWT Sign Error:', err.message);
@@ -240,7 +240,7 @@ router.post('/auth/verify-code', async (req, res) => {
       jwt.sign(
         payload,
         process.env.JWT_SECRET,
-        { expiresIn: '1h' },
+        { expiresIn: '7d' }, // Changed from 1h to 7 days for better UX
         (err, token) => {
           if (err) {
             console.error('JWT Sign Error:', err.message);
@@ -295,7 +295,7 @@ router.post('/auth/verify-code', async (req, res) => {
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: '1h' },
+      { expiresIn: '7d' }, // Changed from 1h to 7 days for better UX
       (err, token) => {
         if (err) {
           console.error('JWT Sign Error:', err.message);

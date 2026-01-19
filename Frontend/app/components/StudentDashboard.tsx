@@ -2,28 +2,42 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { FileText, Clock, CheckCircle, XCircle, Trash2, Eye, Search, ArrowRight } from 'lucide-react';
+import { FileText, Clock, CheckCircle, XCircle, Trash2, Eye, Search, ArrowRight, AlertCircle, Download, Bell } from 'lucide-react';
 import { getStudentApplications, withdrawApplication, StudentApplication } from '../api/student';
 import { formatDistanceToNow } from 'date-fns';
+import { BASE_URL } from '@/api/school';
+import { useAuth } from '../providers/AuthProvider';
 
 export default function StudentDashboard() {
   const router = useRouter();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [applications, setApplications] = useState<StudentApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedApp, setSelectedApp] = useState<StudentApplication | null>(null);
   const [withdrawingId, setWithdrawingId] = useState<number | null>(null);
 
   useEffect(() => {
-    loadApplications();
-  }, []);
+    // Only fetch applications when authentication is ready and user is authenticated
+    if (!authLoading && isAuthenticated) {
+      loadApplications();
+    } else if (!authLoading && !isAuthenticated) {
+      setLoading(false);
+    }
+  }, [authLoading, isAuthenticated]);
 
   const loadApplications = async () => {
     try {
       setLoading(true);
+      console.log('Fetching student applications...');
       const data = await getStudentApplications();
+      console.log('Applications loaded:', data.length);
       setApplications(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading applications:', error);
+      // If unauthorized, the error might be due to expired token
+      if (error.message?.includes('401') || error.message?.includes('authorization')) {
+        console.log('Token might be expired, please login again');
+      }
     } finally {
       setLoading(false);
     }
@@ -69,6 +83,34 @@ export default function StudentDashboard() {
     }
   };
 
+  const parseDocumentUrls = (docUrls: any): string[] => {
+    if (!docUrls) return []
+    if (typeof docUrls === 'string') {
+      try {
+        return JSON.parse(docUrls).map((url: string) => 
+          url.startsWith('http') ? url : `${BASE_URL}${url}`
+        )
+      } catch {
+        return []
+      }
+    }
+    if (Array.isArray(docUrls)) {
+      return docUrls.map((url: string) =>
+        url.startsWith('http') ? url : `${BASE_URL}${url}`
+      )
+    }
+    return []
+  };
+
+  // Count recent status updates (within last 7 days)
+  const recentStatusUpdates = applications.filter(app => {
+    if (app.status === 'pending') return false;
+    const updatedDate = new Date(app.updated_at);
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    return updatedDate > weekAgo;
+  });
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -101,6 +143,56 @@ export default function StudentDashboard() {
         <h2 className="text-2xl font-bold text-gray-900">My Applications</h2>
         <span className="text-sm text-gray-600">{applications.length} application(s)</span>
       </div>
+
+      {/* Recent Status Updates Notifications */}
+      {recentStatusUpdates.length > 0 && (
+        <div className="space-y-3 mb-6">
+          {recentStatusUpdates.map((app) => (
+            <div
+              key={`notification-${app.id}`}
+              className={`rounded-lg border p-4 ${
+                app.status === 'approved'
+                  ? 'bg-green-50 border-green-200'
+                  : 'bg-red-50 border-red-200'
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <div className={`mt-1 ${app.status === 'approved' ? 'text-green-600' : 'text-red-600'}`}>
+                  <Bell className="w-5 h-5" />
+                </div>
+                <div className="flex-1">
+                  <h4 className={`font-semibold mb-1 ${
+                    app.status === 'approved' ? 'text-green-900' : 'text-red-900'
+                  }`}>
+                    {app.status === 'approved' ? '🎉 Application Approved!' : '❌ Application Not Approved'}
+                  </h4>
+                  <p className={`text-sm mb-2 ${
+                    app.status === 'approved' ? 'text-green-800' : 'text-red-800'
+                  }`}>
+                    Your application to <strong>{app.school_name}</strong> has been {app.status}.
+                    {app.status === 'approved' && ' The school will contact you with next steps.'}
+                  </p>
+                  {app.status === 'rejected' && app.rejection_reason && (
+                    <div className="bg-red-100 border border-red-200 rounded p-3 text-sm text-red-900 mt-2">
+                      <p className="font-medium mb-1">Reason:</p>
+                      <p>{app.rejection_reason}</p>
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-600 mt-2">
+                    Updated {formatDistanceToNow(new Date(app.updated_at), { addSuffix: true })}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSelectedApp(app)}
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="space-y-3">
         {applications.map((app) => (
@@ -139,6 +231,26 @@ export default function StudentDashboard() {
                     </p>
                   )}
                 </div>
+
+                {app.status === 'rejected' && app.rejection_reason && (
+                  <div className="mt-3 bg-red-50 border border-red-200 rounded-lg p-3">
+                    <p className="text-xs font-medium text-red-900 mb-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      Rejection Reason:
+                    </p>
+                    <p className="text-xs text-red-800">{app.rejection_reason}</p>
+                  </div>
+                )}
+
+                {app.status === 'approved' && (
+                  <div className="mt-3 bg-green-50 border border-green-200 rounded-lg p-3">
+                    <p className="text-xs font-medium text-green-900 mb-1 flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3" />
+                      Congratulations!
+                    </p>
+                    <p className="text-xs text-green-800">The school will contact you with next steps for enrollment.</p>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-2 ml-4">
@@ -280,6 +392,56 @@ export default function StudentDashboard() {
                 <div className="border-t pt-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Additional Information</h3>
                   <p className="text-sm text-gray-700 whitespace-pre-wrap">{selectedApp.additional_info}</p>
+                </div>
+              )}
+
+              {selectedApp.document_urls && parseDocumentUrls(selectedApp.document_urls).length > 0 && (
+                <div className="border-t pt-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Supporting Documents</h3>
+                  <div className="space-y-2">
+                    {parseDocumentUrls(selectedApp.document_urls).map((url, index) => (
+                      <a
+                        key={index}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors"
+                      >
+                        <FileText className="w-5 h-5 text-blue-600" />
+                        <span className="text-sm font-medium text-blue-900 flex-1">
+                          Document {index + 1} - {url.endsWith('.pdf') ? 'PDF' : 'Image'}
+                        </span>
+                        <Download className="w-4 h-4 text-blue-600" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedApp.status === 'rejected' && selectedApp.rejection_reason && (
+                <div className="border-t pt-4">
+                  <h3 className="text-lg font-semibold text-red-900 mb-3">Rejection Reason</h3>
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p className="text-sm text-red-800">{selectedApp.rejection_reason}</p>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-2">
+                    We encourage you to apply again in the future or consider other schools in the system.
+                  </p>
+                </div>
+              )}
+
+              {selectedApp.status === 'approved' && (
+                <div className="border-t pt-4">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-green-900 mb-2 flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5" />
+                      Application Approved!
+                    </h3>
+                    <p className="text-sm text-green-800">
+                      Congratulations! The school will contact you soon with the next steps for enrollment.
+                      Please keep an eye on your email for further instructions.
+                    </p>
+                  </div>
                 </div>
               )}
 

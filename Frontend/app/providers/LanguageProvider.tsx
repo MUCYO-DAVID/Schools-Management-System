@@ -10,7 +10,7 @@ const translations = {
     about: "About",
     admin: "Admin Dashboard",
     student: "Student Access",
-    welcome: "Welcome to Rwanda School Management System",
+    welcome: "Welcome to Rwanda School Bridge System",
     addSchool: "Add New School",
     editSchool: "Edit School",
     deleteSchool: "Delete School",

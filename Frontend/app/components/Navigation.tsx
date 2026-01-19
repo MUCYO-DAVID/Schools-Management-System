@@ -30,6 +30,11 @@ export default function Navigation() {
     navItems.splice(1, 0, { path: "/schools", label: t("schools") })
   }
 
+  // Show Leader Dashboard for leaders
+  if (user?.role === "leader") {
+    navItems.push({ path: "/leader", label: "Applications" })
+  }
+
   if (user?.role === "admin") {
     navItems.push({ path: "/admin", label: t("admin") })
   }
@@ -43,7 +48,7 @@ export default function Navigation() {
           <div className="flex items-center">
             <Link href="/home" className="flex items-center space-x-2">
               <div className="w-7 h-7 bg-gradient-to-r from-blue-500 via-yellow-400 to-green-500 rounded"></div>
-              <span className="text-white font-bold text-base">Rwanda Schools</span>
+              <span className="text-white font-bold text-base">RSBS</span>
             </Link>
           </div>
 

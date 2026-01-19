@@ -23,7 +23,31 @@ const upload = multer({ storage });
 
 router.get('/schools', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM schools');
+    // Check if request has authentication
+    const authHeader = req.header('Authorization');
+    let userRole = null;
+    let userId = null;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      try {
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        userRole = decoded.user.role;
+        userId = decoded.user.id;
+      } catch (err) {
+        // Invalid token, treat as unauthenticated
+      }
+    }
+
+    // Leaders only see schools they created, admins and others see all schools
+    let result;
+    if (userRole === 'leader') {
+      result = await pool.query('SELECT * FROM schools WHERE created_by = $1', [userId]);
+    } else {
+      result = await pool.query('SELECT * FROM schools');
+    }
+    
     res.json(result.rows);
   } catch (err) {
     console.error('Error fetching schools:', err.message);
@@ -75,10 +99,13 @@ router.post('/schools', authMiddleware, leaderMiddleware, upload.array('images',
   const imageUrls = (req.files || []).map((file) => `/uploads/${file.filename}`);
 
   try {
+    // Get the user ID from the authenticated request
+    const createdBy = req.user.id;
+
     const newSchool = await pool.query(
       `INSERT INTO schools
-        (id, name, name_rw, location, type, level, students, established, image_urls)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        (id, name, name_rw, location, type, level, students, established, image_urls, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
       [
         schoolId,
@@ -90,6 +117,7 @@ router.post('/schools', authMiddleware, leaderMiddleware, upload.array('images',
         students ? Number(students) : 0,
         established ? Number(established) : null,
         imageUrls.length ? JSON.stringify(imageUrls) : null,
+        createdBy,
       ]
     );
 
@@ -100,10 +128,32 @@ router.post('/schools', authMiddleware, leaderMiddleware, upload.array('images',
   }
 });
 
-// Rate a school (1–5 stars)
+// Rate a school (1–5 stars) - Students and unauthenticated users only
 router.post('/schools/:id/rate', async (req, res) => {
   const { id } = req.params;
   const { rating } = req.body;
+
+  // Check if user is authenticated and get their role
+  const authHeader = req.header('Authorization');
+  let userRole = null;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    try {
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      userRole = decoded.user.role;
+    } catch (err) {
+      // Invalid token, treat as unauthenticated (allow rating)
+    }
+  }
+
+  // Prevent leaders and admins from rating schools
+  if (userRole === 'leader' || userRole === 'admin') {
+    return res.status(403).json({ 
+      message: 'School leaders and administrators cannot rate schools to prevent conflicts of interest.' 
+    });
+  }
 
   const parsedRating = Number(rating);
   if (!parsedRating || parsedRating < 1 || parsedRating > 5) {

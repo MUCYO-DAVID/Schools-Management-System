@@ -15,7 +15,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 
 export default function StudentAccess() {
   const { t, language } = useLanguage()
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, user, loading: authLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<'browse' | 'applications' | 'comments'>('browse')
@@ -34,6 +34,9 @@ export default function StudentAccess() {
 
   // Check authentication and role on mount - only students can access
   useEffect(() => {
+    // Wait for auth to load before checking roles
+    if (authLoading) return;
+    
     if (isAuthenticated && user) {
       // Leaders and admins should not access student page
       if (user.role === 'leader') {
@@ -45,28 +48,45 @@ export default function StudentAccess() {
         return
       }
     }
-  }, [isAuthenticated, user, router])
+  }, [isAuthenticated, user, router, authLoading])
 
   useEffect(() => {
+    // Wait for auth to be ready before loading schools
+    if (authLoading) return;
+    
     // Only load schools if user is a student or not authenticated (for browsing)
     if (!isAuthenticated || user?.role === 'student') {
+      let isMounted = true;
       const loadSchools = async () => {
         try {
+          console.log('Loading schools...');
           const schoolsData = await fetchSchools()
-          setSchools(schoolsData)
+          if (isMounted) {
+            console.log('Schools loaded:', schoolsData.length);
+            setSchools(schoolsData)
+          }
         } catch (error) {
-          console.error("Error fetching:", error)
+          console.error("Error fetching schools:", error)
         }
       }
       loadSchools()
+      return () => {
+        isMounted = false;
+      }
     }
-  }, [isAuthenticated, user])
+  }, [isAuthenticated, user?.role, authLoading])
 
   // Check for tab query parameter on mount
   useEffect(() => {
     const tabParam = searchParams?.get('tab')
     if (tabParam && (tabParam === 'browse' || tabParam === 'applications' || tabParam === 'comments')) {
       setActiveTab(tabParam as 'browse' | 'applications' | 'comments')
+    }
+
+    // Check for search query parameter
+    const searchParam = searchParams?.get('search')
+    if (searchParam) {
+      setSearchTerm(searchParam)
     }
   }, [searchParams])
 
@@ -179,8 +199,8 @@ export default function StudentAccess() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-medium transition-colors ${activeTab === tab.id
-                      ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -236,26 +256,38 @@ export default function StudentAccess() {
                             ? school.average_rating
                             : 0
                         const rounded = Math.round(avg * 2) / 2
+                        const canRate = !user || user.role === 'student'; // Students and unauthenticated can rate
+
                         return (
                           <>
                             {[1, 2, 3, 4, 5].map((star) => (
-                              <button
-                                key={star}
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleRate(school.id, star)
-                                }}
-                                className="mr-1"
-                                disabled={ratingSchoolId === school.id}
-                              >
-                                <Star
-                                  className={`w-4 h-4 ${star <= rounded
+                              canRate ? (
+                                <button
+                                  key={star}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleRate(school.id, star)
+                                  }}
+                                  className="mr-1"
+                                  disabled={ratingSchoolId === school.id}
+                                >
+                                  <Star
+                                    className={`w-4 h-4 ${star <= rounded
                                       ? "text-yellow-400 fill-yellow-400"
                                       : "text-gray-300"
+                                      }`}
+                                  />
+                                </button>
+                              ) : (
+                                <Star
+                                  key={star}
+                                  className={`w-4 h-4 mr-1 ${star <= rounded
+                                    ? "text-yellow-400 fill-yellow-400"
+                                    : "text-gray-300"
                                     }`}
                                 />
-                              </button>
+                              )
                             ))}
                             <span className="ml-2 text-xs text-gray-500">
                               {school.rating_count ?? 0}

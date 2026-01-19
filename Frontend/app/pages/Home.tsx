@@ -20,17 +20,25 @@ export default function Home() {
   const [ratingSchoolId, setRatingSchoolId] = useState<string | null>(null)
 
   useEffect(() => {
+    let isMounted = true;
     const loadTopSchools = async () => {
       try {
         const data = await fetchTopSchools(5)
-        setTopSchools(data)
+        if (isMounted) {
+          setTopSchools(data)
+          setLoading(false)
+        }
       } catch (err) {
         console.error("Error loading top schools", err)
-      } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
     loadTopSchools()
+    return () => {
+      isMounted = false;
+    }
   }, [])
 
   const handleRate = async (schoolId: string, value: number) => {
@@ -202,20 +210,29 @@ export default function Home() {
                           <p className="text-xs text-gray-600 mb-2">{school.location}</p>
 
                           <div className="flex items-center mb-2">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <button
-                                key={star}
-                                type="button"
-                                onClick={() => handleRate(school.id, star)}
-                                className="mr-0.5"
-                                aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
-                              >
+                            {[1, 2, 3, 4, 5].map((star) => {
+                              const canRate = !user || user.role === 'student'; // Students and unauthenticated can rate
+                              return canRate ? (
+                                <button
+                                  key={star}
+                                  type="button"
+                                  onClick={() => handleRate(school.id, star)}
+                                  className="mr-0.5"
+                                  aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
+                                >
+                                  <Star
+                                    className={`w-3 h-3 ${star <= rounded ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+                                      }`}
+                                  />
+                                </button>
+                              ) : (
                                 <Star
-                                  className={`w-3 h-3 ${star <= rounded ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+                                  key={star}
+                                  className={`w-3 h-3 mr-0.5 ${star <= rounded ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
                                     }`}
                                 />
-                              </button>
-                            ))}
+                              )
+                            })}
                             <span className="ml-1.5 text-xs text-gray-500">
                               {school.rating_count ?? 0}
                             </span>

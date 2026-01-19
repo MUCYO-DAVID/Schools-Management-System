@@ -35,8 +35,8 @@ const adminMiddleware = (req, res, next) => {
 };
 
 const leaderMiddleware = (req, res, next) => {
-    if (!req.user || req.user.role !== 'leader') {
-        return res.status(403).json({ message: 'Access denied, school leader privileges required' });
+    if (!req.user || (req.user.role !== 'leader' && req.user.role !== 'admin')) {
+        return res.status(403).json({ message: 'Access denied, school leader or admin privileges required' });
     }
     next();
 };

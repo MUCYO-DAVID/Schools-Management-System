@@ -77,11 +77,24 @@ export default function VerifyCodePage() {
 
       const { token, user } = await response.json();
       login(token, user); // Log in the user after successful verification
-      localStorage.removeItem('userEmailForVerification'); // Clean up
-      localStorage.removeItem('requiresLeaderQuestions'); // Clean up
+      
+      // Clean up verification data
+      localStorage.removeItem('userEmailForVerification');
+      localStorage.removeItem('requiresLeaderQuestions');
+      
+      // Check for redirect path (from verification flow)
+      const redirectPath = localStorage.getItem('redirectAfterVerification');
+      localStorage.removeItem('redirectAfterVerification');
+      
+      // Also check for redirect from login (in case it wasn't moved to redirectAfterVerification)
+      const loginRedirect = localStorage.getItem('redirectAfterLogin');
+      localStorage.removeItem('redirectAfterLogin');
 
-      // Redirect based on role
-      if (user.role === 'admin') {
+      // Redirect based on role or saved redirect
+      const finalRedirect = redirectPath || loginRedirect;
+      if (finalRedirect) {
+        router.push(finalRedirect);
+      } else if (user.role === 'admin') {
         router.push('/admin');
       } else if (user.role === 'leader') {
         router.push('/schools');

@@ -17,10 +17,21 @@ async function initializeDb() {
         image_urls TEXT,
         rating_total INTEGER DEFAULT 0,
         rating_count INTEGER DEFAULT 0,
+        created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    // Add created_by column if it doesn't exist (for existing databases)
+    try {
+      await pool.query(`
+        ALTER TABLE schools 
+        ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
+      `);
+    } catch (alterError) {
+      console.warn('⚠️  Could not add created_by column to schools (may already exist):', alterError.message);
+    }
 
     // School Details - Additional information managed by headmasters
     // Drop table if exists to handle type changes
@@ -213,7 +224,11 @@ async function initializeDb() {
         parent_phone VARCHAR(50),
         address TEXT,
         additional_info TEXT,
+        document_urls TEXT,
         status VARCHAR(50) DEFAULT 'pending',
+        rejection_reason TEXT,
+        reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        reviewed_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(user_id, school_id)
@@ -221,6 +236,19 @@ async function initializeDb() {
     `;
 
     await pool.query(createTableSql);
+
+    // Add new columns to existing student_applications table if they don't exist
+    try {
+      await pool.query(`
+        ALTER TABLE student_applications 
+        ADD COLUMN IF NOT EXISTS document_urls TEXT,
+        ADD COLUMN IF NOT EXISTS rejection_reason TEXT,
+        ADD COLUMN IF NOT EXISTS reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
+      `);
+    } catch (alterError) {
+      console.warn('⚠️  Could not add new columns to student_applications (may already exist):', alterError.message);
+    }
 
     // Create indexes for student applications
     try {
@@ -232,6 +260,9 @@ async function initializeDb() {
       `);
       await pool.query(`
         CREATE INDEX IF NOT EXISTS idx_student_applications_status ON student_applications(status);
+      `);
+      await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_student_applications_reviewed_by ON student_applications(reviewed_by);
       `);
     } catch (indexError) {
       console.warn('⚠️  Could not create indexes on student_applications (non-critical):', indexError.message);
