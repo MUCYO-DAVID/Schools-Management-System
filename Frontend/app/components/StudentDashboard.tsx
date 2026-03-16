@@ -1,25 +1,40 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { jsPDF } from 'jspdf';
 import { useRouter } from 'next/navigation';
-import { FileText, Clock, CheckCircle, XCircle, Trash2, Eye, Search, ArrowRight, AlertCircle, Download, Bell } from 'lucide-react';
+import { FileText, Clock, CheckCircle, XCircle, Trash2, Eye, Search, ArrowRight, AlertCircle, Download, Bell, CreditCard } from 'lucide-react';
 import { getStudentApplications, withdrawApplication, StudentApplication } from '../api/student';
 import { formatDistanceToNow } from 'date-fns';
 import { BASE_URL } from '@/api/school';
 import { useAuth } from '../providers/AuthProvider';
+import { createInvoice, fetchFeeInvoices, fetchFeeSchedules, payInvoiceSandbox, createStripeCheckout, fetchReceipt } from '../api/payments';
+import { fetchInbox, fetchAnnouncements } from '../api/portal';
 
 export default function StudentDashboard() {
   const router = useRouter();
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, user } = useAuth();
   const [applications, setApplications] = useState<StudentApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedApp, setSelectedApp] = useState<StudentApplication | null>(null);
   const [withdrawingId, setWithdrawingId] = useState<number | null>(null);
+  const [feeSchedules, setFeeSchedules] = useState<any[]>([]);
+  const [feeInvoices, setFeeInvoices] = useState<any[]>([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [inboxMessages, setInboxMessages] = useState<any[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [receiptData, setReceiptData] = useState<any | null>(null);
+  const [receiptLoading, setReceiptLoading] = useState(false);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [announcementsLoading, setAnnouncementsLoading] = useState(false);
 
   useEffect(() => {
     // Only fetch applications when authentication is ready and user is authenticated
     if (!authLoading && isAuthenticated) {
       loadApplications();
+      loadPayments();
+      loadMessages();
+      loadAnnouncements();
     } else if (!authLoading && !isAuthenticated) {
       setLoading(false);
     }
@@ -57,6 +72,125 @@ export default function StudentDashboard() {
     } finally {
       setWithdrawingId(null);
     }
+  };
+
+  const loadPayments = async () => {
+    try {
+      setPaymentsLoading(true);
+      const [schedules, invoices] = await Promise.all([
+        fetchFeeSchedules(),
+        fetchFeeInvoices(),
+      ]);
+      setFeeSchedules(schedules);
+      setFeeInvoices(invoices);
+    } catch (error) {
+      console.error('Error loading payments:', error);
+    } finally {
+      setPaymentsLoading(false);
+    }
+  };
+
+  const handleCreateInvoice = async (scheduleId: number) => {
+    try {
+      setPaymentsLoading(true);
+      const invoice = await createInvoice({ schedule_id: scheduleId });
+      setFeeInvoices((prev) => [invoice, ...prev]);
+    } catch (error) {
+      console.error('Failed to create invoice:', error);
+      alert('Unable to create invoice');
+    } finally {
+      setPaymentsLoading(false);
+    }
+  };
+
+  const handlePayInvoice = async (invoiceId: number) => {
+    try {
+      setPaymentsLoading(true);
+      const result = await payInvoiceSandbox(invoiceId);
+      setFeeInvoices((prev) =>
+        prev.map((inv) => (inv.id === result.invoice.id ? result.invoice : inv))
+      );
+      alert(`Sandbox payment successful. Reference: ${result.receipt.reference}`);
+    } catch (error) {
+      console.error('Payment failed:', error);
+      alert('Payment failed');
+    } finally {
+      setPaymentsLoading(false);
+    }
+  };
+
+  const handleStripePay = async (invoiceId: number) => {
+    try {
+      setPaymentsLoading(true);
+      const origin = window.location.origin;
+      const result = await createStripeCheckout(
+        invoiceId,
+        `${origin}/payments/stripe-success`,
+        `${origin}/payments/stripe-cancel`
+      );
+      if (result.url) {
+        window.location.href = result.url;
+      }
+    } catch (error) {
+      console.error('Stripe payment failed:', error);
+      alert('Stripe payment failed');
+    } finally {
+      setPaymentsLoading(false);
+    }
+  };
+
+  const loadMessages = async () => {
+    try {
+      setMessagesLoading(true);
+      const messages = await fetchInbox();
+      setInboxMessages(messages);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
+
+  const loadAnnouncements = async () => {
+    try {
+      setAnnouncementsLoading(true);
+      const data = await fetchAnnouncements();
+      setAnnouncements(data);
+    } catch (error) {
+      console.error('Error loading announcements:', error);
+    } finally {
+      setAnnouncementsLoading(false);
+    }
+  };
+
+  const handleViewReceipt = async (invoiceId: number) => {
+    try {
+      setReceiptLoading(true);
+      const data = await fetchReceipt(invoiceId);
+      setReceiptData(data);
+    } catch (error) {
+      console.error('Failed to load receipt:', error);
+      alert('Failed to load receipt');
+    } finally {
+      setReceiptLoading(false);
+    }
+  };
+
+  const handleDownloadReceipt = () => {
+    if (!receiptData?.invoice) return;
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text('RSBS - Payment Receipt', 20, 20);
+    doc.setFontSize(10);
+    doc.text('Rwanda School Bridge System', 20, 28);
+    doc.line(20, 32, 190, 32);
+    doc.setFontSize(10);
+    doc.text(`Invoice: #${receiptData.invoice.id}`, 20, 42);
+    doc.text(`Amount: ${receiptData.invoice.amount} ${receiptData.invoice.currency}`, 20, 50);
+    doc.text(`Status: ${receiptData.invoice.status}`, 20, 58);
+    doc.text(`Provider: ${receiptData.payment?.provider || 'N/A'}`, 20, 66);
+    doc.text(`Reference: ${receiptData.payment?.reference || receiptData.payment?.id || 'N/A'}`, 20, 74);
+    doc.save(`receipt-${receiptData.invoice.id}.pdf`);
   };
 
   const getStatusColor = (status: string) => {
@@ -142,6 +276,189 @@ export default function StudentDashboard() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900">My Applications</h2>
         <span className="text-sm text-gray-600">{applications.length} application(s)</span>
+      </div>
+
+      {/* Announcements Section */}
+      {announcements.length > 0 && (
+        <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200 p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Bell className="w-5 h-5 text-blue-600" />
+            <h3 className="text-lg font-semibold text-blue-900">Announcements</h3>
+          </div>
+          <div className="space-y-3">
+            {announcements.slice(0, 3).map((ann) => (
+              <div key={ann.id} className="bg-white rounded-lg p-4 border border-blue-200">
+                <h4 className="text-sm font-semibold text-gray-900 mb-1">{ann.title}</h4>
+                <p className="text-sm text-gray-600 whitespace-pre-wrap">{ann.body}</p>
+                <p className="text-xs text-gray-400 mt-2">
+                  {new Date(ann.created_at).toLocaleString()}
+                </p>
+              </div>
+            ))}
+          </div>
+          {announcements.length > 3 && (
+            <p className="text-xs text-blue-700 mt-3">
+              + {announcements.length - 3} more announcement(s)
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="bg-white rounded-lg border border-gray-200 p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <CreditCard className="w-5 h-5 text-blue-600" />
+          <h3 className="text-lg font-semibold text-gray-900">Fees & Payments</h3>
+        </div>
+        <p className="text-sm text-gray-600 mb-4">
+          Students can view invoices and pay using the sandbox payment flow.
+          Parents should use the Parent Portal for their own payments.
+        </p>
+        {paymentsLoading ? (
+          <p className="text-sm text-gray-500">Loading payment data...</p>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-2">Available Fee Schedules</h4>
+              {feeSchedules.length === 0 ? (
+                <p className="text-sm text-gray-500">No fee schedules available.</p>
+              ) : (
+                <div className="space-y-2">
+                  {feeSchedules.map((schedule) => (
+                    <div key={schedule.id} className="border border-gray-200 rounded-lg p-3 flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{schedule.title}</p>
+                        <p className="text-xs text-gray-500">
+                          {schedule.amount} {schedule.currency}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleCreateInvoice(schedule.id)}
+                        className="text-sm px-3 py-1.5 bg-blue-600 text-white rounded-md"
+                        disabled={paymentsLoading}
+                      >
+                        Create Invoice
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-2">My Invoices</h4>
+              {feeInvoices.length === 0 ? (
+                <p className="text-sm text-gray-500">No invoices yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {feeInvoices.map((invoice) => (
+                    <div key={invoice.id} className="border border-gray-200 rounded-lg p-3 flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{invoice.schedule_title || 'Invoice'}</p>
+                        <p className="text-xs text-gray-500">
+                          {invoice.amount} {invoice.currency} • {invoice.status}
+                        </p>
+                      </div>
+                      {invoice.status !== 'paid' && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handlePayInvoice(invoice.id)}
+                            className="text-xs px-3 py-1.5 bg-green-600 text-white rounded-md"
+                            disabled={paymentsLoading}
+                          >
+                            Sandbox Pay
+                          </button>
+                          <button
+                            onClick={() => handleStripePay(invoice.id)}
+                            className="text-xs px-3 py-1.5 bg-purple-600 text-white rounded-md"
+                            disabled={paymentsLoading}
+                          >
+                            Stripe Test
+                          </button>
+                        </div>
+                      )}
+                      {invoice.status === 'paid' && (
+                        <button
+                          onClick={() => handleViewReceipt(invoice.id)}
+                          className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-md"
+                          disabled={receiptLoading}
+                        >
+                          View Receipt
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {receiptData && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Payment Receipt</h3>
+            <p className="text-sm text-gray-600 mb-4">Invoice #{receiptData.invoice?.id}</p>
+            <div className="space-y-2 text-sm text-gray-700">
+              <div className="flex justify-between">
+                <span>Amount</span>
+                <span>
+                  {receiptData.invoice?.amount} {receiptData.invoice?.currency}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Status</span>
+                <span>{receiptData.invoice?.status}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Provider</span>
+                <span>{receiptData.payment?.provider || "N/A"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Reference</span>
+                <span>{receiptData.payment?.reference || receiptData.payment?.id || "N/A"}</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setReceiptData(null)}
+              className="mt-4 w-full bg-gray-800 text-white px-4 py-2 rounded-md text-sm"
+            >
+              Close
+            </button>
+            <button
+              onClick={handleDownloadReceipt}
+              className="mt-2 w-full bg-blue-600 text-white px-4 py-2 rounded-md text-sm"
+            >
+              Download PDF
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white rounded-lg border border-gray-200 p-5">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-semibold text-gray-900">Messages</h3>
+          <span className="text-xs text-gray-500">
+            {inboxMessages.filter((msg) => !msg.read_at).length} unread
+          </span>
+        </div>
+        {messagesLoading ? (
+          <p className="text-sm text-gray-500">Loading messages...</p>
+        ) : inboxMessages.length === 0 ? (
+          <p className="text-sm text-gray-500">No messages yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {inboxMessages.slice(0, 3).map((msg) => (
+              <div key={msg.id} className="border border-gray-200 rounded-lg p-3">
+                <p className="text-xs text-gray-400">
+                  From {msg.sender_first_name} {msg.sender_last_name}
+                </p>
+                <p className="text-sm font-medium text-gray-900">{msg.subject || 'No subject'}</p>
+                <p className="text-sm text-gray-600 line-clamp-2">{msg.body}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Recent Status Updates Notifications */}

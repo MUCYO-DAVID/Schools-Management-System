@@ -4,7 +4,14 @@ import type { School } from "@/app/types";
 export const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
 const API_URL = `${BASE_URL}/api`;
 
-export const fetchSchools = async (): Promise<School[]> => {
+const SCHOOLS_CACHE_TTL_MS = 2 * 60 * 1000;
+let cachedSchools: { data: School[]; fetchedAt: number } | null = null;
+const cachedTopSchools: Record<number, { data: School[]; fetchedAt: number }> = {};
+
+export const fetchSchools = async (options?: { forceRefresh?: boolean }): Promise<School[]> => {
+  if (!options?.forceRefresh && cachedSchools && Date.now() - cachedSchools.fetchedAt < SCHOOLS_CACHE_TTL_MS) {
+    return cachedSchools.data;
+  }
   const token = localStorage.getItem('token');
   const headers: HeadersInit = {};
   if (token) {
@@ -16,7 +23,7 @@ export const fetchSchools = async (): Promise<School[]> => {
     throw new Error("Failed to fetch schools");
   }
   const data: any[] = await response.json();
-  return data.map((school) => {
+  const mapped = data.map((school) => {
     const rawImages = school.image_urls;
     const image_urls =
       rawImages && typeof rawImages === "string"
@@ -43,12 +50,55 @@ export const fetchSchools = async (): Promise<School[]> => {
       average_rating,
     } as School;
   });
+  cachedSchools = { data: mapped, fetchedAt: Date.now() };
+  return mapped;
 };
 
-export const fetchTopSchools = async (limit = 4): Promise<School[]> => {
+export const fetchTopSchools = async (limit = 4, options?: { forceRefresh?: boolean }): Promise<School[]> => {
+  const cached = cachedTopSchools[limit];
+  if (!options?.forceRefresh && cached && Date.now() - cached.fetchedAt < SCHOOLS_CACHE_TTL_MS) {
+    return cached.data;
+  }
   const response = await fetch(`${API_URL}/schools/top?limit=${limit}`);
   if (!response.ok) {
     throw new Error("Failed to fetch top schools");
+  }
+  const data: any[] = await response.json();
+  const mapped = data.map((school) => {
+    const rawImages = school.image_urls;
+    const image_urls =
+      rawImages && typeof rawImages === "string"
+        ? JSON.parse(rawImages).map((url: string) =>
+            url.startsWith("http") ? url : `${BASE_URL}${url}`
+          )
+        : Array.isArray(rawImages)
+          ? rawImages.map((url: string) =>
+              url.startsWith("http") ? url : `${BASE_URL}${url}`
+            )
+          : [];
+
+    const rating_total = school.rating_total ?? 0;
+    const rating_count = school.rating_count ?? 0;
+    const average_rating =
+      rating_count > 0 ? rating_total / rating_count : 0;
+
+    return {
+      ...school,
+      nameRw: school.name_rw || school.nameRw || "",
+      image_urls,
+      rating_total,
+      rating_count,
+      average_rating,
+    } as School;
+  });
+  cachedTopSchools[limit] = { data: mapped, fetchedAt: Date.now() };
+  return mapped;
+};
+
+export const fetchNearbySchools = async (latitude: number, longitude: number, radius = 50): Promise<School[]> => {
+  const response = await fetch(`${API_URL}/schools/nearby?latitude=${latitude}&longitude=${longitude}&radius=${radius}`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch nearby schools");
   }
   const data: any[] = await response.json();
   return data.map((school) => {

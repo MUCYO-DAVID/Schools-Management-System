@@ -4,7 +4,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { LanguageProvider } from "./providers/LanguageProvider"
 import { AuthProvider } from "./providers/AuthProvider"
-import AIChatBot from "./components/AIChatBot"
+import AIChatBotLoader from "./components/AIChatBotLoader"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -25,7 +25,7 @@ export default function RootLayout({
         <AuthProvider>
           <LanguageProvider>
             {children}
-            <AIChatBot />
+            <AIChatBotLoader />
           </LanguageProvider>
         </AuthProvider>
         <footer className="bg-gray-800 text-white text-center p-4 mt-8">

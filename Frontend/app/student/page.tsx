@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, MapPin, Users, GraduationCap, Star, FileText, MessageSquare, AlertCircle, Shield } from "lucide-react"
+import { Search, MapPin, Users, GraduationCap, Star, FileText, MessageSquare, AlertCircle, Shield, Calendar, Award } from "lucide-react"
 import Navigation from "../components/Navigation"
 import { useLanguage } from "../providers/LanguageProvider"
 import { useAuth } from "../providers/AuthProvider"
@@ -12,19 +12,31 @@ import StudentDashboard from "../components/StudentDashboard"
 import SchoolDetailsModal from "../components/SchoolDetailsModal"
 import SurveyCommentsFeed from "../components/SurveyCommentsFeed"
 import { useRouter, useSearchParams } from "next/navigation"
+import { fetchGrades, fetchReportCards } from "../api/grades"
+import { fetchEvents, rsvpToEvent } from "../api/events"
+import EventCalendar from "../components/EventCalendar"
+import { fetchScholarships, fetchMyApplications, applyForScholarship } from "../api/scholarships"
 
 export default function StudentAccess() {
   const { t, language } = useLanguage()
   const { isAuthenticated, user, loading: authLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [activeTab, setActiveTab] = useState<'browse' | 'applications' | 'comments'>('browse')
+  const [activeTab, setActiveTab] = useState<'browse' | 'applications' | 'comments' | 'grades' | 'events' | 'scholarships' | 'surveys'>('browse')
   const [schools, setSchools] = useState<School[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null)
   const [showApplicationForm, setShowApplicationForm] = useState(false)
   const [ratingSchoolId, setRatingSchoolId] = useState<string | null>(null)
   const [applicationSuccess, setApplicationSuccess] = useState(false)
+  const [myGrades, setMyGrades] = useState<any[]>([])
+  const [myReportCards, setMyReportCards] = useState<any[]>([])
+  const [events, setEvents] = useState<any[]>([])
+  const [scholarships, setScholarships] = useState<any[]>([])
+  const [myScholarshipApps, setMyScholarshipApps] = useState<any[]>([])
+  const [loadingGrades, setLoadingGrades] = useState(false)
+  const [loadingEvents, setLoadingEvents] = useState(false)
+  const [loadingScholarships, setLoadingScholarships] = useState(false)
 
   const filteredSchools = schools.filter(
     (school) =>
@@ -134,8 +146,56 @@ export default function StudentAccess() {
   const tabs = [
     { id: 'browse' as const, label: 'Browse Schools', icon: Search },
     { id: 'applications' as const, label: 'My Applications', icon: FileText },
+    { id: 'grades' as const, label: 'My Grades', icon: GraduationCap },
+    { id: 'events' as const, label: 'Events', icon: Calendar },
+    { id: 'scholarships' as const, label: 'Scholarships', icon: Award },
     { id: 'comments' as const, label: 'Comments', icon: MessageSquare },
   ]
+
+  // Load grades when tab is active
+  useEffect(() => {
+    if (activeTab === 'grades' && user?.id) {
+      setLoadingGrades(true)
+      Promise.all([
+        fetchGrades({ student_id: user.id }),
+        fetchReportCards(user.id)
+      ])
+        .then(([grades, reportCards]) => {
+          setMyGrades(grades)
+          setMyReportCards(reportCards)
+        })
+        .catch(err => console.error('Error loading grades:', err))
+        .finally(() => setLoadingGrades(false))
+    }
+  }, [activeTab, user?.id])
+
+  // Load events when tab is active
+  useEffect(() => {
+    if (activeTab === 'events') {
+      setLoadingEvents(true)
+      fetchEvents()
+        .then(setEvents)
+        .catch(err => console.error('Error loading events:', err))
+        .finally(() => setLoadingEvents(false))
+    }
+  }, [activeTab])
+
+  // Load scholarships when tab is active
+  useEffect(() => {
+    if (activeTab === 'scholarships') {
+      setLoadingScholarships(true)
+      Promise.all([
+        fetchScholarships({ status: 'active' }),
+        fetchMyApplications()
+      ])
+        .then(([scholarshipList, apps]) => {
+          setScholarships(scholarshipList)
+          setMyScholarshipApps(apps)
+        })
+        .catch(err => console.error('Error loading scholarships:', err))
+        .finally(() => setLoadingScholarships(false))
+    }
+  }, [activeTab])
 
   // Show access denied message if user is a leader or admin
   if (isAuthenticated && user && (user.role === 'leader' || user.role === 'admin')) {
@@ -382,6 +442,247 @@ export default function StudentAccess() {
               </p>
             </div>
             <SurveyCommentsFeed />
+          </div>
+        )}
+
+        {/* Grades Tab */}
+        {activeTab === 'grades' && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">My Grades & Report Cards</h2>
+              <p className="text-gray-600">
+                View your academic performance and generated report cards
+              </p>
+            </div>
+
+            {loadingGrades ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-4 text-gray-600">Loading grades...</p>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {/* Report Cards Section */}
+                {myReportCards.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Report Cards</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {myReportCards.map((report) => (
+                        <div key={report.id} className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+                          <div className="flex items-center justify-between mb-4">
+                            <div>
+                              <h4 className="font-semibold text-gray-900">{report.school_name}</h4>
+                              <p className="text-sm text-gray-600">{report.term} {report.academic_year}</p>
+                            </div>
+                            <div className="text-center">
+                              <div className={`text-3xl font-bold ${
+                                report.overall_grade === 'A' ? 'text-green-600' :
+                                report.overall_grade === 'B' ? 'text-blue-600' :
+                                report.overall_grade === 'C' ? 'text-yellow-600' :
+                                'text-red-600'
+                              }`}>
+                                {report.overall_grade}
+                              </div>
+                              <p className="text-xs text-gray-600">{report.overall_percentage?.toFixed(1)}%</p>
+                            </div>
+                          </div>
+                          {report.teacher_comments && (
+                            <div className="bg-white rounded p-3 mt-3">
+                              <p className="text-xs font-semibold text-gray-700 mb-1">Teacher Comments:</p>
+                              <p className="text-sm text-gray-600">{report.teacher_comments}</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Individual Grades */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">All Grades</h3>
+                  {myGrades.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                      <GraduationCap className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                      <p>No grades available yet</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grade</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Term</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">School</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Comments</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {myGrades.map((grade) => (
+                            <tr key={grade.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 text-sm font-medium text-gray-900">{grade.subject}</td>
+                              <td className="px-4 py-3">
+                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                  grade.grade === 'A' ? 'bg-green-100 text-green-800' :
+                                  grade.grade === 'B' ? 'bg-blue-100 text-blue-800' :
+                                  grade.grade === 'C' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-red-100 text-red-800'
+                                }`}>
+                                  {grade.grade}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{grade.score}/{grade.max_score}</td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{grade.term} {grade.academic_year}</td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{grade.school_name}</td>
+                              <td className="px-4 py-3 text-sm text-gray-500">{grade.comments || '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Events Tab */}
+        {activeTab === 'events' && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Upcoming Events</h2>
+              <p className="text-gray-600">
+                Stay updated with school events and activities
+              </p>
+            </div>
+
+            <EventCalendar
+              onEventClick={(event) => {
+                // Show event details and allow RSVP
+                const rsvp = confirm(`Event: ${event.title}\nDate: ${new Date(event.start_date).toLocaleString()}\n${event.description || ''}\n\nWould you like to RSVP?`);
+                if (rsvp) {
+                  rsvpToEvent(event.id, 'attending')
+                    .then(() => alert('RSVP confirmed!'))
+                    .catch(err => alert('Failed to RSVP'));
+                }
+              }}
+              schoolId={undefined}
+            />
+          </div>
+        )}
+
+        {/* Scholarships Tab */}
+        {activeTab === 'scholarships' && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Scholarship Opportunities</h2>
+              <p className="text-gray-600">
+                Explore and apply for scholarships to support your education
+              </p>
+            </div>
+
+            {loadingScholarships ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-4 text-gray-600">Loading scholarships...</p>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {/* My Applications */}
+                {myScholarshipApps.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">My Applications</h3>
+                    <div className="space-y-3">
+                      {myScholarshipApps.map((app) => (
+                        <div key={app.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{app.scholarship_title}</h4>
+                            <p className="text-sm text-gray-600">{app.school_name}</p>
+                          </div>
+                          <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                            app.status === 'approved' ? 'bg-green-100 text-green-700' :
+                            app.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                            'bg-yellow-100 text-yellow-700'
+                          }`}>
+                            {app.status}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Available Scholarships */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Available Scholarships</h3>
+                  {scholarships.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                      <Award className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                      <p>No scholarships available at this time</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {scholarships.map((scholarship) => {
+                        const alreadyApplied = myScholarshipApps.some(app => app.scholarship_id === scholarship.id);
+                        return (
+                          <div key={scholarship.id} className="bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
+                            <div className="flex items-start gap-4 mb-4">
+                              <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <Award className="w-6 h-6 text-white" />
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="font-bold text-gray-900 mb-1">{scholarship.title}</h4>
+                                <p className="text-sm text-gray-600 line-clamp-2">{scholarship.description}</p>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 mb-4">
+                              <div>
+                                <p className="text-xs text-gray-500">Amount</p>
+                                <p className="font-semibold text-gray-900">
+                                  {scholarship.amount?.toLocaleString()} {scholarship.currency}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500">Deadline</p>
+                                <p className="font-semibold text-gray-900">
+                                  {scholarship.application_deadline ? new Date(scholarship.application_deadline).toLocaleDateString() : 'Open'}
+                                </p>
+                              </div>
+                            </div>
+                            {scholarship.eligibility_criteria && (
+                              <div className="bg-white rounded p-3 mb-4">
+                                <p className="text-xs font-semibold text-gray-700 mb-1">Eligibility:</p>
+                                <p className="text-xs text-gray-600 line-clamp-2">{scholarship.eligibility_criteria}</p>
+                              </div>
+                            )}
+                            <button
+                              onClick={() => {
+                                if (alreadyApplied) {
+                                  alert('You have already applied for this scholarship');
+                                } else {
+                                  router.push(`/scholarships/${scholarship.id}/apply`);
+                                }
+                              }}
+                              disabled={alreadyApplied}
+                              className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
+                                alreadyApplied
+                                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                  : 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white'
+                              }`}
+                            >
+                              {alreadyApplied ? 'Already Applied' : 'Apply Now'}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

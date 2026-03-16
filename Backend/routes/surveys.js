@@ -40,21 +40,26 @@ router.get('/surveys', async (req, res) => {
         SELECT 
           s.id,
           s.school_id,
+          s.user_id,
           s.rating,
           s.would_recommend,
           s.comments,
           s.created_at,
           sch.name as school_name,
           sch.location as school_location,
+          u.first_name,
+          u.last_name,
+          u.avatar_url,
           COALESCE(COUNT(DISTINCT sl.id), 0)::INTEGER as likes_count,
           COALESCE(COUNT(DISTINCT sr.id), 0)::INTEGER as replies_count,
           EXISTS(SELECT 1 FROM survey_likes WHERE survey_id = s.id AND user_id = $1) as is_liked
         FROM surveys s
         LEFT JOIN schools sch ON s.school_id = sch.id
+        LEFT JOIN users u ON s.user_id = u.id
         LEFT JOIN survey_likes sl ON s.id = sl.survey_id
         LEFT JOIN survey_replies sr ON s.id = sr.survey_id
         WHERE s.comments IS NOT NULL AND s.comments != ''
-        GROUP BY s.id, sch.name, sch.location
+        GROUP BY s.id, sch.name, sch.location, u.first_name, u.last_name, u.avatar_url
         ORDER BY likes_count DESC, s.created_at DESC
       `;
       params = [userId];
@@ -64,21 +69,26 @@ router.get('/surveys', async (req, res) => {
         SELECT 
           s.id,
           s.school_id,
+          s.user_id,
           s.rating,
           s.would_recommend,
           s.comments,
           s.created_at,
           sch.name as school_name,
           sch.location as school_location,
+          u.first_name,
+          u.last_name,
+          u.avatar_url,
           COALESCE(COUNT(DISTINCT sl.id), 0)::INTEGER as likes_count,
           COALESCE(COUNT(DISTINCT sr.id), 0)::INTEGER as replies_count,
           false as is_liked
         FROM surveys s
         LEFT JOIN schools sch ON s.school_id = sch.id
+        LEFT JOIN users u ON s.user_id = u.id
         LEFT JOIN survey_likes sl ON s.id = sl.survey_id
         LEFT JOIN survey_replies sr ON s.id = sr.survey_id
         WHERE s.comments IS NOT NULL AND s.comments != ''
-        GROUP BY s.id, sch.name, sch.location
+        GROUP BY s.id, sch.name, sch.location, u.first_name, u.last_name, u.avatar_url
         ORDER BY likes_count DESC, s.created_at DESC
       `;
       params = [];
@@ -105,7 +115,8 @@ router.get('/surveys/:id/replies', async (req, res) => {
         u.id as user_id,
         u.first_name,
         u.last_name,
-        u.email
+        u.email,
+        u.avatar_url
       FROM survey_replies sr
       JOIN users u ON sr.user_id = u.id
       WHERE sr.survey_id = $1
@@ -228,7 +239,8 @@ router.post('/surveys/:id/replies', authMiddleware.authMiddleware, async (req, r
       user_id: userResult.rows[0].id,
       first_name: userResult.rows[0].first_name,
       last_name: userResult.rows[0].last_name,
-      email: userResult.rows[0].email
+      email: userResult.rows[0].email,
+      avatar_url: userResult.rows[0].avatar_url
     });
   } catch (err) {
     console.error('Error adding reply:', err.message);

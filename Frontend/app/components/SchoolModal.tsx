@@ -3,7 +3,7 @@
 import { ChangeEvent } from "react"
 
 import { useState, useEffect, useRef } from "react"
-import { X } from "lucide-react"
+import { X, MapPin } from "lucide-react"
 import { School } from "../types";
 import { useLanguage } from "../providers/LanguageProvider"
 
@@ -24,9 +24,12 @@ export default function SchoolModal({ school, onSave, onClose }: SchoolModalProp
     students: 0,
     established: new Date().getFullYear(),
     image_urls: [],
+    latitude: -1.9441, // Default to Kigali, Rwanda
+    longitude: 30.0619,
   });
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
+  const [showMapPicker, setShowMapPicker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -40,6 +43,8 @@ export default function SchoolModal({ school, onSave, onClose }: SchoolModalProp
         students: school.students,
         established: school.established,
         image_urls: school.image_urls || [],
+        latitude: school.latitude || -1.9441,
+        longitude: school.longitude || 30.0619,
       });
       setImagesToDelete([]); // Reset images to delete when school changes
     }
@@ -70,6 +75,32 @@ export default function SchoolModal({ school, onSave, onClose }: SchoolModalProp
       image_urls: prev.image_urls.filter((url) => url !== imageUrl),
     }));
     setImagesToDelete((prev) => [...prev, imageUrl]);
+  };
+
+  const handleMapClick = async (lat: number, lng: number) => {
+    try {
+      // Get address from coordinates
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
+      );
+      const data = await response.json();
+      const address = data.display_name || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      
+      setFormData((prev) => ({
+        ...prev,
+        latitude: lat,
+        longitude: lng,
+        location: address,
+      }));
+    } catch (error) {
+      console.error("Error getting address:", error);
+      setFormData((prev) => ({
+        ...prev,
+        latitude: lat,
+        longitude: lng,
+        location: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+      }));
+    }
   };
 
   return (
@@ -110,15 +141,78 @@ export default function SchoolModal({ school, onSave, onClose }: SchoolModalProp
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{t("location")}</label>
-            <input
-              type="text"
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+            <div className="space-y-2">
+              <input
+                type="text"
+                name="location"
+                value={formData.location}
+                onChange={handleChange}
+                required
+                placeholder="Enter school address or pick on map"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <button
+                type="button"
+                onClick={() => setShowMapPicker(!showMapPicker)}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors text-sm"
+              >
+                <MapPin className="w-4 h-4" />
+                {showMapPicker ? "Hide Map" : "Pick Location on Map"}
+              </button>
+            </div>
           </div>
+
+          {/* Simple Map Picker using Google Maps embed */}
+          {showMapPicker && (
+            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-3">
+              <p className="text-sm text-gray-700 font-medium">
+                Click on the map to select school location
+              </p>
+              <div className="relative w-full h-96 bg-gray-200 rounded-lg overflow-hidden">
+                <iframe
+                  src={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}&z=15&output=embed`}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="School Location Map"
+                ></iframe>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Latitude</label>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    value={formData.latitude || -1.9441}
+                    onChange={(e) => {
+                      const lat = parseFloat(e.target.value) || -1.9441;
+                      handleMapClick(lat, formData.longitude || 30.0619);
+                    }}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Longitude</label>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    value={formData.longitude || 30.0619}
+                    onChange={(e) => {
+                      const lng = parseFloat(e.target.value) || 30.0619;
+                      handleMapClick(formData.latitude || -1.9441, lng);
+                    }}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-gray-500">
+                💡 Tip: Adjust the latitude and longitude values to precisely set the school location
+              </p>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{t("type")}</label>

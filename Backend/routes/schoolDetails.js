@@ -38,6 +38,7 @@ router.post('/schools/:schoolId/details', authMiddleware.authMiddleware, async (
       programs,
       admission_requirements,
       fees_info,
+      uniform_info,
       contact_email,
       contact_phone,
       website,
@@ -67,14 +68,15 @@ router.post('/schools/:schoolId/details', authMiddleware.authMiddleware, async (
             programs = $3,
             admission_requirements = $4,
             fees_info = $5,
-            contact_email = $6,
-            contact_phone = $7,
-            website = $8,
-            address = $9,
-            working_hours = $10,
-            principal_name = $11,
+            uniform_info = $6,
+            contact_email = $7,
+            contact_phone = $8,
+            website = $9,
+            address = $10,
+            working_hours = $11,
+            principal_name = $12,
             updated_at = CURRENT_TIMESTAMP
-        WHERE school_id = $12
+        WHERE school_id = $13
         RETURNING *
       `, [
         description || null,
@@ -82,6 +84,7 @@ router.post('/schools/:schoolId/details', authMiddleware.authMiddleware, async (
         programs || null,
         admission_requirements || null,
         fees_info || null,
+        uniform_info || null,
         contact_email || null,
         contact_phone || null,
         website || null,
@@ -97,10 +100,10 @@ router.post('/schools/:schoolId/details', authMiddleware.authMiddleware, async (
       const result = await pool.query(`
         INSERT INTO school_details (
           school_id, description, facilities, programs, admission_requirements,
-          fees_info, contact_email, contact_phone, website, address,
+          fees_info, uniform_info, contact_email, contact_phone, website, address,
           working_hours, principal_name
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         RETURNING *
       `, [
         schoolId,
@@ -109,6 +112,7 @@ router.post('/schools/:schoolId/details', authMiddleware.authMiddleware, async (
         programs || null,
         admission_requirements || null,
         fees_info || null,
+        uniform_info || null,
         contact_email || null,
         contact_phone || null,
         website || null,

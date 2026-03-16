@@ -12,6 +12,9 @@ export interface School {
   rating_count?: number
   average_rating?: number
   created_at?: string
+  latitude?: number
+  longitude?: number
+  distance?: number
 }
 
 export interface Student {

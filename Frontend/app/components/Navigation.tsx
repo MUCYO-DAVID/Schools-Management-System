@@ -2,16 +2,127 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
-import { Menu, X, Globe, LogOut, User } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Menu, X, Globe, LogOut, User, Bell, MessageCircle, Settings } from "lucide-react"
 import { useLanguage } from "../providers/LanguageProvider"
 import { useAuth } from "../providers/AuthProvider"
+import { fetchInbox, markMessageRead } from "../api/portal"
+import ChatWindow from "./ChatWindow"
+import { fetchUnreadCount } from "../api/realtime-chat"
 
 export default function Navigation() {
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000"
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
   const { language, setLanguage, t } = useLanguage()
   const { user, isAuthenticated, logout } = useAuth()
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [inboxPreview, setInboxPreview] = useState<any[]>([])
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [notificationCount, setNotificationCount] = useState(0)
+  const [showChat, setShowChat] = useState(false)
+  const [chatUnreadCount, setChatUnreadCount] = useState(0)
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setUnreadCount(0)
+      setNotificationCount(0)
+      return
+    }
+
+    let mounted = true
+    const loadInbox = async () => {
+      try {
+        const messages = await fetchInbox()
+        const unread = messages.filter((msg) => !msg.read_at).length
+        if (mounted) setUnreadCount(unread)
+        if (mounted) setInboxPreview(messages.slice(0, 5))
+      } catch (error) {
+        console.error("Failed to load inbox notifications:", error)
+      }
+    }
+
+    const loadNotifications = async () => {
+      try {
+        const token = localStorage.getItem("token")
+        const response = await fetch(`${backendUrl}/api/notifications`, {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        })
+        if (response.ok) {
+          const data = await response.json()
+          if (mounted) {
+            setNotifications(data.slice(0, 5))
+            const unreadNotifs = data.filter((n: any) => !n.read).length
+            setNotificationCount(unreadNotifs)
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load system notifications:", error)
+      }
+    }
+
+    loadInbox()
+    loadNotifications()
+    
+    // Load chat unread count
+    const loadChatUnread = async () => {
+      try {
+        const data = await fetchUnreadCount()
+        if (mounted) setChatUnreadCount(data.unread_count || 0)
+      } catch (error) {
+        console.error("Failed to load chat unread count:", error)
+      }
+    }
+    loadChatUnread()
+    
+    // Poll for updates every 30 seconds
+    const interval = setInterval(() => {
+      loadInbox()
+      loadNotifications()
+      loadChatUnread()
+    }, 30000)
+
+    return () => {
+      mounted = false
+      clearInterval(interval)
+    }
+  }, [isAuthenticated, backendUrl])
+
+  const handleMarkRead = async (id: number) => {
+    try {
+      await markMessageRead(id)
+      setInboxPreview((prev) =>
+        prev.map((msg) => (msg.id === id ? { ...msg, read_at: new Date().toISOString() } : msg))
+      )
+      setUnreadCount((prev) => Math.max(prev - 1, 0))
+      setShowNotifications(false)
+    } catch (error) {
+      console.error("Failed to mark message as read:", error)
+    }
+  }
+
+  const handleMarkNotificationRead = async (id: number) => {
+    try {
+      const token = localStorage.getItem("token")
+      const response = await fetch(`${backendUrl}/api/notifications/${id}/read`, {
+        method: "PUT",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      })
+      if (response.ok) {
+        setNotifications((prev) =>
+          prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif))
+        )
+        setNotificationCount((prev) => Math.max(prev - 1, 0))
+      }
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error)
+    }
+  }
 
   // Home is its own dedicated page; schools is a separate page
   const navItems = [
@@ -20,7 +131,7 @@ export default function Navigation() {
     { path: "/about", label: t("about") },
   ]
 
-  // Only show Student link for students (not leaders or admins)
+  // Only show Student link for students (not leaders/admins/parents/teachers)
   if (!user || user?.role === "student") {
     navItems.push({ path: "/student", label: t("student") })
   }
@@ -37,6 +148,14 @@ export default function Navigation() {
 
   if (user?.role === "admin") {
     navItems.push({ path: "/admin", label: t("admin") })
+  }
+
+  if (user?.role === "parent") {
+    navItems.push({ path: "/parent", label: "Parent" })
+  }
+
+  if (user?.role === "teacher") {
+    navItems.push({ path: "/teacher", label: "Teacher" })
   }
 
   const isActive = (path: string) => pathname === path
@@ -77,6 +196,121 @@ export default function Navigation() {
             {/* User Info and Logout */}
             {isAuthenticated && user ? (
               <div className="flex items-center space-x-3 ml-2 pl-3 border-l border-blue-700">
+                {/* Chat Button */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowChat(true)}
+                    className="relative text-blue-100 hover:text-white"
+                    title="Messages"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    {chatUnreadCount > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] rounded-full px-1.5">
+                        {chatUnreadCount}
+                      </span>
+                    )}
+                  </button>
+                </div>
+                
+                {/* Notifications Button */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowNotifications((prev) => !prev)}
+                    className="relative text-blue-100 hover:text-white"
+                    title="Notifications"
+                  >
+                    <Bell className="w-4 h-4" />
+                    {(unreadCount + notificationCount) > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] rounded-full px-1.5">
+                        {unreadCount + notificationCount}
+                      </span>
+                    )}
+                  </button>
+                  {showNotifications && (
+                    <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-[500px] overflow-hidden">
+                      <div className="px-3 py-2 border-b border-gray-200 text-xs font-semibold text-gray-600">
+                        Notifications ({unreadCount + notificationCount} unread)
+                      </div>
+                      <div className="max-h-96 overflow-y-auto">
+                        {notifications.length > 0 && (
+                          <div className="border-b border-gray-200">
+                            <div className="px-3 py-1.5 bg-gray-50 text-xs font-semibold text-gray-700">
+                              System
+                            </div>
+                            {notifications.map((notif) => (
+                              <button
+                                key={notif.id}
+                                type="button"
+                                onClick={() => handleMarkNotificationRead(notif.id)}
+                                className={`w-full text-left px-3 py-2 border-b border-gray-100 hover:bg-gray-50 ${
+                                  !notif.read ? 'bg-blue-50' : ''
+                                }`}
+                              >
+                                <p className="text-sm font-medium text-gray-900">
+                                  {notif.title}
+                                </p>
+                                <p className="text-xs text-gray-600 line-clamp-2 mt-1">{notif.message}</p>
+                                <p className="text-xs text-gray-400 mt-1">
+                                  {new Date(notif.created_at).toLocaleDateString()}
+                                </p>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {inboxPreview.length === 0 && notifications.length === 0 ? (
+                          <div className="px-3 py-3 text-sm text-gray-500">No notifications yet.</div>
+                        ) : inboxPreview.length > 0 ? (
+                          <div>
+                            <div className="px-3 py-1.5 bg-gray-50 text-xs font-semibold text-gray-700">
+                              Messages
+                            </div>
+                            {inboxPreview.map((msg) => (
+                              <button
+                                key={msg.id}
+                                type="button"
+                                onClick={() => handleMarkRead(msg.id)}
+                                className={`w-full text-left px-3 py-2 border-b border-gray-100 hover:bg-gray-50 ${
+                                  !msg.read_at ? 'bg-blue-50' : ''
+                                }`}
+                              >
+                                <p className="text-xs text-gray-500">
+                                  {msg.sender_first_name} {msg.sender_last_name}
+                                </p>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {msg.subject || "No subject"}
+                                </p>
+                                <p className="text-xs text-gray-600 line-clamp-2">{msg.body}</p>
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                      <Link
+                        href={
+                          user.role === "parent"
+                            ? "/parent"
+                            : user.role === "teacher" || user.role === "leader" || user.role === "admin"
+                              ? "/teacher"
+                              : "/student"
+                        }
+                        className="block px-3 py-2 text-sm text-blue-600 hover:text-blue-800"
+                        onClick={() => setShowNotifications(false)}
+                      >
+                        View all messages
+                      </Link>
+                    </div>
+                  )}
+                </div>
+                <Link
+                  href="/profile"
+                  className="flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium text-blue-100 hover:bg-blue-800 hover:text-white transition-colors"
+                  title="Profile"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span className="hidden lg:inline">Profile</span>
+                </Link>
                 <div className="flex items-center space-x-2 text-blue-100 text-sm">
                   <User className="w-4 h-4" />
                   <span className="hidden lg:inline">
@@ -104,6 +338,11 @@ export default function Navigation() {
               </Link>
             )}
           </div>
+          
+          {/* Chat Window Modal */}
+          {showChat && (
+            <ChatWindow onClose={() => setShowChat(false)} />
+          )}
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center">
@@ -154,6 +393,35 @@ export default function Navigation() {
                       ({user.role})
                     </span>
                   </div>
+                  <Link
+                    href="/profile"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium text-blue-100 hover:bg-blue-800 hover:text-white transition-colors"
+                  >
+                    <Settings className="w-4 h-4" />
+                    Profile
+                  </Link>
+                  <Link
+                    href={
+                      user.role === "parent"
+                        ? "/parent"
+                        : user.role === "teacher" || user.role === "leader" || user.role === "admin"
+                          ? "/teacher"
+                          : "/student"
+                    }
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center justify-between px-3 py-2 rounded-md text-base font-medium text-blue-100 hover:bg-blue-800 hover:text-white transition-colors"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Bell className="w-4 h-4" />
+                      Notifications
+                    </span>
+                    {(unreadCount + notificationCount) > 0 && (
+                      <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                        {unreadCount + notificationCount}
+                      </span>
+                    )}
+                  </Link>
                   <button
                     onClick={() => {
                       logout()
@@ -178,6 +446,11 @@ export default function Navigation() {
           </div>
         )}
       </div>
+      
+      {/* Chat Window Modal */}
+      {showChat && (
+        <ChatWindow onClose={() => setShowChat(false)} />
+      )}
     </nav>
   )
 }

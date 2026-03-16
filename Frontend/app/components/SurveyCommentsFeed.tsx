@@ -17,6 +17,9 @@ interface Survey {
   likes_count: number;
   replies_count: number;
   is_liked: boolean;
+  first_name?: string;
+  last_name?: string;
+  avatar_url?: string;
 }
 
 interface Reply {
@@ -28,9 +31,11 @@ interface Reply {
   first_name: string;
   last_name: string;
   email: string;
+  avatar_url?: string;
 }
 
 export default function SurveyCommentsFeed() {
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [loading, setLoading] = useState(true);
   const [likingId, setLikingId] = useState<number | null>(null);
@@ -48,7 +53,7 @@ export default function SurveyCommentsFeed() {
   const fetchSurveys = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/surveys`, {
+      const response = await fetch(`${backendUrl}/api/surveys`, {
         headers: token ? {
           'Authorization': `Bearer ${token}`
         } : {}
@@ -69,9 +74,7 @@ export default function SurveyCommentsFeed() {
 
     try {
       setLoadingReplies(prev => ({ ...prev, [surveyId]: true }));
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/surveys/${surveyId}/replies`
-      );
+      const response = await fetch(`${backendUrl}/api/surveys/${surveyId}/replies`);
 
       if (!response.ok) throw new Error('Failed to fetch replies');
       const data = await response.json();
@@ -102,7 +105,7 @@ export default function SurveyCommentsFeed() {
       setLikingId(surveyId);
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/surveys/${surveyId}/like`,
+        `${backendUrl}/api/surveys/${surveyId}/like`,
         {
           method: 'POST',
           headers: {
@@ -154,7 +157,7 @@ export default function SurveyCommentsFeed() {
       setReplyingTo(surveyId);
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/surveys/${surveyId}/replies`,
+        `${backendUrl}/api/surveys/${surveyId}/replies`,
         {
           method: 'POST',
           headers: {
@@ -222,8 +225,30 @@ export default function SurveyCommentsFeed() {
           <div className="p-3">
             {/* Header */}
             <div className="flex items-start gap-2 mb-2">
-              <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
-                {survey.school_name ? survey.school_name.charAt(0).toUpperCase() : 'U'}
+              {survey.avatar_url ? (
+                <img 
+                  src={survey.avatar_url.startsWith('http') 
+                    ? survey.avatar_url 
+                    : `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}${survey.avatar_url}`} 
+                  alt={`${survey.first_name || ''} ${survey.last_name || ''}`}
+                  className="w-7 h-7 rounded-full object-cover border-2 border-gray-200 flex-shrink-0"
+                  onError={(e) => {
+                    // Fallback to initial if image fails to load
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const fallback = target.nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <div 
+                className={`w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 ${survey.avatar_url ? 'hidden' : ''}`}
+              >
+                {(survey.first_name || survey.last_name) 
+                  ? (survey.first_name?.charAt(0) || survey.last_name?.charAt(0) || 'U').toUpperCase()
+                  : survey.school_name 
+                    ? survey.school_name.charAt(0).toUpperCase() 
+                    : 'U'}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-1 flex-wrap">
@@ -337,7 +362,25 @@ export default function SurveyCommentsFeed() {
                     {replies[survey.id] && replies[survey.id].length > 0 ? (
                       replies[survey.id].map((reply) => (
                         <div key={reply.id} className="flex gap-2 pl-3 border-l-2 border-gray-200">
-                          <div className="w-5 h-5 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
+                          {reply.avatar_url ? (
+                            <img 
+                              src={reply.avatar_url.startsWith('http') 
+                                ? reply.avatar_url 
+                                : `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}${reply.avatar_url}`} 
+                              alt={`${reply.first_name} ${reply.last_name}`}
+                              className="w-5 h-5 rounded-full object-cover border border-gray-200 flex-shrink-0"
+                              onError={(e) => {
+                                // Fallback to initial if image fails to load
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const fallback = target.nextElementSibling as HTMLElement;
+                                if (fallback) fallback.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          <div 
+                            className={`w-5 h-5 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 ${reply.avatar_url ? 'hidden' : ''}`}
+                          >
                             {reply.first_name ? reply.first_name.charAt(0).toUpperCase() : 'U'}
                           </div>
                           <div className="flex-1 min-w-0">

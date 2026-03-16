@@ -1,13 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { FileText, AlertCircle, School, Users, Calendar, Mail, Phone, MapPin, GraduationCap, Clock, CheckCircle, XCircle, ThumbsUp, ThumbsDown, Download } from "lucide-react"
+import { FileText, AlertCircle, School, Users, Calendar, Mail, Phone, MapPin, GraduationCap, Clock, CheckCircle, XCircle, ThumbsUp, ThumbsDown, Download, Image as ImageIcon, Plus, Trash2, X, BarChart3, Edit } from "lucide-react"
 import Navigation from "../components/Navigation"
 import { useLanguage } from "../providers/LanguageProvider"
 import { useAuth } from "../providers/AuthProvider"
 import { getLeaderApplications, approveApplication, rejectApplication, type LeaderApplication } from "@/app/api/student"
 import { useRouter } from "next/navigation"
-import { BASE_URL } from "@/api/school"
+import { BASE_URL, fetchSchools } from "@/api/school"
+import { fetchGalleries, createGallery, uploadGalleryMedia, deleteGalleryItem, fetchGallery } from "@/app/api/galleries"
+import SurveyBuilder from "../components/SurveyBuilder"
+import SurveyAnalytics from "../components/SurveyAnalytics"
+import { fetchSurveyTemplates, deleteSurveyTemplate, type SurveyTemplate } from "@/app/api/surveyTemplates"
 
 export default function LeaderDashboard() {
   const { t } = useLanguage()
@@ -23,6 +27,25 @@ export default function LeaderDashboard() {
   const [showRejectModal, setShowRejectModal] = useState<LeaderApplication | null>(null)
   const [rejectionReason, setRejectionReason] = useState("")
   const [actionError, setActionError] = useState<string | null>(null)
+  
+  // Gallery management state
+  const [activeTab, setActiveTab] = useState<'applications' | 'gallery' | 'surveys'>('applications')
+  const [leaderSchools, setLeaderSchools] = useState<any[]>([])
+  const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null)
+  const [galleries, setGalleries] = useState<any[]>([])
+  const [selectedGallery, setSelectedGallery] = useState<any | null>(null)
+  const [galleryItems, setGalleryItems] = useState<any[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [showCreateGallery, setShowCreateGallery] = useState(false)
+  const [newGalleryTitle, setNewGalleryTitle] = useState("")
+  const [newGalleryDescription, setNewGalleryDescription] = useState("")
+  
+  // Survey management state
+  const [surveys, setSurveys] = useState<SurveyTemplate[]>([])
+  const [surveysLoading, setSurveysLoading] = useState(false)
+  const [showSurveyBuilder, setShowSurveyBuilder] = useState(false)
+  const [editingSurvey, setEditingSurvey] = useState<SurveyTemplate | null>(null)
+  const [selectedSurveyForAnalytics, setSelectedSurveyForAnalytics] = useState<number | null>(null)
 
   // Check authentication and role on mount - only leaders can access
   useEffect(() => {
@@ -64,6 +87,95 @@ export default function LeaderDashboard() {
       setLoading(false);
     }
   }, [isAuthenticated, user, authLoading])
+
+  // Fetch leader's schools
+  useEffect(() => {
+    if (isAuthenticated && user && (user.role === 'leader' || user.role === 'admin') && activeTab === 'gallery') {
+      const fetchLeaderSchools = async () => {
+        try {
+          const token = localStorage.getItem("token");
+          const schools = await fetchSchools();
+          // Filter schools created by this leader
+          const mySchools = schools.filter((s: any) => s.created_by === user.id);
+          setLeaderSchools(mySchools);
+          if (mySchools.length > 0 && !selectedSchoolId) {
+            setSelectedSchoolId(mySchools[0].id);
+          }
+        } catch (err) {
+          console.error('Error fetching schools:', err);
+        }
+      };
+      fetchLeaderSchools();
+    }
+  }, [isAuthenticated, user, activeTab]);
+
+  // Fetch galleries for selected school
+  useEffect(() => {
+    if (selectedSchoolId && activeTab === 'gallery') {
+      const loadGalleries = async () => {
+        try {
+          const data = await fetchGalleries({ school_id: selectedSchoolId });
+          setGalleries(data);
+        } catch (err) {
+          console.error('Error fetching galleries:', err);
+        }
+      };
+      loadGalleries();
+    }
+  }, [selectedSchoolId, activeTab]);
+
+  // Fetch gallery items when gallery is selected
+  useEffect(() => {
+    if (selectedGallery) {
+      const loadGalleryItems = async () => {
+        try {
+          const gallery = await fetchGallery(selectedGallery.id);
+          setGalleryItems(gallery.items || []);
+        } catch (err) {
+          console.error('Error fetching gallery items:', err);
+        }
+      };
+      loadGalleryItems();
+    }
+  }, [selectedGallery]);
+
+  // Load surveys
+  useEffect(() => {
+    if (activeTab === 'surveys' && isAuthenticated) {
+      loadSurveys();
+    }
+  }, [activeTab, isAuthenticated]);
+
+  const loadSurveys = async () => {
+    setSurveysLoading(true);
+    try {
+      const data = await fetchSurveyTemplates({});
+      // Filter to only show surveys for leader's schools
+      if (user && user.role === 'leader') {
+        const mySchoolIds = leaderSchools.map(s => s.id);
+        const filtered = data.filter((s: SurveyTemplate) => 
+          !s.school_id || mySchoolIds.includes(s.school_id) || s.created_by === user.id
+        );
+        setSurveys(filtered);
+      } else {
+        setSurveys(data);
+      }
+    } catch (err: any) {
+      console.error('Error loading surveys:', err);
+    } finally {
+      setSurveysLoading(false);
+    }
+  };
+
+  const handleDeleteSurvey = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this survey?')) return;
+    try {
+      await deleteSurveyTemplate(id);
+      await loadSurveys();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete survey');
+    }
+  };
 
   // Filter applications
   const filteredApplications = applications.filter((app) => {
@@ -123,6 +235,62 @@ export default function LeaderDashboard() {
       day: 'numeric'
     })
   }
+
+  // Gallery management handlers
+  const handleCreateGallery = async () => {
+    if (!selectedSchoolId || !newGalleryTitle.trim()) {
+      alert('Please select a school and enter a gallery title');
+      return;
+    }
+    try {
+      const gallery = await createGallery({
+        school_id: selectedSchoolId,
+        title: newGalleryTitle,
+        description: newGalleryDescription,
+        gallery_type: 'photos'
+      });
+      setGalleries([...galleries, gallery]);
+      setShowCreateGallery(false);
+      setNewGalleryTitle("");
+      setNewGalleryDescription("");
+      setSelectedGallery(gallery);
+    } catch (err: any) {
+      alert('Failed to create gallery: ' + (err.message || 'Unknown error'));
+    }
+  };
+
+  const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedGallery || !e.target.files || e.target.files.length === 0) return;
+    
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('media', e.target.files[0]);
+      
+      await uploadGalleryMedia(selectedGallery.id, formData);
+      
+      // Reload gallery items
+      const gallery = await fetchGallery(selectedGallery.id);
+      setGalleryItems(gallery.items || []);
+      
+      e.target.value = ''; // Reset input
+    } catch (err: any) {
+      alert('Failed to upload image: ' + (err.message || 'Unknown error'));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteImage = async (itemId: number) => {
+    if (!confirm('Are you sure you want to delete this image?')) return;
+    
+    try {
+      await deleteGalleryItem(itemId);
+      setGalleryItems(galleryItems.filter(item => item.id !== itemId));
+    } catch (err: any) {
+      alert('Failed to delete image: ' + (err.message || 'Unknown error'));
+    }
+  };
 
   const handleApprove = async (application: LeaderApplication) => {
     if (!confirm(`Are you sure you want to approve ${application.first_name} ${application.last_name}'s application?`)) {
@@ -204,6 +372,16 @@ export default function LeaderDashboard() {
       <div className="min-h-screen bg-gray-50">
         <Navigation />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-900">
+            <p className="font-semibold mb-1">Leader usage</p>
+            <p>Use the Staff Portal for announcements, documents, and fee schedules.</p>
+            <button
+              onClick={() => router.push('/teacher')}
+              className="mt-2 inline-flex items-center px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs"
+            >
+              Open Staff Portal
+            </button>
+          </div>
           <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
             <AlertCircle className="w-16 h-16 mx-auto text-red-600 mb-4" />
             <h2 className="text-2xl font-bold text-red-900 mb-2">Access Denied</h2>
@@ -219,7 +397,7 @@ export default function LeaderDashboard() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (loading) {
@@ -233,7 +411,7 @@ export default function LeaderDashboard() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -250,8 +428,50 @@ export default function LeaderDashboard() {
           <p className="text-gray-600">View and manage applications to your schools</p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        {/* Tabs */}
+        <div className="mb-6 border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('applications')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'applications'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <FileText className="w-5 h-5 inline mr-2" />
+              Applications
+            </button>
+            <button
+              onClick={() => setActiveTab('gallery')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'gallery'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <ImageIcon className="w-5 h-5 inline mr-2" />
+              Gallery Management
+            </button>
+            <button
+              onClick={() => setActiveTab('surveys')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'surveys'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <FileText className="w-5 h-5 inline mr-2" />
+              Surveys
+            </button>
+          </nav>
+        </div>
+
+        {/* Applications Tab Content */}
+        {activeTab === 'applications' && (
+          <>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -472,7 +692,132 @@ export default function LeaderDashboard() {
             ))}
           </div>
         )}
-      </div>
+          </>
+        )}
+
+        {/* Gallery Management Tab Content */}
+        {activeTab === 'gallery' && (
+          <div className="space-y-6">
+            {/* School Selection */}
+            {leaderSchools.length > 0 ? (
+              <>
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select School
+                  </label>
+                  <select
+                    value={selectedSchoolId || ''}
+                    onChange={(e) => {
+                      setSelectedSchoolId(e.target.value);
+                      setSelectedGallery(null);
+                      setGalleryItems([]);
+                    }}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {leaderSchools.map((school) => (
+                      <option key={school.id} value={school.id}>
+                        {school.name} - {school.location}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Galleries List */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold text-gray-900">Galleries</h2>
+                    <button
+                      onClick={() => setShowCreateGallery(true)}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Create Gallery
+                    </button>
+                  </div>
+
+                  {galleries.length === 0 ? (
+                    <p className="text-gray-500 text-center py-8">No galleries yet. Create one to get started!</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {galleries.map((gallery) => (
+                        <div
+                          key={gallery.id}
+                          onClick={() => setSelectedGallery(gallery)}
+                          className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                            selectedGallery?.id === gallery.id
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <h3 className="font-semibold text-gray-900 mb-1">{gallery.title}</h3>
+                          {gallery.description && (
+                            <p className="text-sm text-gray-600 mb-2">{gallery.description}</p>
+                          )}
+                          <p className="text-xs text-gray-500">
+                            {gallery.item_count || 0} {gallery.item_count === 1 ? 'item' : 'items'}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Gallery Items */}
+                {selectedGallery && (
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-xl font-semibold text-gray-900">
+                        {selectedGallery.title} - Images
+                      </h2>
+                      <label className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer flex items-center gap-2">
+                        <Plus className="w-4 h-4" />
+                        {uploading ? 'Uploading...' : 'Upload Image'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleUploadImage}
+                          disabled={uploading}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+
+                    {galleryItems.length === 0 ? (
+                      <p className="text-gray-500 text-center py-8">No images in this gallery yet.</p>
+                    ) : (
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {galleryItems.map((item) => (
+                          <div key={item.id} className="relative group">
+                            <img
+                              src={`${BASE_URL}${item.media_url}`}
+                              alt={item.title || 'Gallery image'}
+                              className="w-full h-48 object-cover rounded-lg"
+                            />
+                            <button
+                              onClick={() => handleDeleteImage(item.id)}
+                              className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                            {item.title && (
+                              <div className="mt-2 text-sm font-medium text-gray-900">{item.title}</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+                <School className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Schools Found</h3>
+                <p className="text-gray-600">You need to create a school first before managing galleries.</p>
+              </div>
+            )}
+          </div>
+        )}
 
       {/* Application Details Modal */}
       {selectedApplication && (
@@ -668,6 +1013,72 @@ export default function LeaderDashboard() {
         </div>
       )}
 
+      {/* Create Gallery Modal */}
+      {showCreateGallery && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="bg-blue-50 border-b border-blue-200 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900">Create New Gallery</h2>
+              <button
+                onClick={() => {
+                  setShowCreateGallery(false);
+                  setNewGalleryTitle("");
+                  setNewGalleryDescription("");
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Gallery Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newGalleryTitle}
+                  onChange={(e) => setNewGalleryTitle(e.target.value)}
+                  placeholder="e.g., School Facilities, Events 2024"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description (Optional)
+                </label>
+                <textarea
+                  value={newGalleryDescription}
+                  onChange={(e) => setNewGalleryDescription(e.target.value)}
+                  rows={3}
+                  placeholder="Describe what this gallery contains..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+            <div className="bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowCreateGallery(false);
+                  setNewGalleryTitle("");
+                  setNewGalleryDescription("");
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateGallery}
+                disabled={!newGalleryTitle.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Create Gallery
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Rejection Modal */}
       {showRejectModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -735,6 +1146,7 @@ export default function LeaderDashboard() {
           </div>
         </div>
       )}
+      </div>
     </div>
-  )
+  );
 }

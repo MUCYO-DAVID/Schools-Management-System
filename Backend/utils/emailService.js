@@ -238,8 +238,60 @@ const sendVerificationCode = async (email, code) => {
   }
 };
 
+// Send general notification email
+const sendNotificationEmail = async (userEmail, userName, title, message, link = null) => {
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+        .button { display: inline-block; padding: 12px 30px; background: #3b82f6; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+        .footer { text-align: center; margin-top: 20px; color: #6b7280; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🔔 Notification</h1>
+        </div>
+        <div class="content">
+          <h2>Hello ${userName},</h2>
+          <h3>${title}</h3>
+          <p>${message}</p>
+          ${link ? `<a href="${link}" class="button">View Details</a>` : ''}
+        </div>
+        <div class="footer">
+          <p>This is an automated message from Rwanda School Bridge System</p>
+          <p>Please do not reply to this email</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const mailOptions = {
+    from: process.env.EMAIL_FROM || 'Rwanda School Bridge System <noreply@rsbs.rw>',
+    to: userEmail,
+    subject: title,
+    html: htmlContent
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ Notification email sent to: ${userEmail}`);
+  } catch (error) {
+    console.error('❌ Error sending notification email:', error.message);
+  }
+};
+
 module.exports = {
   sendApplicationStatusEmail,
+  sendNotificationEmail,
   sendNewApplicationNotification,
   sendVerificationCode
 };

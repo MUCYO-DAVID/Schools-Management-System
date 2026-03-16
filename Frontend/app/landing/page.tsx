@@ -24,6 +24,7 @@ interface FloatingIcon {
   size: number;
   rotation: number;
   delay: number;
+  duration: number;
 }
 
 export default function LandingPage() {
@@ -64,6 +65,7 @@ export default function LandingPage() {
         size: 40 + Math.random() * 30,
         rotation: Math.random() * 360,
         delay: Math.random() * 2,
+        duration: 3 + Math.random() * 2,
       });
     }
     setFloatingIcons(icons);
@@ -132,7 +134,7 @@ export default function LandingPage() {
               top: `${item.position.y}%`,
               transform: `rotate(${item.rotation}deg)`,
               animationDelay: `${item.delay}s`,
-              animationDuration: `${3 + Math.random() * 2}s`,
+              animationDuration: `${item.duration}s`,
             }}
           >
             <IconComponent

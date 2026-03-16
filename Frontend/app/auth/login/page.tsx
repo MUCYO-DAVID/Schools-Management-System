@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 const LoginPage = () => {
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -15,7 +16,7 @@ const LoginPage = () => {
     setError('');
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/login`, {
+      const response = await fetch(`${backendUrl}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -29,10 +30,21 @@ const LoginPage = () => {
       }
 
       const data = await response.json();
-      // Assuming the backend returns a token or user data upon successful login
-      localStorage.setItem('userToken', data.token); // Store token (or other relevant data)
-      // Redirect to a protected page, e.g., dashboard or home
-      router.push('/dashboard'); // You might need to create a dashboard page or redirect to home
+      if (data.token && data.user && !data.requiresVerification) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        if (data.user.role === 'admin') {
+          router.push('/admin');
+        } else if (data.user.role === 'leader') {
+          router.push('/schools');
+        } else {
+          router.push('/student');
+        }
+      } else {
+        localStorage.setItem('userEmailForVerification', email);
+        localStorage.setItem('requiresLeaderQuestions', data.requiresLeaderQuestions ? 'true' : 'false');
+        router.push('/auth/verify-code');
+      }
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred');
     }

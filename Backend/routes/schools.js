@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 const multer = require('multer');
 const router = express.Router();
 const pool = require('../db');
@@ -47,7 +47,7 @@ router.get('/schools', async (req, res) => {
     } else {
       result = await pool.query('SELECT * FROM schools');
     }
-    
+
     res.json(result.rows);
   } catch (err) {
     console.error('Error fetching schools:', err.message);
@@ -77,6 +77,47 @@ router.get('/schools/top', async (req, res) => {
   }
 });
 
+// Get schools near a location (using Haversine formula for distance calculation)
+router.get('/schools/nearby', async (req, res) => {
+  try {
+    const { latitude, longitude, radius = 50 } = req.query; // radius in kilometers
+
+    if (!latitude || !longitude) {
+      return res.status(400).json({ message: 'Latitude and longitude are required' });
+    }
+
+    const lat = Number(latitude);
+    const lng = Number(longitude);
+    const rad = Number(radius);
+
+    // Haversine formula to calculate distance
+    const result = await pool.query(
+      `SELECT *,
+              CASE
+                WHEN rating_count > 0 THEN rating_total::FLOAT / rating_count
+                ELSE 0
+              END AS average_rating,
+              (
+                6371 * acos(
+                  cos(radians($1)) * cos(radians(latitude)) * 
+                  cos(radians(longitude) - radians($2)) + 
+                  sin(radians($1)) * sin(radians(latitude))
+                )
+              ) AS distance
+       FROM schools
+       WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+       HAVING distance <= $3
+       ORDER BY distance ASC`,
+      [lat, lng, rad]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching nearby schools:', err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 // Create school with optional images - requires leader role
 router.post('/schools', authMiddleware, leaderMiddleware, upload.array('images', 10), async (req, res) => {
   const {
@@ -88,9 +129,11 @@ router.post('/schools', authMiddleware, leaderMiddleware, upload.array('images',
     level,
     students,
     established,
+    latitude,
+    longitude,
   } = req.body;
 
-  const schoolId = uuidv4();
+  const schoolId = randomUUID();
 
   // Map potential field name differences between frontend and backend
   const englishName = name;
@@ -104,8 +147,8 @@ router.post('/schools', authMiddleware, leaderMiddleware, upload.array('images',
 
     const newSchool = await pool.query(
       `INSERT INTO schools
-        (id, name, name_rw, location, type, level, students, established, image_urls, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        (id, name, name_rw, location, type, level, students, established, image_urls, created_by, latitude, longitude)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
       [
         schoolId,
@@ -118,6 +161,8 @@ router.post('/schools', authMiddleware, leaderMiddleware, upload.array('images',
         established ? Number(established) : null,
         imageUrls.length ? JSON.stringify(imageUrls) : null,
         createdBy,
+        latitude ? Number(latitude) : null,
+        longitude ? Number(longitude) : null,
       ]
     );
 
@@ -150,8 +195,8 @@ router.post('/schools/:id/rate', async (req, res) => {
 
   // Prevent leaders and admins from rating schools
   if (userRole === 'leader' || userRole === 'admin') {
-    return res.status(403).json({ 
-      message: 'School leaders and administrators cannot rate schools to prevent conflicts of interest.' 
+    return res.status(403).json({
+      message: 'School leaders and administrators cannot rate schools to prevent conflicts of interest.'
     });
   }
 
@@ -188,17 +233,24 @@ router.post('/schools/:id/rate', async (req, res) => {
   }
 });
 router.delete('/schools/:id', authMiddleware, leaderMiddleware, async (req, res) => {
-    const { id } = req.params;
-    try {
-        const result = await pool.query('DELETE FROM schools WHERE id = $1 RETURNING *', [id]);
-        if (result.rows.length === 0) {
-            return res.status(404).send('School not found');
-        }
-        res.json({ success: true });
-    } catch (err) {
-        console.error('Error deleting school:', err.message);
-        res.status(500).send('Server Error');
+  const { id } = req.params;
+  try {
+    const existing = await pool.query('SELECT created_by FROM schools WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).send('School not found');
     }
+
+    const createdBy = existing.rows[0].created_by;
+    if (req.user.role !== 'admin' && createdBy !== req.user.id) {
+      return res.status(403).json({ message: 'Access denied. You can only delete schools you created.' });
+    }
+
+    await pool.query('DELETE FROM schools WHERE id = $1', [id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting school:', err.message);
+    res.status(500).send('Server Error');
+  }
 });
 // Update school with optional new images and deletions - requires leader role
 router.put('/schools/:id', authMiddleware, leaderMiddleware, upload.array('images', 10), async (req, res) => {
@@ -213,13 +265,20 @@ router.put('/schools/:id', authMiddleware, leaderMiddleware, upload.array('image
     students,
     established,
     imagesToDelete,
+    latitude,
+    longitude,
   } = req.body;
 
   try {
     // Fetch existing school to merge image URLs
-    const existing = await pool.query('SELECT image_urls FROM schools WHERE id = $1', [id]);
+    const existing = await pool.query('SELECT image_urls, created_by FROM schools WHERE id = $1', [id]);
     if (existing.rows.length === 0) {
       return res.status(404).send('School not found');
+    }
+
+    const createdBy = existing.rows[0].created_by;
+    if (req.user.role !== 'admin' && createdBy !== req.user.id) {
+      return res.status(403).json({ message: 'Access denied. You can only update schools you created.' });
     }
 
     let currentImages = [];
@@ -248,7 +307,7 @@ router.put('/schools/:id', authMiddleware, leaderMiddleware, upload.array('image
         currentImages.splice(index, 1);
       }
       const filePath = path.join(__dirname, '..', url.replace(/^\/+/, ''));
-      fs.unlink(filePath, () => {});
+      fs.unlink(filePath, () => { });
     });
 
     // Add newly uploaded images
@@ -268,8 +327,10 @@ router.put('/schools/:id', authMiddleware, leaderMiddleware, upload.array('image
            students = $6,
            established = $7,
            image_urls = $8,
+           latitude = $9,
+           longitude = $10,
            updated_at = NOW()
-       WHERE id = $9
+       WHERE id = $11
        RETURNING *`,
       [
         englishName,
@@ -280,6 +341,8 @@ router.put('/schools/:id', authMiddleware, leaderMiddleware, upload.array('image
         students ? Number(students) : 0,
         established ? Number(established) : null,
         finalImages.length ? JSON.stringify(finalImages) : null,
+        latitude ? Number(latitude) : null,
+        longitude ? Number(longitude) : null,
         id,
       ]
     );

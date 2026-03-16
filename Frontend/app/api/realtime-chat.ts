@@ -1,0 +1,117 @@
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+
+// Get or create direct chat room between two users
+export async function createDirectChat(otherUserId: number) {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${backendUrl}/api/chat/rooms/direct`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ other_user_id: otherUserId }),
+  });
+
+  if (!res.ok) throw new Error('Failed to create direct chat');
+  return res.json();
+}
+
+// Get or create group chat room for a school
+export async function createGroupChat(schoolId: string, name: string) {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${backendUrl}/api/chat/rooms/group`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ school_id: schoolId, name }),
+  });
+
+  if (!res.ok) throw new Error('Failed to create group chat');
+  return res.json();
+}
+
+// Get user's chat rooms
+export async function fetchChatRooms() {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${backendUrl}/api/chat/rooms`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error('Failed to fetch chat rooms');
+  return res.json();
+}
+
+// Get messages for a chat room
+export async function fetchChatMessages(roomId: number, limit: number = 50, offset: number = 0) {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${backendUrl}/api/chat/rooms/${roomId}/messages?limit=${limit}&offset=${offset}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error('Failed to fetch messages');
+  return res.json();
+}
+
+// Send message
+export async function sendChatMessage(roomId: number, message: string, messageType: string = 'text', attachmentUrl?: string) {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${backendUrl}/api/chat/rooms/${roomId}/messages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ message, message_type: messageType, attachment_url: attachmentUrl }),
+  });
+
+  if (!res.ok) throw new Error('Failed to send message');
+  return res.json();
+}
+
+// Add member to group chat
+export async function addChatRoomMember(roomId: number, userId: number) {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${backendUrl}/api/chat/rooms/${roomId}/members`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ user_id: userId }),
+  });
+
+  if (!res.ok) throw new Error('Failed to add member');
+  return res.json();
+}
+
+// Get members of a chat room
+export async function fetchChatRoomMembers(roomId: number) {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${backendUrl}/api/chat/rooms/${roomId}/members`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error('Failed to fetch members');
+  return res.json();
+}
+
+// Get unread message count
+export async function fetchUnreadCount() {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${backendUrl}/api/chat/unread-count`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error('Failed to fetch unread count');
+  return res.json();
+}

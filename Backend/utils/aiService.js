@@ -230,7 +230,7 @@ const getQuickSuggestions = (userRole) => {
       "Application trends this month"
     ],
     guest: [
-      "What is Rwanda School Browsing System?",
+      "What is Rwanda School Bridge System?",
       "How do I sign up?",
       "What are the benefits?",
       "Who can use this system?",
@@ -248,7 +248,7 @@ const getFallbackResponse = (message, userRole) => {
   // Greetings
   if (lowerMessage.match(/^(hi|hello|hey|greetings|good morning|good afternoon)/i)) {
     const userName = userRole === 'student' ? 'Student' : userRole === 'leader' ? 'School Leader' : 'there';
-    return `Hello ${userName}! 👋 Welcome to Rwanda School Browsing System (RSBS)!
+    return `Hello ${userName}! 👋 Welcome to Rwanda School Bridge System (RSBS)!
 
 I'm here to help you with:
 ${userRole === 'student' ? `

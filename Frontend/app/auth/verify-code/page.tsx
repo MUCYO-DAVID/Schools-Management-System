@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Shield, AlertCircle } from 'lucide-react';
 
 export default function VerifyCodePage() {
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [emailForVerification, setEmailForVerification] = useState<string | null>(null);
@@ -62,7 +63,7 @@ export default function VerifyCodePage() {
         requestBody.code = code;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/verify-code`, {
+      const response = await fetch(`${backendUrl}/api/auth/verify-code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -123,7 +124,7 @@ export default function VerifyCodePage() {
     
     try {
       // Placeholder for your backend API call to resend the code
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/resend-code`, {
+      const response = await fetch(`${backendUrl}/api/auth/resend-code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

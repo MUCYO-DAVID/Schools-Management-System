@@ -129,12 +129,12 @@ router.post('/auth/login', async (req, res) => {
 
 // User registration
 router.post('/auth/signup', async (req, res) => {
-  const { first_name, last_name, email, password, role } = req.body;
+  const { first_name, last_name, email, password, role, school_name, subject } = req.body;
 
   try {
-    // Validate role - only allow 'student' or 'leader' through signup
+    // Validate role - only allow 'student', 'leader', or 'teacher' through signup
     // Admin roles must be created manually or through admin panel
-    const validRoles = ['student', 'leader'];
+    const validRoles = ['student', 'leader', 'teacher'];
     const userRole = role && validRoles.includes(role.toLowerCase()) ? role.toLowerCase() : 'student';
 
     // Check if user already exists
@@ -153,10 +153,20 @@ router.post('/auth/signup', async (req, res) => {
       [first_name, last_name, email, hashedPassword, userRole] // Use validated role
     );
 
+    const userId = newUser.rows[0].id;
+
+    // If teacher, save additional teacher information
+    if (userRole === 'teacher') {
+      await pool.query(
+        'INSERT INTO teacher_info (user_id, school_name, subject) VALUES ($1, $2, $3)',
+        [userId, school_name || null, subject || null]
+      );
+    }
+
     // Generate JWT
     const payload = {
       user: {
-        id: newUser.rows[0].id,
+        id: userId,
         role: newUser.rows[0].role,
       },
     };
