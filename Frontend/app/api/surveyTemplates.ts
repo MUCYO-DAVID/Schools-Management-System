@@ -1,4 +1,5 @@
-const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+const backendUrl =
+  process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
 
 export interface SurveyQuestion {
   id?: number;

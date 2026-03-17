@@ -27,7 +27,8 @@ import SurveyAnalytics from "../components/SurveyAnalytics"
 import { fetchSurveyTemplates, deleteSurveyTemplate, type SurveyTemplate } from "@/app/api/surveyTemplates"
 
 export default function AdminDashboard() {
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+  const backendUrl =
+    process.env.NEXT_PUBLIC_BACKEND_URL || "https://rwandaschoolsbridgesystem.onrender.com";
   const { t } = useLanguage()
   const [schools, setSchools] = useState<SchoolType[]>([])
   const [activeTab, setActiveTab] = useState("overview")

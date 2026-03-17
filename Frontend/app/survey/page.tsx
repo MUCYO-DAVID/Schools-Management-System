@@ -20,7 +20,7 @@ export default function SurveyPage() {
     setSubmitting(true)
 
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000"}/api/surveys`, {
+      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "https://rwandaschoolsbridgesystem.onrender.com"}/api/surveys`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

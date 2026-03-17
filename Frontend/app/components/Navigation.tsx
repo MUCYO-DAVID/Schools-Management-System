@@ -11,7 +11,8 @@ import ChatWindow from "./ChatWindow"
 import { fetchUnreadCount } from "../api/realtime-chat"
 
 export default function Navigation() {
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000"
+  const backendUrl =
+    process.env.NEXT_PUBLIC_BACKEND_URL || "https://rwandaschoolsbridgesystem.onrender.com"
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
   const { language, setLanguage, t } = useLanguage()

@@ -44,7 +44,8 @@ export default function BulkReportCardGenerator({ schoolId, term, academicYear, 
       }
 
       const token = localStorage.getItem('token');
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const backendUrl =
+        process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
       const res = await fetch(`${backendUrl}/api/report-cards/bulk-generate`, {
         method: 'POST',
         headers: {

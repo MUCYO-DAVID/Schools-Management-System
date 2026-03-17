@@ -24,7 +24,8 @@ export default function Contact() {
 
     try {
       console.log('▶️ sending', formData);
-      const backend = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:5000';
+      const backend =
+        process.env.NEXT_PUBLIC_BACKEND_URL ?? "https://rwandaschoolsbridgesystem.onrender.com";
       await fetch(`${backend}/api/contacts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -226,4 +227,7 @@ export default function Contact() {
     </div>
   )
 }
-console.log("➡️  POST to", process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:5000/api/contacts");
+console.log(
+  "➡️  POST to",
+  process.env.NEXT_PUBLIC_BACKEND_URL ?? "https://rwandaschoolsbridgesystem.onrender.com/api/contacts",
+);

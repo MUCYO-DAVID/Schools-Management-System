@@ -7,7 +7,8 @@ import Link from 'next/link';
 import { Shield, AlertCircle } from 'lucide-react';
 
 export default function VerifyCodePage() {
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+  const backendUrl =
+    process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [emailForVerification, setEmailForVerification] = useState<string | null>(null);

@@ -35,7 +35,8 @@ interface Reply {
 }
 
 export default function SurveyCommentsFeed() {
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+  const backendUrl =
+    process.env.NEXT_PUBLIC_BACKEND_URL || "https://rwandaschoolsbridgesystem.onrender.com";
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [loading, setLoading] = useState(true);
   const [likingId, setLikingId] = useState<number | null>(null);
@@ -229,7 +230,7 @@ export default function SurveyCommentsFeed() {
                 <img 
                   src={survey.avatar_url.startsWith('http') 
                     ? survey.avatar_url 
-                    : `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}${survey.avatar_url}`} 
+                    : `${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com'}${survey.avatar_url}`}
                   alt={`${survey.first_name || ''} ${survey.last_name || ''}`}
                   className="w-7 h-7 rounded-full object-cover border-2 border-gray-200 flex-shrink-0"
                   onError={(e) => {
@@ -366,7 +367,7 @@ export default function SurveyCommentsFeed() {
                             <img 
                               src={reply.avatar_url.startsWith('http') 
                                 ? reply.avatar_url 
-                                : `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}${reply.avatar_url}`} 
+                                : `${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com'}${reply.avatar_url}`}
                               alt={`${reply.first_name} ${reply.last_name}`}
                               className="w-5 h-5 rounded-full object-cover border border-gray-200 flex-shrink-0"
                               onError={(e) => {

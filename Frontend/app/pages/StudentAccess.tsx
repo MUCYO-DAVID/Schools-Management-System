@@ -34,7 +34,9 @@ export default function StudentAccess({ schools: initialSchools }: StudentAccess
       } catch (helperErr) {
         // helper failed — fallback to explicit fetch (keeps parity with Schools page)
         console.warn("fetchSchools helper failed, falling back to direct fetch:", helperErr)
-        const res = await fetch("http://localhost:5000/api/schools")
+        const backendUrl =
+          process.env.NEXT_PUBLIC_BACKEND_URL || "https://rwandaschoolsbridgesystem.onrender.com";
+        const res = await fetch(`${backendUrl}/api/schools`)
         if (!res.ok) {
           const bodyText = await res.text().catch(() => "")
           const msg = `Fetch error ${res.status} ${res.statusText} - ${bodyText}`

@@ -1,7 +1,8 @@
 // api/schools.ts
 import type { School } from "@/app/types";
 
-export const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+export const BASE_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
 const API_URL = `${BASE_URL}/api`;
 
 const SCHOOLS_CACHE_TTL_MS = 2 * 60 * 1000;

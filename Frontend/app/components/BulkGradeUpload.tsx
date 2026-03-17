@@ -47,7 +47,8 @@ export default function BulkGradeUpload({ schoolId, term, academicYear, onClose,
       formData.append('academic_year', academicYear);
 
       const token = localStorage.getItem('token');
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const backendUrl =
+        process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
       const res = await fetch(`${backendUrl}/api/grades/bulk-upload`, {
         method: 'POST',
         headers: {

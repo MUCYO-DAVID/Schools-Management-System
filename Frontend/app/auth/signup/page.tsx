@@ -7,7 +7,8 @@ import { useAuth } from '../../providers/AuthProvider';
 import { GraduationCap, School, Users, BookOpen, Award, Star } from 'lucide-react';
 
 const SignUpPage = () => {
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+  const backendUrl =
+    process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');

@@ -77,7 +77,8 @@ export default function UserProfile({ userId, onClose }: UserProfileProps) {
   const loadPreferences = async () => {
     try {
       const token = localStorage.getItem('token');
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const backendUrl =
+        process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
       const res = await fetch(`${backendUrl}/api/users/preferences`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -107,7 +108,8 @@ export default function UserProfile({ userId, onClose }: UserProfileProps) {
       if (!targetUserId) return;
 
       const token = localStorage.getItem('token');
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const backendUrl =
+        process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
 
       // Use /me endpoint for own profile, /:id for viewing others (admin only)
       const endpoint = !userId || userId === currentUser?.id
@@ -133,7 +135,8 @@ export default function UserProfile({ userId, onClose }: UserProfileProps) {
           date_of_birth: data.date_of_birth || '',
         });
         if (data.avatar_url) {
-          const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+          const backendUrl =
+            process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
           const avatarUrl = data.avatar_url.startsWith('http')
             ? data.avatar_url
             : `${backendUrl}${data.avatar_url}`;
@@ -175,7 +178,8 @@ export default function UserProfile({ userId, onClose }: UserProfileProps) {
       if (!targetUserId) return;
 
       const token = localStorage.getItem('token');
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const backendUrl =
+        process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
 
       // Upload avatar if changed
       let newAvatarUrl: string | null = null;
@@ -326,7 +330,8 @@ export default function UserProfile({ userId, onClose }: UserProfileProps) {
       setMessage(null);
 
       const token = localStorage.getItem('token');
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const backendUrl =
+        process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
       const res = await fetch(`${backendUrl}/api/users/change-password`, {
         method: 'POST',
         headers: {
@@ -361,7 +366,8 @@ export default function UserProfile({ userId, onClose }: UserProfileProps) {
       setMessage(null);
 
       const token = localStorage.getItem('token');
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const backendUrl =
+        process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
       const res = await fetch(`${backendUrl}/api/users/preferences`, {
         method: 'PUT',
         headers: {
@@ -434,7 +440,7 @@ export default function UserProfile({ userId, onClose }: UserProfileProps) {
                           ? avatarPreview
                           : avatarPreview.startsWith('data:')
                             ? avatarPreview
-                            : `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}${avatarPreview.startsWith('/') ? '' : '/'}${avatarPreview}`
+                            : `${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com'}${avatarPreview.startsWith('/') ? '' : '/'}${avatarPreview}`
                       }
                       alt="Avatar"
                       className="w-full h-full object-cover"
@@ -505,7 +511,9 @@ export default function UserProfile({ userId, onClose }: UserProfileProps) {
                               setAvatarFile(null);
                               // Reset avatar preview to the saved profile avatar
                               if (profile?.avatar_url) {
-                                const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+                                const backendUrl =
+                                  process.env.NEXT_PUBLIC_BACKEND_URL ||
+                                  'https://rwandaschoolsbridgesystem.onrender.com';
                                 const avatarUrl = profile.avatar_url.startsWith('http')
                                   ? profile.avatar_url
                                   : `${backendUrl}${profile.avatar_url}`;

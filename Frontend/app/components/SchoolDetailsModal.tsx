@@ -31,7 +31,8 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
   const [loading, setLoading] = useState(true);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'gallery' | 'details' | 'contact'>('overview');
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+  const backendUrl =
+    process.env.NEXT_PUBLIC_BACKEND_URL || "https://rwandaschoolsbridgesystem.onrender.com";
 
   useEffect(() => {
     fetchSchoolDetails();
