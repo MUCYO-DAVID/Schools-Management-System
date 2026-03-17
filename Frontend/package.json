@@ -7,8 +7,7 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start",
-    "start": "node Server.js"
+    "start": "next start"
   },
   "engines": {
     "node": ">=18.0.0"
