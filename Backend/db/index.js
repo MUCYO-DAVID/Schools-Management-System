@@ -1,22 +1,18 @@
 // db/index.js
 const { Pool } = require('pg');
-require('dotenv').config();
+
+const rawConnectionString = process.env.DATABASE_URL;
+// If `sslmode=require` is present, `pg` may override `rejectUnauthorized: false`.
+// We rely on the explicit `ssl` config below instead.
+const connectionString = typeof rawConnectionString === 'string'
+  ? rawConnectionString.replace(/[?&]sslmode=require\b/, '')
+  : rawConnectionString;
 
 const pool = new Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_DATABASE,
-    password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT,
-});
-
-pool.on('connect', () => {
-    console.log('Connected to PostgreSQL');
-});
-
-pool.on('error', (err) => {
-    console.error('Unexpected PostgreSQL error', err);
-    process.exit(1);
+  connectionString,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 module.exports = pool;

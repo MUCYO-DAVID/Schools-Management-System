@@ -7,7 +7,8 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "start": "node Server.js"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -50,6 +51,7 @@
     "geist": "^1.3.1",
     "input-otp": "1.4.1",
     "jspdf": "^2.5.1",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.454.0",
     "next": "14.2.16",
     "next-themes": "^0.4.4",
@@ -67,6 +69,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/leaflet": "^1.9.21",
     "@types/node": "^24.9.2",
     "@types/react": "^18",
     "@types/react-dom": "^18",
