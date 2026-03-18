@@ -1,20 +1,28 @@
-'use client';
+'use client'
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import React, { useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { School, Eye, EyeOff, AlertCircle, Loader } from 'lucide-react'
+import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import Alert from '@/components/ui/Alert'
 
 const LoginPage = () => {
   const backendUrl =
-    process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const router = useRouter();
+    process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com'
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+    e.preventDefault()
+    setError('')
+    setIsLoading(true)
 
     try {
       const response = await fetch(`${backendUrl}/api/auth/login`, {
@@ -23,109 +31,160 @@ const LoginPage = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
-      });
+      })
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Login failed')
       }
 
-      const data = await response.json();
+      const data = await response.json()
       if (data.token && data.user && !data.requiresVerification) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify(data.user))
         if (data.user.role === 'admin') {
-          router.push('/admin');
+          router.push('/admin')
         } else if (data.user.role === 'leader') {
-          router.push('/schools');
+          router.push('/schools')
         } else {
-          router.push('/student');
+          router.push('/student')
         }
       } else {
-        localStorage.setItem('userEmailForVerification', email);
-        localStorage.setItem('requiresLeaderQuestions', data.requiresLeaderQuestions ? 'true' : 'false');
-        router.push('/auth/verify-code');
+        localStorage.setItem('userEmailForVerification', email)
+        localStorage.setItem('requiresLeaderQuestions', data.requiresLeaderQuestions ? 'true' : 'false')
+        router.push('/auth/verify-code')
       }
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred');
+      setError(err.message || 'An unexpected error occurred')
+    } finally {
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4">
-      <div className="relative flex w-full max-w-4xl bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-        {/* Left Section - Rwanda Flag Inspired */}
-        <div className="w-1/2 bg-gradient-to-br from-blue-500 via-yellow-400 to-green-500 flex flex-col items-center justify-center p-8 text-white">
-          <div className="text-4xl font-bold mb-4">AMU</div>
-          <h2 className="text-2xl font-semibold text-center mb-6">Capturing Moments, Creating Memories</h2>
-          <p className="text-center text-sm">Log in to continue your journey with us.</p>
-          <div className="absolute bottom-4 flex space-x-2">
-            <span className="block w-2 h-2 bg-gray-400 rounded-full"></span>
-            <span className="block w-2 h-2 bg-white rounded-full"></span>
-            <span className="block w-2 h-2 bg-gray-400 rounded-full"></span>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted p-4">
+      <div className="w-full max-w-md">
+        {/* Logo Section */}
+        <div className="flex flex-col items-center gap-3 mb-8 text-center">
+          <div className="p-3 bg-primary/10 rounded-lg">
+            <School className="w-8 h-8 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">SchoolHub</h1>
+            <p className="text-muted-foreground text-sm mt-1">Rwanda School Management System</p>
           </div>
         </div>
 
-        {/* Right Section - Login Form */}
-        <div className="w-1/2 p-8">
-          <h2 className="text-3xl font-bold text-white mb-2">Log in to your account</h2>
-          <p className="text-gray-400 mb-6">
-            Don't have an account?{' '}
-            <Link href="/auth/signup" className="text-purple-400 hover:underline">
-              Sign up
-            </Link>
-          </p>
+        {/* Login Card */}
+        <Card className="shadow-lg border-primary/10">
+          <CardHeader className="space-y-2">
+            <CardTitle className="text-2xl">Welcome Back</CardTitle>
+            <CardDescription>
+              Sign in to your account to continue
+            </CardDescription>
+          </CardHeader>
 
-          {error && <p className="text-red-500 mb-4">{error}</p>}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <input
-              type="email"
-              placeholder="Email"
-              className="w-full p-3 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <div className="relative">
-              <input
-                type="password"
-                placeholder="Enter your password"
-                className="w-full p-3 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 pr-10"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+          <CardContent className="space-y-6">
+            {error && (
+              <Alert
+                variant="error"
+                title="Login Error"
+                description={error}
+                closeable
+                onClose={() => setError('')}
               />
-              {/* You can add an eye icon here to toggle password visibility */}
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Input
+                label="Email Address"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isLoading}
+              />
+
+              <div className="space-y-2">
+                <div className="relative">
+                  <Input
+                    label="Password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-10 text-muted-foreground hover:text-foreground transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-sm text-primary hover:underline inline-block"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="md"
+                loading={isLoading}
+                className="w-full"
+              >
+                {isLoading ? 'Signing in...' : 'Sign In'}
+              </Button>
+            </form>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-card text-muted-foreground">Don't have an account?</span>
+              </div>
             </div>
-            <button
-              type="submit"
-              className="w-full p-3 rounded-md bg-purple-600 text-white font-semibold hover:bg-purple-700 transition duration-200"
-            >
-              Log in
-            </button>
-          </form>
 
-          <div className="flex items-center my-6">
-            <div className="flex-grow border-t border-gray-700"></div>
-            <span className="mx-4 text-gray-500">Or log in with</span>
-            <div className="flex-grow border-t border-gray-700"></div>
-          </div>
+            <Link href="/auth/signup">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                className="w-full"
+              >
+                Create New Account
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
 
-          <div className="flex space-x-4">
-            <button className="flex-1 flex items-center justify-center p-3 rounded-md bg-gray-700 text-white hover:bg-gray-600 transition duration-200">
-              <img src="/google-icon.svg" alt="Google" className="w-5 h-5 mr-2" />
-              Google
-            </button>
-            <button className="flex-1 flex items-center justify-center p-3 rounded-md bg-gray-700 text-white hover:bg-gray-600 transition duration-200">
-              <img src="/apple-icon.svg" alt="Apple" className="w-5 h-5 mr-2" />
-              Apple
-            </button>
-          </div>
-        </div>
+        {/* Footer */}
+        <p className="text-center text-xs text-muted-foreground mt-6">
+          By signing in, you agree to our{' '}
+          <Link href="#" className="text-primary hover:underline">
+            Terms of Service
+          </Link>
+          {' '}and{' '}
+          <Link href="#" className="text-primary hover:underline">
+            Privacy Policy
+          </Link>
+        </p>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default LoginPage;
+export default LoginPage

@@ -1,22 +1,29 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../../providers/AuthProvider';
-import Link from 'next/link';
-import { Shield, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '../../providers/AuthProvider'
+import Link from 'next/link'
+import { Shield, School, Clock, Loader } from 'lucide-react'
+import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import Alert from '@/components/ui/Alert'
 
 export default function VerifyCodePage() {
   const backendUrl =
     process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
-  const [code, setCode] = useState('');
-  const [error, setError] = useState('');
-  const [emailForVerification, setEmailForVerification] = useState<string | null>(null);
-  const [requiresLeaderQuestions, setRequiresLeaderQuestions] = useState(false);
-  const [leaderAnswer1, setLeaderAnswer1] = useState('');
-  const [leaderAnswer2, setLeaderAnswer2] = useState('');
-  const router = useRouter();
-  const { login } = useAuth();
+  const [code, setCode] = useState('')
+  const [error, setError] = useState('')
+  const [emailForVerification, setEmailForVerification] = useState<string | null>(null)
+  const [requiresLeaderQuestions, setRequiresLeaderQuestions] = useState(false)
+  const [leaderAnswer1, setLeaderAnswer1] = useState('')
+  const [leaderAnswer2, setLeaderAnswer2] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [resendLoading, setResendLoading] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
+  const router = useRouter()
+  const { login } = useAuth()
 
   useEffect(() => {
     // In a real application, you'd likely get the email from a secure session or context
@@ -34,34 +41,36 @@ export default function VerifyCodePage() {
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+    e.preventDefault()
+    setError('')
+    setIsLoading(true)
 
     if (!emailForVerification) {
-      setError('Email not found for verification. Please sign in again.');
-      return;
+      setError('Email not found for verification. Please sign in again.')
+      setIsLoading(false)
+      return
     }
 
     try {
-      let requestBody: any = { email: emailForVerification };
-      
+      let requestBody: any = { email: emailForVerification }
+
       if (requiresLeaderQuestions) {
-        // For leaders, send answers to verification questions
         if (!leaderAnswer1.trim() || !leaderAnswer2.trim()) {
-          setError('Please answer both verification questions.');
-          return;
+          setError('Please answer both verification questions.')
+          setIsLoading(false)
+          return
         }
         requestBody.leaderAnswers = {
           answer1: leaderAnswer1,
           answer2: leaderAnswer2,
-        };
-      } else {
-        // For regular users, send verification code
-        if (!code.trim()) {
-          setError('Please enter the verification code.');
-          return;
         }
-        requestBody.code = code;
+      } else {
+        if (!code.trim()) {
+          setError('Please enter the verification code.')
+          setIsLoading(false)
+          return
+        }
+        requestBody.code = code
       }
 
       const response = await fetch(`${backendUrl}/api/auth/verify-code`, {
@@ -70,182 +79,211 @@ export default function VerifyCodePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
-      });
+      })
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Verification failed');
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Verification failed')
       }
 
-      const { token, user } = await response.json();
-      login(token, user); // Log in the user after successful verification
-      
-      // Clean up verification data
-      localStorage.removeItem('userEmailForVerification');
-      localStorage.removeItem('requiresLeaderQuestions');
-      
-      // Check for redirect path (from verification flow)
-      const redirectPath = localStorage.getItem('redirectAfterVerification');
-      localStorage.removeItem('redirectAfterVerification');
-      
-      // Also check for redirect from login (in case it wasn't moved to redirectAfterVerification)
-      const loginRedirect = localStorage.getItem('redirectAfterLogin');
-      localStorage.removeItem('redirectAfterLogin');
+      const { token, user } = await response.json()
+      login(token, user)
 
-      // Redirect based on role or saved redirect
-      const finalRedirect = redirectPath || loginRedirect;
+      localStorage.removeItem('userEmailForVerification')
+      localStorage.removeItem('requiresLeaderQuestions')
+
+      const redirectPath = localStorage.getItem('redirectAfterVerification')
+      localStorage.removeItem('redirectAfterVerification')
+
+      const loginRedirect = localStorage.getItem('redirectAfterLogin')
+      localStorage.removeItem('redirectAfterLogin')
+
+      const finalRedirect = redirectPath || loginRedirect
       if (finalRedirect) {
-        router.push(finalRedirect);
+        router.push(finalRedirect)
       } else if (user.role === 'admin') {
-        router.push('/admin');
+        router.push('/admin')
       } else if (user.role === 'leader') {
-        router.push('/schools');
+        router.push('/schools')
       } else if (user.role === 'student') {
-        router.push('/student');
+        router.push('/student')
       } else {
-        router.push('/home');
+        router.push('/home')
       }
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred during verification');
+      setError(err.message || 'An unexpected error occurred during verification')
+    } finally {
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleResendCode = async () => {
-    setError('');
+    setError('')
     if (!emailForVerification) {
-      setError('Email not found to resend code.');
-      return;
+      setError('Email not found to resend code.')
+      return
     }
-    
-    // Leaders don't need to resend code, they answer questions
+
     if (requiresLeaderQuestions) {
-      setError('Please answer the verification questions above.');
-      return;
+      setError('Please answer the verification questions above.')
+      return
     }
-    
+
+    setResendLoading(true)
+
     try {
-      // Placeholder for your backend API call to resend the code
       const response = await fetch(`${backendUrl}/api/auth/resend-code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email: emailForVerification }),
-      });
+      })
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to resend code');
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to resend code')
       }
-      alert('Verification code sent to your email!');
+
+      setResendCooldown(60)
+      const interval = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred while resending code');
+      setError(err.message || 'An unexpected error occurred while resending code')
+    } finally {
+      setResendLoading(false)
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#007A3D] via-[#FDB913] to-[#005BBB] p-4">
-      <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg">
-        <div className="text-center mb-6">
-          {requiresLeaderQuestions ? (
-            <>
-              <div className="flex justify-center mb-4">
-                <Shield className="w-12 h-12 text-blue-600" />
-              </div>
-              <h2 className="text-3xl font-extrabold text-gray-900">Leader Verification</h2>
-              <p className="mt-2 text-sm text-gray-600">
-                Please answer the following questions to verify your leadership role.
-              </p>
-            </>
-          ) : (
-            <>
-              <h2 className="text-3xl font-extrabold text-gray-900">Verify Your Email</h2>
-              <p className="mt-2 text-sm text-gray-600">
-                A verification code has been sent to {emailForVerification || 'your email'}. Please enter it below.
-              </p>
-            </>
-          )}
-        </div>
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-red-600" />
-              <p className="text-red-600 text-sm">{error}</p>
-            </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted p-4">
+      <div className="w-full max-w-md">
+        {/* Logo Section */}
+        <div className="flex flex-col items-center gap-3 mb-8 text-center">
+          <div className="p-3 bg-primary/10 rounded-lg">
+            <School className="w-8 h-8 text-primary" />
           </div>
-        )}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {requiresLeaderQuestions ? (
-            <>
-              <div>
-                <label htmlFor="answer1" className="block text-sm font-medium text-gray-700 mb-2">
-                  What is your primary responsibility at the school?
-                </label>
-                <input
-                  id="answer1"
-                  name="answer1"
-                  type="text"
-                  autoComplete="off"
-                  required
-                  placeholder="e.g., School management, Leadership, Administration"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#FDB913] focus:border-[#FDB913] sm:text-sm"
-                  value={leaderAnswer1}
-                  onChange={(e) => setLeaderAnswer1(e.target.value)}
-                />
-              </div>
-              <div>
-                <label htmlFor="answer2" className="block text-sm font-medium text-gray-700 mb-2">
-                  Are you authorized to manage school information? (Yes/No)
-                </label>
-                <input
-                  id="answer2"
-                  name="answer2"
-                  type="text"
-                  autoComplete="off"
-                  required
-                  placeholder="Yes or No"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#FDB913] focus:border-[#FDB913] sm:text-sm"
-                  value={leaderAnswer2}
-                  onChange={(e) => setLeaderAnswer2(e.target.value)}
-                />
-              </div>
-            </>
-          ) : (
-            <div>
-              <label htmlFor="code" className="block text-sm font-medium text-gray-700">Verification Code</label>
-              <input
-                id="code"
-                name="code"
-                type="text"
-                autoComplete="off"
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#FDB913] focus:border-[#FDB913] sm:text-sm"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-              />
-            </div>
-          )}
           <div>
-            <button
-              type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#007A3D] hover:bg-[#005BBB] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FDB913]"
-            >
-              {requiresLeaderQuestions ? 'Verify Leadership' : 'Verify Code'}
-            </button>
+            <h1 className="text-3xl font-bold text-foreground">SchoolHub</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              {requiresLeaderQuestions ? 'Leadership Verification' : 'Email Verification'}
+            </p>
           </div>
-          {!requiresLeaderQuestions && (
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={handleResendCode}
-                className="font-medium text-[#005BBB] hover:text-[#007A3D]"
-              >
-                Resend Code
-              </button>
+        </div>
+
+        {/* Verification Card */}
+        <Card className="shadow-lg border-primary/10">
+          <CardHeader className="space-y-2">
+            <div className="flex items-center gap-2">
+              {requiresLeaderQuestions ? (
+                <Shield className="w-5 h-5 text-primary" />
+              ) : (
+                <Clock className="w-5 h-5 text-primary" />
+              )}
+              <CardTitle className="text-2xl">
+                {requiresLeaderQuestions ? 'Verify Leadership' : 'Verify Email'}
+              </CardTitle>
             </div>
-          )}
-        </form>
+            <CardDescription>
+              {requiresLeaderQuestions
+                ? 'Answer the verification questions to confirm your leadership role'
+                : `A verification code has been sent to ${emailForVerification || 'your email'}`}
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-6">
+            {error && (
+              <Alert
+                variant="error"
+                title="Verification Error"
+                description={error}
+                closeable
+                onClose={() => setError('')}
+              />
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {requiresLeaderQuestions ? (
+                <>
+                  <Input
+                    label="What is your primary responsibility at the school?"
+                    placeholder="e.g., School management, Leadership"
+                    value={leaderAnswer1}
+                    onChange={(e) => setLeaderAnswer1(e.target.value)}
+                    required
+                    disabled={isLoading}
+                  />
+                  <Input
+                    label="Are you authorized to manage school information?"
+                    placeholder="Yes or No"
+                    value={leaderAnswer2}
+                    onChange={(e) => setLeaderAnswer2(e.target.value)}
+                    required
+                    disabled={isLoading}
+                  />
+                </>
+              ) : (
+                <Input
+                  label="Verification Code"
+                  placeholder="Enter the 6-digit code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  maxLength={6}
+                />
+              )}
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="md"
+                loading={isLoading}
+                className="w-full"
+              >
+                {isLoading
+                  ? 'Verifying...'
+                  : requiresLeaderQuestions
+                    ? 'Verify Leadership'
+                    : 'Verify Code'}
+              </Button>
+
+              {!requiresLeaderQuestions && (
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground mb-2">Didn't receive the code?</p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={resendCooldown > 0 || resendLoading}
+                    onClick={handleResendCode}
+                    className="w-full"
+                  >
+                    {resendCooldown > 0
+                      ? `Resend in ${resendCooldown}s`
+                      : resendLoading
+                        ? 'Sending...'
+                        : 'Resend Code'}
+                  </Button>
+                </div>
+              )}
+
+              <Link href="/auth/login">
+                <Button type="button" variant="outline" size="md" className="w-full">
+                  Back to Login
+                </Button>
+              </Link>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
-  );
+  )
 }

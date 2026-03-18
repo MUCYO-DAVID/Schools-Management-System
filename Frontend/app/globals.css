@@ -2,9 +2,122 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Design System - Modern SaaS Color Tokens */
+@layer base {
+  :root {
+    /* Primary Colors - Professional Blue (Rwanda-inspired) */
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Neutral Colors - Clean Grays */
+    --background: 0 0% 100%;
+    --foreground: 210 40% 20%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 210 40% 20%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 40% 20%;
+    
+    /* Secondary - Soft teal accent */
+    --secondary: 174 100% 29%;
+    --secondary-foreground: 0 0% 100%;
+    
+    /* Muted - Light grays */
+    --muted: 210 14% 97%;
+    --muted-foreground: 215 13% 34%;
+    
+    /* Accent - Supporting color */
+    --accent: 50 97% 52%;
+    --accent-foreground: 0 0% 0%;
+    
+    /* Destructive - Red */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 210 14% 89%;
+    --input: 210 14% 97%;
+    --ring: 217 91% 60%;
+    --radius: 8px;
+  }
+
+  .dark {
+    /* Dark mode colors */
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 20%;
+    
+    --background: 210 40% 10%;
+    --foreground: 0 0% 95%;
+    
+    --card: 210 40% 15%;
+    --card-foreground: 0 0% 95%;
+    
+    --popover: 210 40% 15%;
+    --popover-foreground: 0 0% 95%;
+    
+    --secondary: 174 100% 29%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --muted: 210 40% 25%;
+    --muted-foreground: 210 14% 72%;
+    
+    --accent: 50 97% 52%;
+    --accent-foreground: 0 0% 0%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 210 40% 25%;
+    --input: 210 40% 20%;
+    --ring: 217 91% 60%;
+  }
+}
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+  }
+  
+  * {
+    @apply border-border;
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  
+  .text-pretty {
+    text-wrap: pretty;
+  }
+  
+  /* Layout utilities */
+  .flex-center {
+    @apply flex items-center justify-center;
+  }
+  
+  .flex-between {
+    @apply flex items-center justify-between;
+  }
+  
+  /* Gradient utilities */
+  .bg-gradient-primary {
+    @apply bg-gradient-to-r from-primary to-blue-500;
+  }
+  
+  /* Shadow utilities */
+  .shadow-sm-subtle {
+    @apply shadow-sm;
+  }
+  
+  /* Responsive utilities */
+  .container-responsive {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
   }
 }
 

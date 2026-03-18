@@ -9,9 +9,22 @@ import AIChatBotLoader from "./components/AIChatBotLoader"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Rwanda School Bridge System (RSBS)",
-  description: "Comprehensive school management system for Rwanda - Connecting students, schools, and education",
-    generator: 'v0.dev'
+  title: "RSBS - Rwanda School Bridge System",
+  description: "Modern school management system for Rwanda. Connect students, teachers, and schools with powerful analytics and collaboration tools.",
+  generator: 'v0.dev',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
+  keywords: ['school', 'management', 'Rwanda', 'education', 'dashboard', 'students', 'teachers'],
+  authors: [{ name: 'RSBS Team' }],
+  openGraph: {
+    title: 'RSBS - Rwanda School Bridge System',
+    description: 'Modern school management system for Rwanda',
+    type: 'website',
+  },
 }
 
 export default function RootLayout({
