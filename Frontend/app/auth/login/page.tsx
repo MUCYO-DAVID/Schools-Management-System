@@ -3,6 +3,10 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { LogIn } from 'lucide-react';
+import { Button } from '@/components/design-system/button';
+import { Input } from '@/components/design-system/input';
+import { Card } from '@/components/design-system/card';
 
 const LoginPage = () => {
   const backendUrl =
@@ -10,11 +14,13 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
     try {
       const response = await fetch(`${backendUrl}/api/auth/login`, {
@@ -35,11 +41,13 @@ const LoginPage = () => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         if (data.user.role === 'admin') {
-          router.push('/admin');
+          router.push('/admin/dashboard');
         } else if (data.user.role === 'leader') {
           router.push('/schools');
+        } else if (data.user.role === 'teacher') {
+          router.push('/teacher/dashboard');
         } else {
-          router.push('/student');
+          router.push('/student/dashboard');
         }
       } else {
         localStorage.setItem('userEmailForVerification', email);
@@ -48,81 +56,81 @@ const LoginPage = () => {
       }
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4">
-      <div className="relative flex w-full max-w-4xl bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-        {/* Left Section - Rwanda Flag Inspired */}
-        <div className="w-1/2 bg-gradient-to-br from-blue-500 via-yellow-400 to-green-500 flex flex-col items-center justify-center p-8 text-white">
-          <div className="text-4xl font-bold mb-4">AMU</div>
-          <h2 className="text-2xl font-semibold text-center mb-6">Capturing Moments, Creating Memories</h2>
-          <p className="text-center text-sm">Log in to continue your journey with us.</p>
-          <div className="absolute bottom-4 flex space-x-2">
-            <span className="block w-2 h-2 bg-gray-400 rounded-full"></span>
-            <span className="block w-2 h-2 bg-white rounded-full"></span>
-            <span className="block w-2 h-2 bg-gray-400 rounded-full"></span>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
+      <div className="w-full max-w-md">
+        {/* Brand section */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary mb-4">
+            <LogIn className="text-white" size={24} />
           </div>
+          <h1 className="text-3xl font-bold text-foreground">Rwanda School Bridge</h1>
+          <p className="text-muted-foreground mt-2">Sign in to your account</p>
         </div>
 
-        {/* Right Section - Login Form */}
-        <div className="w-1/2 p-8">
-          <h2 className="text-3xl font-bold text-white mb-2">Log in to your account</h2>
-          <p className="text-gray-400 mb-6">
-            Don't have an account?{' '}
-            <Link href="/auth/signup" className="text-purple-400 hover:underline">
-              Sign up
-            </Link>
-          </p>
+        {/* Login card */}
+        <Card variant="elevated">
+          {error && (
+            <div className="p-4 mb-4 bg-danger/10 border border-danger/20 rounded-lg">
+              <p className="text-sm text-danger">{error}</p>
+            </div>
+          )}
 
-          {error && <p className="text-red-500 mb-4">{error}</p>}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <input
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <Input
               type="email"
-              placeholder="Email"
-              className="w-full p-3 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              label="Email"
+              disabled={isLoading}
             />
-            <div className="relative">
-              <input
-                type="password"
-                placeholder="Enter your password"
-                className="w-full p-3 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 pr-10"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              {/* You can add an eye icon here to toggle password visibility */}
+
+            <Input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              label="Password"
+              disabled={isLoading}
+            />
+
+            <div className="flex items-center justify-between text-sm">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" className="rounded border-input" />
+                <span className="text-muted-foreground">Remember me</span>
+              </label>
+              <Link href="/auth/forgot-password" className="text-primary hover:underline">
+                Forgot password?
+              </Link>
             </div>
-            <button
-              type="submit"
-              className="w-full p-3 rounded-md bg-purple-600 text-white font-semibold hover:bg-purple-700 transition duration-200"
-            >
-              Log in
-            </button>
+
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Signing in...' : 'Sign In'}
+            </Button>
           </form>
 
-          <div className="flex items-center my-6">
-            <div className="flex-grow border-t border-gray-700"></div>
-            <span className="mx-4 text-gray-500">Or log in with</span>
-            <div className="flex-grow border-t border-gray-700"></div>
+          <div className="mt-6 pt-6 border-t border-border">
+            <p className="text-center text-sm text-muted-foreground">
+              Don't have an account?{' '}
+              <Link href="/auth/signup" className="font-medium text-primary hover:underline">
+                Create one
+              </Link>
+            </p>
           </div>
+        </Card>
 
-          <div className="flex space-x-4">
-            <button className="flex-1 flex items-center justify-center p-3 rounded-md bg-gray-700 text-white hover:bg-gray-600 transition duration-200">
-              <img src="/google-icon.svg" alt="Google" className="w-5 h-5 mr-2" />
-              Google
-            </button>
-            <button className="flex-1 flex items-center justify-center p-3 rounded-md bg-gray-700 text-white hover:bg-gray-600 transition duration-200">
-              <img src="/apple-icon.svg" alt="Apple" className="w-5 h-5 mr-2" />
-              Apple
-            </button>
-          </div>
-        </div>
+        {/* Footer text */}
+        <p className="text-center text-xs text-muted-foreground mt-6">
+          Protected by enterprise-grade security
+        </p>
       </div>
     </div>
   );

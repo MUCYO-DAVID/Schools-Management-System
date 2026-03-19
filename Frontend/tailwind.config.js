@@ -20,6 +20,24 @@ module.exports = {
         // NESA/REB colors
         "nesa-blue": "#1E40AF",
         "nesa-green": "#059669",
+        // Modern slate palette
+        slate: {
+          50: "rgb(var(--slate-50))",
+          100: "rgb(var(--slate-100))",
+          200: "rgb(var(--slate-200))",
+          300: "rgb(var(--slate-300))",
+          400: "rgb(var(--slate-400))",
+          500: "rgb(var(--slate-500))",
+          600: "rgb(var(--slate-600))",
+          700: "rgb(var(--slate-700))",
+          800: "rgb(var(--slate-800))",
+          900: "rgb(var(--slate-900))",
+        },
+        // Status colors
+        success: "rgb(var(--success))",
+        warning: "rgb(var(--warning))",
+        danger: "rgb(var(--danger))",
+        info: "rgb(var(--info))",
         // shadcn/ui colors
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

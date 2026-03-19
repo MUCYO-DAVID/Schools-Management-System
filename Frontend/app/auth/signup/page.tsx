@@ -4,7 +4,10 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../providers/AuthProvider';
-import { GraduationCap, School, Users, BookOpen, Award, Star } from 'lucide-react';
+import { GraduationCap } from 'lucide-react';
+import { Button } from '@/components/design-system/button';
+import { Input } from '@/components/design-system/input';
+import { Card } from '@/components/design-system/card';
 
 const SignUpPage = () => {
   const backendUrl =
@@ -89,43 +92,24 @@ const SignUpPage = () => {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-gradient-to-br from-blue-900 via-blue-800 to-green-700 relative overflow-hidden flex items-center justify-center p-3">
-      {/* Floating decorative icons */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <GraduationCap className="absolute top-20 left-10 w-16 h-16 text-white/10 animate-float" style={{ animationDelay: '0s' }} />
-        <School className="absolute top-40 right-20 w-20 h-20 text-white/10 animate-float" style={{ animationDelay: '1s' }} />
-        <BookOpen className="absolute bottom-20 left-20 w-14 h-14 text-white/10 animate-float" style={{ animationDelay: '2s' }} />
-        <Award className="absolute bottom-40 right-10 w-18 h-18 text-white/10 animate-float" style={{ animationDelay: '1.5s' }} />
-      </div>
-
-      <div className="relative z-10 w-full max-w-4xl">
-        {/* Header */}
-        <div className="text-center mb-5">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 via-yellow-400 to-green-500 rounded-lg"></div>
-            <h1 className="text-2xl font-bold text-white">RSBS</h1>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
+      <div className="w-full max-w-md">
+        {/* Brand section */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary mb-4">
+            <GraduationCap className="text-white" size={24} />
           </div>
-          <p className="text-blue-100 text-sm">Rwanda School Bridge System</p>
+          <h1 className="text-3xl font-bold text-foreground">Rwanda School Bridge</h1>
+          <p className="text-muted-foreground mt-2">Create your account</p>
         </div>
 
-        {/* Main Card */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden">
-          <div className="p-6 md:p-8">
-            <div className="text-center mb-5">
-              <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-2">Create your account</h2>
-              <p className="text-gray-600">
-                Already have an account?{' '}
-                <Link href="/auth/signin" className="font-medium text-blue-600 hover:text-blue-700">
-                  Sign in
-                </Link>
-              </p>
+        {/* Signup card */}
+        <Card variant="elevated">
+          {error && (
+            <div className="p-4 mb-4 bg-danger/10 border border-danger/20 rounded-lg">
+              <p className="text-sm text-danger">{error}</p>
             </div>
-
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{error}</p>
-              </div>
-            )}
+          )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
