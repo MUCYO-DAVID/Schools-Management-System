@@ -3,7 +3,8 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
-import { Menu, X, Globe, LogOut, User, Bell, MessageCircle, Settings } from "lucide-react"
+import { Menu, X, Globe, LogOut, User, Bell, MessageCircle, Settings, Moon, Sun } from "lucide-react"
+import { useTheme } from "next-themes"
 import { useLanguage } from "../providers/LanguageProvider"
 import { useAuth } from "../providers/AuthProvider"
 import { fetchInbox, markMessageRead } from "../api/portal"
@@ -14,9 +15,11 @@ export default function Navigation() {
   const backendUrl =
     process.env.NEXT_PUBLIC_BACKEND_URL || "https://rwandaschoolsbridgesystem.onrender.com"
   const [isOpen, setIsOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
   const { language, setLanguage, t } = useLanguage()
   const { user, isAuthenticated, logout } = useAuth()
+  const { theme, setTheme } = useTheme()
   const [unreadCount, setUnreadCount] = useState(0)
   const [inboxPreview, setInboxPreview] = useState<any[]>([])
   const [showNotifications, setShowNotifications] = useState(false)
@@ -24,6 +27,10 @@ export default function Navigation() {
   const [notificationCount, setNotificationCount] = useState(0)
   const [showChat, setShowChat] = useState(false)
   const [chatUnreadCount, setChatUnreadCount] = useState(0)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -162,52 +169,62 @@ export default function Navigation() {
   const isActive = (path: string) => pathname === path
 
   return (
-    <nav className="bg-blue-900 shadow-lg sticky top-0 z-50">
+    <nav className="bg-rwanda-blue dark:bg-neutral-900 shadow-md sticky top-0 z-50 border-b border-white border-opacity-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <Link href="/home" className="flex items-center space-x-2">
-              <div className="w-7 h-7 bg-gradient-to-r from-blue-500 via-yellow-400 to-green-500 rounded"></div>
-              <span className="text-white font-bold text-base">RSBS</span>
+            <Link href="/home" className="flex items-center space-x-2 group">
+              <div className="w-8 h-8 bg-gradient-to-r from-rwanda-blue via-rwanda-yellow to-rwanda-green rounded-lg shadow-sm group-hover:shadow-md transition-shadow"></div>
+              <span className="text-white font-bold text-lg hidden sm:inline">RSBS</span>
             </Link>
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-1">
             {navItems.map((item) => (
               <Link
                 key={item.path}
                 href={item.path}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive(item.path) ? "bg-blue-700 text-white" : "text-blue-100 hover:bg-blue-800 hover:text-white"
+                className={`px-lg py-md rounded-md text-body-md font-medium transition-all duration-200 ${isActive(item.path) ? "bg-white bg-opacity-20 text-white" : "text-white hover:bg-white hover:bg-opacity-10"
                   }`}
               >
                 {item.label}
               </Link>
             ))}
 
+            {/* Theme Toggle */}
+            {mounted && (
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="flex items-center space-x-sm px-lg py-md rounded-md text-body-sm font-medium text-white hover:bg-white hover:bg-opacity-10 transition-all duration-200"
+              >
+                {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
+            )}
+
             {/* Language Toggle */}
             <button
               onClick={() => setLanguage(language === "en" ? "rw" : "en")}
-              className="flex items-center space-x-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-blue-100 hover:bg-blue-800 hover:text-white transition-colors"
+              className="flex items-center space-x-sm px-lg py-md rounded-md text-body-sm font-medium text-white hover:bg-white hover:bg-opacity-10 transition-all duration-200"
             >
-              <Globe className="w-3.5 h-3.5" />
+              <Globe className="w-4 h-4" />
               <span>{language === "en" ? "RW" : "EN"}</span>
             </button>
 
             {/* User Info and Logout */}
             {isAuthenticated && user ? (
-              <div className="flex items-center space-x-3 ml-2 pl-3 border-l border-blue-700">
+              <div className="flex items-center space-x-md ml-lg pl-lg border-l border-white border-opacity-20">
                 {/* Chat Button */}
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setShowChat(true)}
-                    className="relative text-blue-100 hover:text-white"
+                    className="relative text-white hover:bg-white hover:bg-opacity-10 p-md rounded-lg transition-all duration-200"
                     title="Messages"
                   >
-                    <MessageCircle className="w-4 h-4" />
+                    <MessageCircle className="w-5 h-5" />
                     {chatUnreadCount > 0 && (
-                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] rounded-full px-1.5">
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
                         {chatUnreadCount}
                       </span>
                     )}
@@ -219,19 +236,19 @@ export default function Navigation() {
                   <button
                     type="button"
                     onClick={() => setShowNotifications((prev) => !prev)}
-                    className="relative text-blue-100 hover:text-white"
+                    className="relative text-white hover:bg-white hover:bg-opacity-10 p-md rounded-lg transition-all duration-200"
                     title="Notifications"
                   >
-                    <Bell className="w-4 h-4" />
+                    <Bell className="w-5 h-5" />
                     {(unreadCount + notificationCount) > 0 && (
-                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] rounded-full px-1.5">
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
                         {unreadCount + notificationCount}
                       </span>
                     )}
                   </button>
                   {showNotifications && (
-                    <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-[500px] overflow-hidden">
-                      <div className="px-3 py-2 border-b border-gray-200 text-xs font-semibold text-gray-600">
+                    <div className="absolute right-0 mt-2 w-96 bg-card border border-border rounded-lg shadow-lg dark:shadow-dark-lg z-50 max-h-[500px] overflow-hidden">
+                      <div className="px-lg py-md border-b border-border text-body-sm font-semibold text-muted-foreground">
                         Notifications ({unreadCount + notificationCount} unread)
                       </div>
                       <div className="max-h-96 overflow-y-auto">
@@ -306,24 +323,23 @@ export default function Navigation() {
                 </div>
                 <Link
                   href="/profile"
-                  className="flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium text-blue-100 hover:bg-blue-800 hover:text-white transition-colors"
+                  className="flex items-center space-x-sm px-lg py-md rounded-lg text-body-sm font-medium text-white hover:bg-white hover:bg-opacity-10 transition-all duration-200"
                   title="Profile"
                 >
                   <Settings className="w-4 h-4" />
                   <span className="hidden lg:inline">Profile</span>
                 </Link>
-                <div className="flex items-center space-x-2 text-blue-100 text-sm">
-                  <User className="w-4 h-4" />
-                  <span className="hidden lg:inline">
-                    {user.first_name} {user.last_name}
-                  </span>
-                  <span className="hidden md:inline lg:hidden">
+                <div className="flex items-center space-x-md text-white text-body-sm">
+                  <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <span className="hidden lg:inline font-medium">
                     {user.first_name}
                   </span>
                 </div>
                 <button
                   onClick={logout}
-                  className="flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium text-blue-100 hover:bg-red-600 hover:text-white transition-colors"
+                  className="flex items-center space-x-sm px-lg py-md rounded-lg text-body-sm font-medium text-white hover:bg-red-500 hover:bg-opacity-90 transition-all duration-200"
                   title="Logout"
                 >
                   <LogOut className="w-4 h-4" />
@@ -333,7 +349,7 @@ export default function Navigation() {
             ) : (
               <Link
                 href="/auth/signin"
-                className="px-3 py-1.5 rounded-md text-sm font-medium text-blue-100 hover:bg-blue-800 hover:text-white transition-colors"
+                className="px-lg py-md rounded-lg text-body-sm font-medium text-white bg-white bg-opacity-20 hover:bg-opacity-30 transition-all duration-200"
               >
                 Sign In
               </Link>
@@ -358,25 +374,38 @@ export default function Navigation() {
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+          <div className="md:hidden bg-background dark:bg-neutral-800 border-t border-border">
+            <div className="px-md pt-md pb-lg space-y-sm">
               {navItems.map((item) => (
                 <Link
                   key={item.path}
                   href={item.path}
                   onClick={() => setIsOpen(false)}
-                  className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${isActive(item.path) ? "bg-blue-700 text-white" : "text-blue-100 hover:bg-blue-800 hover:text-white"
+                  className={`block px-lg py-md rounded-lg text-body-md font-medium transition-all duration-200 ${isActive(item.path) ? "bg-rwanda-blue text-white" : "text-foreground hover:bg-neutral-100 dark:hover:bg-neutral-700"
                     }`}
                 >
                   {item.label}
                 </Link>
               ))}
+              {mounted && (
+                <button
+                  onClick={() => {
+                    setTheme(theme === "dark" ? "light" : "dark")
+                    setIsOpen(false)
+                  }}
+                  className="flex items-center space-x-sm px-lg py-md rounded-lg text-body-md font-medium text-foreground hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-all duration-200 w-full"
+                >
+                  {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                  <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
+                </button>
+              )}
+
               <button
                 onClick={() => {
                   setLanguage(language === "en" ? "rw" : "en")
                   setIsOpen(false)
                 }}
-                className="flex items-center space-x-1 px-3 py-2 rounded-md text-base font-medium text-blue-100 hover:bg-blue-800 hover:text-white transition-colors w-full"
+                className="flex items-center space-x-sm px-lg py-md rounded-lg text-body-md font-medium text-foreground hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-all duration-200 w-full"
               >
                 <Globe className="w-4 h-4" />
                 <span>{language === "en" ? "Kinyarwanda" : "English"}</span>
@@ -385,19 +414,23 @@ export default function Navigation() {
               {/* Mobile User Info and Logout */}
               {isAuthenticated && user ? (
                 <>
-                  <div className="flex items-center space-x-2 px-3 py-2 text-blue-100 border-t border-blue-700 mt-2 pt-2">
-                    <User className="w-4 h-4" />
-                    <span className="text-sm">
-                      {user.first_name} {user.last_name}
-                    </span>
-                    <span className="text-xs text-blue-300 ml-auto">
-                      ({user.role})
-                    </span>
+                  <div className="flex items-center space-x-md px-lg py-md text-foreground border-t border-border mt-md pt-md">
+                    <div className="w-8 h-8 bg-rwanda-blue bg-opacity-20 rounded-full flex items-center justify-center">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-body-md font-medium">
+                        {user.first_name} {user.last_name}
+                      </p>
+                      <p className="text-body-sm text-muted-foreground capitalize">
+                        {user.role}
+                      </p>
+                    </div>
                   </div>
                   <Link
                     href="/profile"
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium text-blue-100 hover:bg-blue-800 hover:text-white transition-colors"
+                    className="flex items-center gap-sm px-lg py-md rounded-lg text-body-md font-medium text-foreground hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-all duration-200 w-full"
                   >
                     <Settings className="w-4 h-4" />
                     Profile
@@ -411,14 +444,14 @@ export default function Navigation() {
                           : "/student"
                     }
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center justify-between px-3 py-2 rounded-md text-base font-medium text-blue-100 hover:bg-blue-800 hover:text-white transition-colors"
+                    className="flex items-center justify-between px-lg py-md rounded-lg text-body-md font-medium text-foreground hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-all duration-200 w-full"
                   >
-                    <span className="flex items-center gap-2">
+                    <span className="flex items-center gap-sm">
                       <Bell className="w-4 h-4" />
                       Notifications
                     </span>
                     {(unreadCount + notificationCount) > 0 && (
-                      <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                      <span className="badge-primary text-xs">
                         {unreadCount + notificationCount}
                       </span>
                     )}
@@ -428,7 +461,7 @@ export default function Navigation() {
                       logout()
                       setIsOpen(false)
                     }}
-                    className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-blue-100 hover:bg-red-600 hover:text-white transition-colors w-full mt-2"
+                    className="flex items-center space-x-sm px-lg py-md rounded-lg text-body-md font-medium text-white bg-red-500 hover:bg-red-600 transition-all duration-200 w-full mt-md"
                   >
                     <LogOut className="w-4 h-4" />
                     <span>Logout</span>
@@ -438,7 +471,7 @@ export default function Navigation() {
                 <Link
                   href="/auth/signin"
                   onClick={() => setIsOpen(false)}
-                  className="block px-3 py-2 rounded-md text-base font-medium text-blue-100 hover:bg-blue-800 hover:text-white transition-colors mt-2"
+                  className="block px-lg py-md rounded-lg text-body-md font-medium text-white bg-rwanda-blue hover:bg-rwanda-blue-dark transition-all duration-200 mt-md text-center"
                 >
                   Sign In
                 </Link>
