@@ -106,7 +106,13 @@ router.get('/schools/nearby', async (req, res) => {
               ) AS distance
        FROM schools
        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
-       HAVING distance <= $3
+       AND (
+         6371 * acos(
+           cos(radians($1)) * cos(radians(latitude)) * 
+           cos(radians(longitude) - radians($2)) + 
+           sin(radians($1)) * sin(radians(latitude))
+         )
+       ) <= $3
        ORDER BY distance ASC`,
       [lat, lng, rad]
     );
@@ -290,24 +296,42 @@ router.put('/schools/:id', authMiddleware, leaderMiddleware, upload.array('image
       }
     }
 
-    // Normalize imagesToDelete into an array
+    // Normalize imagesToDelete into an array and extract paths
     let toDelete = [];
     if (imagesToDelete) {
-      if (Array.isArray(imagesToDelete)) {
-        toDelete = imagesToDelete;
-      } else {
-        toDelete = [imagesToDelete];
-      }
+      const deleteItems = Array.isArray(imagesToDelete) ? imagesToDelete : [imagesToDelete];
+      toDelete = deleteItems.map(url => {
+        if (!url) return '';
+        try {
+          // If it's a full URL, extract the path. Otherwise, it might already be a path.
+          if (url.startsWith('http')) {
+            const parsedUrl = new URL(url);
+            return parsedUrl.pathname;
+          }
+          return url;
+        } catch (e) {
+          return url;
+        }
+      });
     }
 
     // Remove deleted images from the list and disk
-    toDelete.forEach((url) => {
-      const index = currentImages.indexOf(url);
+    toDelete.forEach((imagePath) => {
+      if (!imagePath) return;
+      
+      const index = currentImages.indexOf(imagePath);
       if (index !== -1) {
         currentImages.splice(index, 1);
       }
-      const filePath = path.join(__dirname, '..', url.replace(/^\/+/, ''));
-      fs.unlink(filePath, () => { });
+      
+      // Safety check: only delete if it's in our uploads folder
+      if (imagePath.includes('/uploads/')) {
+        const relativePath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
+        const filePath = path.join(__dirname, '..', relativePath);
+        if (fs.existsSync(filePath)) {
+          fs.unlink(filePath, () => { });
+        }
+      }
     });
 
     // Add newly uploaded images
@@ -316,6 +340,13 @@ router.put('/schools/:id', authMiddleware, leaderMiddleware, upload.array('image
 
     const englishName = name;
     const kinyarwandaName = name_rw || nameRw || '';
+
+    // Helper to parse numbers safely and handle "null" strings from FormData
+    const safeNum = (val, defaultVal = null) => {
+      if (val === undefined || val === null || val === "" || val === "null") return defaultVal;
+      const n = Number(val);
+      return isNaN(n) ? defaultVal : n;
+    };
 
     const result = await pool.query(
       `UPDATE schools
@@ -338,11 +369,11 @@ router.put('/schools/:id', authMiddleware, leaderMiddleware, upload.array('image
         location,
         type,
         level,
-        students ? Number(students) : 0,
-        established ? Number(established) : null,
+        safeNum(students, 0),
+        safeNum(established),
         finalImages.length ? JSON.stringify(finalImages) : null,
-        latitude ? Number(latitude) : null,
-        longitude ? Number(longitude) : null,
+        safeNum(latitude),
+        safeNum(longitude),
         id,
       ]
     );

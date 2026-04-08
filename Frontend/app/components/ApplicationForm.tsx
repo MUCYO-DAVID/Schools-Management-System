@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Loader2, XCircle, Upload, FileText, Trash2 } from 'lucide-react';
+import { X, Loader2, XCircle, Upload, FileText, Trash2, Sparkles, ShieldCheck } from 'lucide-react';
 import { createApplication, ApplicationFormData } from '../api/student';
 import type { School } from '../types';
 
@@ -40,27 +40,23 @@ export default function ApplicationForm({ school, onClose, onSuccess }: Applicat
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-      // Validate file types
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
       const invalidFiles = newFiles.filter(file => !validTypes.includes(file.type));
       
       if (invalidFiles.length > 0) {
-        setError('Only JPEG, PNG, and PDF files are allowed');
+        setError('Only JPEG, PNG, and PDF allowed');
         return;
       }
 
-      // Validate file sizes (5MB max)
-      const oversizedFiles = newFiles.filter(file => file.size > 5 * 1024 * 1024);
-      if (oversizedFiles.length > 0) {
-        setError('Files must be smaller than 5MB');
+      if (newFiles.some(file => file.size > 5 * 1024 * 1024)) {
+        setError('Files must be < 5MB');
         return;
       }
 
-      // Add files (max 5 total)
       setDocuments(prev => {
         const combined = [...prev, ...newFiles];
         if (combined.length > 5) {
-          setError('Maximum 5 documents allowed');
+          setError('Max 5 documents');
           return prev;
         }
         setError(null);
@@ -83,260 +79,163 @@ export default function ApplicationForm({ school, onClose, onSuccess }: Applicat
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to submit application');
+      setError(err.message || 'Submission failed');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-gray-900">Apply to {school.name}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X className="w-6 h-6" />
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-[100]">
+      <div className="bg-[#141418] border border-white/10 rounded-[2.5rem] max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
+        <div className="p-6 border-b border-white/5 flex justify-between items-center bg-gradient-to-r from-purple-900/20 to-transparent">
+          <div className="flex items-center gap-3">
+             <div className="w-8 h-8 rounded-xl bg-purple-600 flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-white" />
+             </div>
+             <div>
+                <h2 className="text-sm font-black text-white italic uppercase tracking-widest">Enrolment Form</h2>
+                <p className="text-[10px] text-slate-500 font-bold">{school.name}</p>
+             </div>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full text-slate-500 transition-colors">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
+            <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
+              <XCircle className="w-3 h-3" /> {error}
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                First Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="first_name"
-                value={formData.first_name}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              />
-            </div>
+          <div className="space-y-4">
+             <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">First Name</label>
+                   <input
+                     name="first_name"
+                     value={formData.first_name}
+                     onChange={handleChange}
+                     required
+                     className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white focus:border-purple-500/50 focus:ring-0 transition-all"
+                   />
+                </div>
+                <div className="space-y-1.5">
+                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Last Name</label>
+                   <input
+                     name="last_name"
+                     value={formData.last_name}
+                     onChange={handleChange}
+                     required
+                     className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white focus:border-purple-500/50 focus:ring-0 transition-all"
+                   />
+                </div>
+             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Last Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="last_name"
-                value={formData.last_name}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-              <input
-                type="date"
-                name="date_of_birth"
-                value={formData.date_of_birth}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Current Grade</label>
-              <input
-                type="text"
-                name="current_grade"
-                value={formData.current_grade}
-                onChange={handleChange}
-                placeholder="e.g., Grade 6"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Desired Grade</label>
-              <input
-                type="text"
-                name="desired_grade"
-                value={formData.desired_grade}
-                onChange={handleChange}
-                placeholder="e.g., Grade 7"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Previous School</label>
-              <input
-                type="text"
-                name="previous_school"
-                value={formData.previous_school}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              />
-            </div>
+             <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Email Address</label>
+                   <input
+                     type="email"
+                     name="email"
+                     value={formData.email}
+                     onChange={handleChange}
+                     required
+                     className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white focus:border-purple-500/50 focus:ring-0 transition-all"
+                   />
+                </div>
+                <div className="space-y-1.5">
+                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Target Grade</label>
+                   <input
+                     name="desired_grade"
+                     value={formData.desired_grade}
+                     onChange={handleChange}
+                     placeholder="e.g. Grade 9"
+                     className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white focus:border-purple-500/50 focus:ring-0 transition-all"
+                   />
+                </div>
+             </div>
           </div>
 
-          <div className="border-t pt-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Parent/Guardian Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Parent/Guardian Name</label>
+          <div className="space-y-4">
+             <div className="flex items-center gap-2 mb-2">
+                <div className="h-px bg-white/5 flex-1" />
+                <span className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-600">Legal Guardian Details</span>
+                <div className="h-px bg-white/5 flex-1" />
+             </div>
+             <div className="grid grid-cols-2 gap-3">
                 <input
-                  type="text"
                   name="parent_name"
                   value={formData.parent_name}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  placeholder="Guardian Name"
+                  className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white focus:border-purple-500/50"
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Parent/Guardian Email</label>
                 <input
-                  type="email"
-                  name="parent_email"
-                  value={formData.parent_email}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Parent/Guardian Phone</label>
-                <input
-                  type="tel"
                   name="parent_phone"
                   value={formData.parent_phone}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  placeholder="Contact Phone"
+                  className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white focus:border-purple-500/50"
                 />
-              </div>
-            </div>
+             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-            <textarea
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            />
-          </div>
+          <div className="space-y-4">
+             <div className="flex items-center gap-2 mb-2">
+                <div className="h-px bg-white/5 flex-1" />
+                <span className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-600">Documentation</span>
+                <div className="h-px bg-white/5 flex-1" />
+             </div>
+             
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label className="flex flex-col items-center justify-center p-6 bg-white/5 border border-dashed border-white/10 rounded-2xl hover:border-purple-500/50 transition-all cursor-pointer group">
+                  <Upload className="w-5 h-5 text-slate-500 group-hover:text-purple-400 mb-2" />
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Upload Credentials</span>
+                  <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf" onChange={handleFileChange} className="hidden" />
+                </label>
 
-          <div className="border-t pt-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Supporting Documents</h3>
-            <p className="text-sm text-gray-600 mb-3">
-              Upload documents such as report cards, certificates, ID copies, etc. (Max 5 files, 5MB each)
-            </p>
-            
-            <div className="space-y-3">
-              <label className="flex items-center justify-center w-full h-32 px-4 transition bg-white border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 cursor-pointer">
-                <div className="flex flex-col items-center space-y-2">
-                  <Upload className="w-8 h-8 text-gray-400" />
-                  <span className="text-sm text-gray-600">Click to upload documents</span>
-                  <span className="text-xs text-gray-500">JPEG, PNG, PDF (Max 5MB)</span>
-                </div>
-                <input
-                  type="file"
-                  multiple
-                  accept=".jpg,.jpeg,.png,.pdf"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-              </label>
-
-              {documents.length > 0 && (
-                <div className="space-y-2">
+                <div className="space-y-2 max-h-[100px] overflow-y-auto pr-2">
                   {documents.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-5 h-5 text-blue-600" />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{file.name}</p>
-                          <p className="text-xs text-gray-500">{(file.size / 1024).toFixed(1)} KB</p>
-                        </div>
+                    <div key={index} className="flex items-center justify-between p-2 bg-black/40 border border-white/5 rounded-lg group">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText className="w-3 h-3 text-purple-400 shrink-0" />
+                        <span className="text-[10px] text-slate-400 truncate">{file.name}</span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removeDocument(index)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <Trash2 className="w-4 h-4" />
+                      <button type="button" onClick={() => removeDocument(index)} className="text-slate-600 hover:text-rose-500 transition-colors">
+                        <Trash2 className="w-3 h-3" />
                       </button>
                     </div>
                   ))}
+                  {documents.length === 0 && (
+                    <div className="h-full flex items-center justify-center text-[9px] text-slate-600 italic">No files selected</div>
+                  )}
                 </div>
-              )}
-            </div>
+             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Additional Information</label>
-            <textarea
-              name="additional_info"
-              value={formData.additional_info}
-              onChange={handleChange}
-              rows={3}
-              placeholder="Any additional information you'd like to provide..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            />
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                'Submit Application'
-              )}
-            </button>
+          <div className="pt-4 flex items-center gap-3">
+             <div className="flex items-center gap-2 text-emerald-500/60">
+                <ShieldCheck className="w-4 h-4" />
+                <span className="text-[8px] font-black uppercase tracking-widest">Secure Submission</span>
+             </div>
+             <div className="flex-1" />
+             <button
+               type="button"
+               onClick={onClose}
+               className="px-6 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-500 hover:bg-white/5 transition-all"
+             >
+               Discard
+             </button>
+             <button
+               type="submit"
+               disabled={loading}
+               className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-xl shadow-purple-600/20 transition-all disabled:opacity-50"
+             >
+               {loading ? 'Processing...' : 'Submit Application'}
+             </button>
           </div>
         </form>
       </div>

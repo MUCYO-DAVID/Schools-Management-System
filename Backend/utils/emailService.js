@@ -18,11 +18,14 @@ const createTransporter = () => {
   if (process.env.EMAIL_SERVICE === 'smtp') {
     return nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT || 587,
+      port: parseInt(process.env.SMTP_PORT) || 587,
       secure: process.env.SMTP_SECURE === 'true',
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASSWORD
+      },
+      tls: {
+        rejectUnauthorized: false
       }
     });
   }
@@ -41,6 +44,18 @@ const createTransporter = () => {
 };
 
 const transporter = createTransporter();
+
+// Verify SMTP connection on startup
+if (process.env.EMAIL_SERVICE === 'smtp' || process.env.EMAIL_SERVICE === 'gmail') {
+  transporter.verify((err) => {
+    if (err) {
+      console.error('❌ Email service FAILED to connect:', err.message);
+      console.error('   Fix: Check EMAIL credentials in .env (Gmail App Password may be expired)');
+    } else {
+      console.log('✅ Email service connected and ready');
+    }
+  });
+}
 
 // Send application status email to student
 const sendApplicationStatusEmail = async (application, status, rejectionReason = null) => {

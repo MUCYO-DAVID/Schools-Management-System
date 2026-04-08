@@ -28,14 +28,16 @@ const authMiddleware = (req, res, next) => {
 };
 
 const adminMiddleware = (req, res, next) => {
-    if (!req.user || req.user.role !== 'admin') {
+    const role = req.user?.role?.toLowerCase();
+    if (!req.user || (role !== 'admin' && role !== 'administrator')) {
         return res.status(403).json({ message: 'Access denied, admin privileges required' });
     }
     next();
 };
 
 const leaderMiddleware = (req, res, next) => {
-    if (!req.user || (req.user.role !== 'leader' && req.user.role !== 'admin')) {
+    const role = req.user?.role?.toLowerCase();
+    if (!req.user || (role !== 'leader' && role !== 'admin' && role !== 'administrator')) {
         return res.status(403).json({ message: 'Access denied, school leader or admin privileges required' });
     }
     next();

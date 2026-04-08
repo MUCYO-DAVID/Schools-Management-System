@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../providers/AuthProvider';
 import { GraduationCap, School, Users, BookOpen, Award, Star } from 'lucide-react';
+import AuthBackground from '../../components/AuthBackground';
 
 const SignUpPage = () => {
   const backendUrl =
@@ -37,12 +38,12 @@ const SignUpPage = () => {
     }
 
     try {
-      const payload: any = { 
-        first_name: firstName, 
-        last_name: lastName, 
-        email, 
-        password, 
-        role 
+      const payload: any = {
+        first_name: firstName,
+        last_name: lastName,
+        email,
+        password,
+        role
       };
 
       // Add teacher-specific fields if role is teacher
@@ -69,7 +70,7 @@ const SignUpPage = () => {
       // Auto-login the user after successful registration
       if (data.token && data.user) {
         login(data.token, data.user);
-        
+
         // Redirect based on role
         if (data.user.role === 'admin') {
           router.push('/admin');
@@ -89,225 +90,208 @@ const SignUpPage = () => {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-gradient-to-br from-blue-900 via-blue-800 to-green-700 relative overflow-hidden flex items-center justify-center p-3">
-      {/* Floating decorative icons */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <GraduationCap className="absolute top-20 left-10 w-16 h-16 text-white/10 animate-float" style={{ animationDelay: '0s' }} />
-        <School className="absolute top-40 right-20 w-20 h-20 text-white/10 animate-float" style={{ animationDelay: '1s' }} />
-        <BookOpen className="absolute bottom-20 left-20 w-14 h-14 text-white/10 animate-float" style={{ animationDelay: '2s' }} />
-        <Award className="absolute bottom-40 right-10 w-18 h-18 text-white/10 animate-float" style={{ animationDelay: '1.5s' }} />
-      </div>
+    <AuthBackground>
+      {/* Header Logo */}
+      <header className="relative z-20 px-6 sm:px-12 py-6">
+        <Link href="/" className="flex items-center gap-2 group">
+          <img src="/logo.png" alt="RSBS Logo" className="w-10 h-10 object-contain" />
+          <h1 className="text-2xl font-black text-white tracking-tight group-hover:text-purple-400 transition-colors">
+            RSBS
+          </h1>
+        </Link>
+      </header>
 
-      <div className="relative z-10 w-full max-w-4xl">
-        {/* Header */}
-        <div className="text-center mb-5">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 via-yellow-400 to-green-500 rounded-lg"></div>
-            <h1 className="text-2xl font-bold text-white">RSBS</h1>
-          </div>
-          <p className="text-blue-100 text-sm">Rwanda School Bridge System</p>
-        </div>
+      {/* Main Content */}
+      <main className="relative z-20 flex flex-1 flex-col justify-center items-center px-4 pb-20">
+        <div className="w-full max-w-[500px] bg-black/80 backdrop-blur-md rounded-2xl p-8 md:p-14 border border-white/10 shadow-2xl">
+          <h2 className="text-white text-3xl font-bold mb-7">Sign Up</h2>
 
-        {/* Main Card */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden">
-          <div className="p-6 md:p-8">
-            <div className="text-center mb-5">
-              <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-2">Create your account</h2>
-              <p className="text-gray-600">
-                Already have an account?{' '}
-                <Link href="/auth/signin" className="font-medium text-blue-600 hover:text-blue-700">
-                  Sign in
-                </Link>
-              </p>
+          {error && (
+            <div className="bg-red-500/20 border border-red-500 text-red-200 rounded-lg p-3 mb-4 text-sm">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="relative">
+                <input
+                  id="firstName"
+                  type="text"
+                  className="w-full bg-[#333] hover:bg-[#444] transition-all rounded-lg px-5 pt-6 pb-2 text-white border-none focus:outline-none focus:ring-2 focus:ring-purple-500 peer h-14"
+                  placeholder=" "
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                />
+                <label
+                  htmlFor="firstName"
+                  className="absolute left-5 top-4 text-[#8c8c8c] text-sm transition-all peer-focus:text-[11px] peer-focus:top-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#8c8c8c] peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:top-2 pointer-events-none"
+                >
+                  First Name
+                </label>
+              </div>
+              <div className="relative">
+                <input
+                  id="lastName"
+                  type="text"
+                  className="w-full bg-[#333] hover:bg-[#444] transition-all rounded-lg px-5 pt-6 pb-2 text-white border-none focus:outline-none focus:ring-2 focus:ring-purple-500 peer h-14"
+                  placeholder=" "
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                />
+                <label
+                  htmlFor="lastName"
+                  className="absolute left-5 top-4 text-[#8c8c8c] text-sm transition-all peer-focus:text-[11px] peer-focus:top-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#8c8c8c] peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:top-2 pointer-events-none"
+                >
+                  Last Name
+                </label>
+              </div>
             </div>
 
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{error}</p>
+            <div className="relative">
+              <input
+                id="email"
+                type="email"
+                className="w-full bg-[#333] hover:bg-[#444] transition-all rounded-lg px-5 pt-6 pb-2 text-white border-none focus:outline-none focus:ring-2 focus:ring-purple-500 peer h-14"
+                placeholder=" "
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <label
+                htmlFor="email"
+                className="absolute left-5 top-4 text-[#8c8c8c] text-sm transition-all peer-focus:text-[11px] peer-focus:top-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#8c8c8c] peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:top-2 pointer-events-none"
+              >
+                Email Address
+              </label>
+            </div>
+
+            <div className="relative">
+              <select
+                id="role"
+                value={role}
+                onChange={(e) => setRole(e.target.value as 'student' | 'leader' | 'teacher')}
+                className="w-full bg-[#333] hover:bg-[#444] transition-all rounded-lg px-4 pt-6 pb-2 text-white border-none focus:outline-none focus:ring-2 focus:ring-purple-500 h-14 appearance-none cursor-pointer"
+                required
+              >
+                <option value="student">Student</option>
+                <option value="teacher">Teacher</option>
+                <option value="leader">School Leader</option>
+              </select>
+              <label
+                htmlFor="role"
+                className="absolute left-4 top-2 text-[#8c8c8c] text-[10px] uppercase tracking-widest font-bold pointer-events-none"
+              >
+                Registering as
+              </label>
+            </div>
+
+            {role === 'leader' && (
+              <p className="text-[12px] text-purple-400 font-medium">
+                Note: School leaders require identity verification questions.
+              </p>
+            )}
+
+            {role === 'teacher' && (
+              <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="relative">
+                  <input
+                    id="schoolName"
+                    type="text"
+                    className="w-full bg-[#333] hover:bg-[#444] rounded-lg px-5 pt-6 pb-2 text-white border-none focus:outline-none focus:ring-2 focus:ring-purple-500 peer h-14"
+                    placeholder=" "
+                    value={schoolName}
+                    onChange={(e) => setSchoolName(e.target.value)}
+                  />
+                  <label htmlFor="schoolName" className="absolute left-5 top-4 text-[#8c8c8c] text-sm transition-all peer-focus:text-[11px] peer-focus:top-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#8c8c8c] peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:top-2 pointer-events-none">
+                    School Name
+                  </label>
+                </div>
+                <div className="relative">
+                  <input
+                    id="subject"
+                    type="text"
+                    className="w-full bg-[#333] hover:bg-[#444] rounded-lg px-5 pt-6 pb-2 text-white border-none focus:outline-none focus:ring-2 focus:ring-purple-500 peer h-14"
+                    placeholder=" "
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                  />
+                  <label htmlFor="subject" className="absolute left-5 top-4 text-[#8c8c8c] text-sm transition-all peer-focus:text-[11px] peer-focus:top-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#8c8c8c] peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:top-2 pointer-events-none">
+                    Subject/Lesson
+                  </label>
+                </div>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
-                    First Name
-                  </label>
-                  <input
-                    id="firstName"
-                    type="text"
-                    placeholder="Enter your first name"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
-                    Last Name
-                  </label>
-                  <input
-                    id="lastName"
-                    type="text"
-                    placeholder="Enter your last name"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-                  I am registering as:
-                </label>
-                <select
-                  id="role"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as 'student' | 'leader' | 'teacher')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
-                  required
-                >
-                  <option value="student">Student</option>
-                  <option value="teacher">Teacher</option>
-                  <option value="leader">School Leader</option>
-                </select>
-                {role === 'leader' && (
-                  <p className="mt-2 text-xs text-yellow-600 bg-yellow-50 p-2 rounded">
-                    ⚠️ School leaders will need to verify their identity with additional questions during login.
-                  </p>
-                )}
-                {role === 'teacher' && (
-                  <p className="mt-2 text-xs text-blue-600 bg-blue-50 p-2 rounded">
-                    ℹ️ Please provide your school and subject information below.
-                  </p>
-                )}
-              </div>
-
-              {role === 'teacher' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="schoolName" className="block text-sm font-medium text-gray-700 mb-1">
-                      School Name
-                    </label>
-                    <input
-                      id="schoolName"
-                      type="text"
-                      placeholder="Enter school name"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      value={schoolName}
-                      onChange={(e) => setSchoolName(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
-                      Subject/Lesson
-                    </label>
-                    <input
-                      id="subject"
-                      type="text"
-                      placeholder="Enter subject (e.g., Mathematics)"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      value={subject}
-                      onChange={(e) => setSubject(e.target.value)}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  placeholder="Create a password"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm Password
-                </label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="Confirm your password"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="flex items-start">
-                <input
-                  id="terms"
-                  type="checkbox"
-                  className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  checked={agreeToTerms}
-                  onChange={(e) => setAgreeToTerms(e.target.checked)}
-                  required
-                />
-                <label htmlFor="terms" className="ml-3 text-sm text-gray-600">
-                  I agree to the{' '}
-                  <Link href="#" className="text-blue-600 hover:text-blue-700 font-medium">
-                    Terms & Conditions
-                  </Link>
-                </label>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white font-semibold py-2.5 px-6 rounded-lg transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            <div className="relative">
+              <input
+                id="password"
+                type="password"
+                className="w-full bg-[#333] hover:bg-[#444] transition-all rounded-lg px-5 pt-6 pb-2 text-white border-none focus:outline-none focus:ring-2 focus:ring-purple-500 peer h-14"
+                placeholder=" "
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <label
+                htmlFor="password"
+                className="absolute left-5 top-4 text-[#8c8c8c] text-sm transition-all peer-focus:text-[11px] peer-focus:top-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#8c8c8c] peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:top-2 pointer-events-none"
               >
-                Create Account
-              </button>
-            </form>
-
-            <div className="mt-6 pt-4 border-t border-gray-200 hidden md:block">
-              <p className="text-center text-sm text-gray-600 mb-4">Join thousands of students and educators</p>
-              <div className="flex justify-center gap-6 text-gray-500">
-                <div className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  <span className="text-sm">50K+ Students</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <School className="w-5 h-5" />
-                  <span className="text-sm">500+ Schools</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Star className="w-5 h-5" />
-                  <span className="text-sm">4.8 Rating</span>
-                </div>
-              </div>
+                Password
+              </label>
             </div>
+
+            <div className="relative">
+              <input
+                id="confirmPassword"
+                type="password"
+                className="w-full bg-[#333] hover:bg-[#444] transition-all rounded-lg px-5 pt-6 pb-2 text-white border-none focus:outline-none focus:ring-2 focus:ring-purple-500 peer h-14"
+                placeholder=" "
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+              <label
+                htmlFor="confirmPassword"
+                className="absolute left-5 top-4 text-[#8c8c8c] text-sm transition-all peer-focus:text-[11px] peer-focus:top-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#8c8c8c] peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:top-2 pointer-events-none"
+              >
+                Confirm Password
+              </label>
+            </div>
+
+            <div className="flex items-center mt-2 group">
+              <input
+                id="terms"
+                type="checkbox"
+                className="w-4 h-4 rounded bg-[#737373] border-none focus:ring-0 focus:ring-offset-0 checked:bg-purple-600 cursor-pointer transition-all"
+                checked={agreeToTerms}
+                onChange={(e) => setAgreeToTerms(e.target.checked)}
+                required
+              />
+              <label htmlFor="terms" className="ml-2 text-[14px] text-[#b3b3b3] cursor-pointer group-hover:text-white transition-colors">
+                I agree to the <Link href="#" className="hover:underline text-white underline-offset-4 decoration-purple-500">Terms & Conditions</Link>
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 transition-all text-white font-bold py-3.5 rounded-lg mt-4 shadow-lg shadow-purple-500/20 active:scale-95"
+            >
+              Sign Up
+            </button>
+          </form>
+
+          <div className="mt-12 text-[#737373] text-[16px]">
+            Already have an account?{' '}
+            <Link href="/auth/signin" className="text-white hover:underline font-medium decoration-purple-500 underline-offset-4">
+              Sign in.
+            </Link>
           </div>
         </div>
-      </div>
-    </div>
+      </main>
+    </AuthBackground>
   );
 };
 

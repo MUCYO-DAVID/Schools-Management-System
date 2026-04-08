@@ -132,14 +132,38 @@ router.get('/surveys/:id/replies', async (req, res) => {
 
 // Create a new survey response
 router.post('/surveys', async (req, res) => {
-  const { school_id, rating, would_recommend, comments } = req.body;
+  const { 
+    school_id, 
+    rating, 
+    would_recommend, 
+    comments,
+    teaching_quality,
+    facilities_quality,
+    safety_quality,
+    ease_of_use
+  } = req.body;
+  const user = getOptionalUser(req);
+  const userId = user?.id ? parseInt(user.id) : null;
 
   try {
     const result = await pool.query(
-      `INSERT INTO surveys (school_id, rating, would_recommend, comments)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO surveys (
+        school_id, user_id, rating, would_recommend, comments, 
+        teaching_quality, facilities_quality, safety_quality, ease_of_use
+      )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [school_id || null, rating || null, would_recommend ?? null, comments || null]
+      [
+        school_id || null, 
+        userId, 
+        rating || null, 
+        would_recommend ?? null, 
+        comments || null,
+        teaching_quality || null,
+        facilities_quality || null,
+        safety_quality || null,
+        ease_of_use || null
+      ]
     );
 
     res.status(201).json(result.rows[0]);
@@ -211,8 +235,8 @@ router.post('/surveys/:id/replies', authMiddleware.authMiddleware, async (req, r
 
   // Prevent leaders from replying to survey comments
   if (userRole === 'leader') {
-    return res.status(403).json({ 
-      message: 'School leaders cannot reply to survey comments to maintain objectivity.' 
+    return res.status(403).json({
+      message: 'School leaders cannot reply to survey comments to maintain objectivity.'
     });
   }
 

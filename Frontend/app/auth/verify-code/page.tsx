@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../providers/AuthProvider';
 import Link from 'next/link';
 import { Shield, AlertCircle } from 'lucide-react';
+import AuthBackground from '../../components/AuthBackground';
 
 export default function VerifyCodePage() {
   const backendUrl =
-    process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
+    process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [emailForVerification, setEmailForVerification] = useState<string | null>(null);
@@ -23,7 +24,7 @@ export default function VerifyCodePage() {
     // For this example, we'll assume it's passed via localStorage or a query param
     const storedEmail = localStorage.getItem('userEmailForVerification');
     const requiresLeader = localStorage.getItem('requiresLeaderQuestions') === 'true';
-    
+
     if (storedEmail) {
       setEmailForVerification(storedEmail);
       setRequiresLeaderQuestions(requiresLeader);
@@ -44,7 +45,7 @@ export default function VerifyCodePage() {
 
     try {
       let requestBody: any = { email: emailForVerification };
-      
+
       if (requiresLeaderQuestions) {
         // For leaders, send answers to verification questions
         if (!leaderAnswer1.trim() || !leaderAnswer2.trim()) {
@@ -79,15 +80,15 @@ export default function VerifyCodePage() {
 
       const { token, user } = await response.json();
       login(token, user); // Log in the user after successful verification
-      
+
       // Clean up verification data
       localStorage.removeItem('userEmailForVerification');
       localStorage.removeItem('requiresLeaderQuestions');
-      
+
       // Check for redirect path (from verification flow)
       const redirectPath = localStorage.getItem('redirectAfterVerification');
       localStorage.removeItem('redirectAfterVerification');
-      
+
       // Also check for redirect from login (in case it wasn't moved to redirectAfterVerification)
       const loginRedirect = localStorage.getItem('redirectAfterLogin');
       localStorage.removeItem('redirectAfterLogin');
@@ -100,8 +101,8 @@ export default function VerifyCodePage() {
         router.push('/admin');
       } else if (user.role === 'leader') {
         router.push('/schools');
-      } else if (user.role === 'student') {
-        router.push('/student');
+      } else if (user.role === 'student' || user.role === 'parent') {
+        router.push('/home');
       } else {
         router.push('/home');
       }
@@ -116,13 +117,13 @@ export default function VerifyCodePage() {
       setError('Email not found to resend code.');
       return;
     }
-    
+
     // Leaders don't need to resend code, they answer questions
     if (requiresLeaderQuestions) {
       setError('Please answer the verification questions above.');
       return;
     }
-    
+
     try {
       // Placeholder for your backend API call to resend the code
       const response = await fetch(`${backendUrl}/api/auth/resend-code`, {
@@ -144,108 +145,124 @@ export default function VerifyCodePage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#007A3D] via-[#FDB913] to-[#005BBB] p-4">
-      <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg">
-        <div className="text-center mb-6">
-          {requiresLeaderQuestions ? (
-            <>
-              <div className="flex justify-center mb-4">
-                <Shield className="w-12 h-12 text-blue-600" />
-              </div>
-              <h2 className="text-3xl font-extrabold text-gray-900">Leader Verification</h2>
-              <p className="mt-2 text-sm text-gray-600">
-                Please answer the following questions to verify your leadership role.
-              </p>
-            </>
-          ) : (
-            <>
-              <h2 className="text-3xl font-extrabold text-gray-900">Verify Your Email</h2>
-              <p className="mt-2 text-sm text-gray-600">
-                A verification code has been sent to {emailForVerification || 'your email'}. Please enter it below.
-              </p>
-            </>
-          )}
-        </div>
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-red-600" />
-              <p className="text-red-600 text-sm">{error}</p>
-            </div>
+    <AuthBackground>
+      {/* Header Logo */}
+      <header className="relative z-20 px-6 sm:px-12 py-6">
+        <Link href="/" className="flex items-center gap-2 group">
+          <img src="/logo.png" alt="RSBS Logo" className="w-10 h-10 object-contain" />
+          <h1 className="text-2xl font-black text-white tracking-tight group-hover:text-purple-400 transition-colors">
+            RSBS
+          </h1>
+        </Link>
+      </header>
+
+      {/* Main Content */}
+      <main className="relative z-20 flex flex-1 flex-col justify-center items-center px-4 pb-20">
+        <div className="w-full max-w-[450px] bg-black/80 backdrop-blur-md rounded-2xl p-10 md:p-16 border border-white/10 shadow-2xl">
+          <div className="mb-7">
+            {requiresLeaderQuestions ? (
+              <>
+                <h2 className="text-white text-3xl font-bold mb-3">Leader Verification</h2>
+                <p className="text-[#b3b3b3] text-sm">
+                  Please answer the following questions to verify your leadership role.
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="text-white text-2xl font-bold mb-2">Verify Email</h2>
+                <p className="text-[#b3b3b3] text-sm">
+                  A verification code was sent to <span className="text-purple-400 font-medium">{emailForVerification}</span>.
+                </p>
+              </>
+            )}
           </div>
-        )}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {requiresLeaderQuestions ? (
-            <>
-              <div>
-                <label htmlFor="answer1" className="block text-sm font-medium text-gray-700 mb-2">
-                  What is your primary responsibility at the school?
-                </label>
-                <input
-                  id="answer1"
-                  name="answer1"
-                  type="text"
-                  autoComplete="off"
-                  required
-                  placeholder="e.g., School management, Leadership, Administration"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#FDB913] focus:border-[#FDB913] sm:text-sm"
-                  value={leaderAnswer1}
-                  onChange={(e) => setLeaderAnswer1(e.target.value)}
-                />
-              </div>
-              <div>
-                <label htmlFor="answer2" className="block text-sm font-medium text-gray-700 mb-2">
-                  Are you authorized to manage school information? (Yes/No)
-                </label>
-                <input
-                  id="answer2"
-                  name="answer2"
-                  type="text"
-                  autoComplete="off"
-                  required
-                  placeholder="Yes or No"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#FDB913] focus:border-[#FDB913] sm:text-sm"
-                  value={leaderAnswer2}
-                  onChange={(e) => setLeaderAnswer2(e.target.value)}
-                />
-              </div>
-            </>
-          ) : (
-            <div>
-              <label htmlFor="code" className="block text-sm font-medium text-gray-700">Verification Code</label>
-              <input
-                id="code"
-                name="code"
-                type="text"
-                autoComplete="off"
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#FDB913] focus:border-[#FDB913] sm:text-sm"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-              />
+
+          {error && (
+            <div className="bg-red-500/20 border border-red-500 text-red-200 rounded-lg p-3 mb-6 text-sm flex gap-2 items-start animate-in fade-in zoom-in duration-200">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <span>{error}</span>
             </div>
           )}
-          <div>
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {requiresLeaderQuestions ? (
+              <>
+                <div className="relative">
+                  <input
+                    id="answer1"
+                    type="text"
+                    className="w-full bg-[#333] hover:bg-[#444] transition-all rounded-lg px-5 pt-6 pb-2 text-white border-none focus:outline-none focus:ring-2 focus:ring-purple-500 peer h-14"
+                    placeholder=" "
+                    value={leaderAnswer1}
+                    onChange={(e) => setLeaderAnswer1(e.target.value)}
+                    required
+                  />
+                  <label
+                    htmlFor="answer1"
+                    className="absolute left-5 top-4 text-[#8c8c8c] text-sm transition-all peer-focus:text-[11px] peer-focus:top-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#8c8c8c] peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:top-2 pointer-events-none"
+                  >
+                    Primary responsibility
+                  </label>
+                </div>
+                <div className="relative">
+                  <input
+                    id="answer2"
+                    type="text"
+                    className="w-full bg-[#333] hover:bg-[#444] transition-all rounded-lg px-5 pt-6 pb-2 text-white border-none focus:outline-none focus:ring-2 focus:ring-purple-500 peer h-14"
+                    placeholder=" "
+                    value={leaderAnswer2}
+                    onChange={(e) => setLeaderAnswer2(e.target.value)}
+                    required
+                  />
+                  <label
+                    htmlFor="answer2"
+                    className="absolute left-5 top-4 text-[#8c8c8c] text-sm transition-all peer-focus:text-[11px] peer-focus:top-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#8c8c8c] peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:top-2 pointer-events-none"
+                  >
+                    Authorized to manage info? (Yes/No)
+                  </label>
+                </div>
+              </>
+            ) : (
+              <div className="relative">
+                <input
+                  id="code"
+                  type="text"
+                  className="w-full bg-[#333] hover:bg-[#444] transition-all rounded-lg px-5 pt-6 pb-2 text-white border-none focus:outline-none focus:ring-2 focus:ring-purple-500 peer h-14"
+                  placeholder=" "
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  required
+                />
+                <label
+                  htmlFor="code"
+                  className="absolute left-5 top-4 text-[#8c8c8c] text-sm transition-all peer-focus:text-[11px] peer-focus:top-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#8c8c8c] peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:top-2 pointer-events-none"
+                >
+                  Verification Code
+                </label>
+              </div>
+            )}
+
             <button
               type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#007A3D] hover:bg-[#005BBB] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FDB913]"
+              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 transition-all text-white font-bold py-3.5 rounded-lg mt-6 shadow-lg shadow-purple-500/20 active:scale-95"
             >
               {requiresLeaderQuestions ? 'Verify Leadership' : 'Verify Code'}
             </button>
-          </div>
-          {!requiresLeaderQuestions && (
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={handleResendCode}
-                className="font-medium text-[#005BBB] hover:text-[#007A3D]"
-              >
-                Resend Code
-              </button>
-            </div>
-          )}
-        </form>
-      </div>
-    </div>
+
+            {!requiresLeaderQuestions && (
+              <div className="text-center mt-2">
+                <button
+                  type="button"
+                  onClick={handleResendCode}
+                  className="text-[#b3b3b3] hover:text-white hover:underline text-sm font-medium transition-colors underline-offset-4 decoration-purple-500"
+                >
+                  Resend Code
+                </button>
+              </div>
+            )}
+          </form>
+        </div>
+      </main>
+    </AuthBackground>
   );
 }

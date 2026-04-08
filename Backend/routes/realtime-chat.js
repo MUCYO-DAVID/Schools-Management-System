@@ -26,6 +26,20 @@ router.post('/chat/rooms/direct', authMiddleware, async (req, res) => {
       return res.json(existingRoom.rows[0]);
     }
 
+    // CHECK FOR CONNECTION (unless admin)
+    if (req.user.role !== 'admin') {
+      const connection = await pool.query(
+        `SELECT status FROM user_connections 
+         WHERE ((sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1))
+         AND status = 'accepted'`,
+        [req.user.id, other_user_id]
+      );
+
+      if (connection.rows.length === 0) {
+        return res.status(403).json({ message: 'You must be friends to start a chat' });
+      }
+    }
+
     // Create new room
     const roomResult = await pool.query(
       `INSERT INTO chat_rooms (room_type, created_by) VALUES ('direct', $1) RETURNING *`,

@@ -10,7 +10,7 @@ export async function fetchGrades(filters: {
 } = {}) {
   const token = localStorage.getItem("token");
   const params = new URLSearchParams();
-  
+
   Object.entries(filters).forEach(([key, value]) => {
     if (value) params.append(key, value.toString());
   });
@@ -48,7 +48,10 @@ export async function createGrade(gradeData: {
     body: JSON.stringify(gradeData),
   });
 
-  if (!res.ok) throw new Error("Failed to create grade");
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to create grade");
+  }
   return res.json();
 }
 

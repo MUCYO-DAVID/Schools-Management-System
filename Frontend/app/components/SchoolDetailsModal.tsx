@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, MapPin, Users, Calendar, BookOpen, GraduationCap, Star, Mail, Phone, Globe, Clock, User, Building2, DollarSign, FileText, CheckCircle, Shirt, Image as ImageIcon, ChevronRight, ChevronLeft } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { X, MapPin, Users, Calendar, BookOpen, GraduationCap, Star, Mail, Phone, Globe, Clock, User, Building2, DollarSign, FileText, CheckCircle, Shirt, Image as ImageIcon, ChevronRight, ChevronLeft, ArrowRight } from 'lucide-react';
 import type { School } from '../types';
 import { fetchGalleries, fetchGallery } from '../api/galleries';
+import { getImageUrl } from '../../lib/image-utils';
 
 interface SchoolDetails {
   description?: string;
@@ -58,7 +59,6 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
       const galleries = await fetchGalleries({ school_id: school.id });
       const allImages: string[] = [];
       
-      // Fetch items from all galleries
       for (const gallery of galleries) {
         try {
           const galleryData = await fetchGallery(gallery.id);
@@ -86,487 +86,390 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [currentImagePage, setCurrentImagePage] = useState(0);
   const imagesPerPage = 4;
-  const allImages = galleryImages.length > 0 ? galleryImages : (school.image_urls || []);
+  
+  // Robust image URL list construction (handling potential stringified JSON)
+  const schoolImageUrls = useMemo(() => {
+    if (!school.image_urls) return [];
+    if (typeof school.image_urls === 'string') {
+      try {
+        const parsed = JSON.parse(school.image_urls);
+        return Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        return [school.image_urls];
+      }
+    }
+    return Array.isArray(school.image_urls) ? school.image_urls : [school.image_urls];
+  }, [school.image_urls]);
+
+  const allImages = galleryImages.length > 0 ? galleryImages : schoolImageUrls;
   const totalImagePages = Math.ceil(allImages.length / imagesPerPage);
   const currentImages = allImages.slice(currentImagePage * imagesPerPage, (currentImagePage + 1) * imagesPerPage);
 
+  const heroImage = allImages[0] || '';
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto my-4 shadow-2xl">
-        {/* Compact Header */}
-        <div className="sticky top-0 bg-white border-b p-4 z-10 flex justify-between items-start">
-          <div className="flex-1">
-            <h2 className="text-xl font-bold text-gray-900 mb-1">{school.name}</h2>
-            <div className="flex items-center gap-3 text-sm text-gray-600">
-              <div className="flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5" />
-                <span>{school.location}</span>
-              </div>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                school.type === "Public" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
-              }`}>
-                {school.type}
-              </span>
-            </div>
-          </div>
+    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto duration-300">
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] max-w-4xl w-full max-h-[90vh] overflow-hidden my-4 shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col transition-colors duration-300">
+        
+        {/* Cinematic Hero Header */}
+        <div className="relative h-64 w-full shrink-0 group">
+          <img 
+            src={getImageUrl(heroImage)} 
+            alt={school.name}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-slate-900 via-transparent to-black/20" />
+          
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+            className="absolute top-6 right-6 h-10 w-10 bg-black/20 backdrop-blur-md border border-white/30 text-white rounded-full flex items-center justify-center hover:bg-black/40 transition-all z-20"
           >
             <X className="w-5 h-5" />
           </button>
-        </div>
 
-        <div className="p-4">
-          {/* Compact Quick Stats Bar */}
-          <div className="grid grid-cols-4 gap-2 mb-4">
-            <div className="bg-blue-50 rounded-lg p-2 text-center border border-blue-100">
-              <Users className="w-4 h-4 text-blue-600 mx-auto mb-1" />
-              <div className="text-sm font-bold text-gray-900">{school.students.toLocaleString()}</div>
-              <div className="text-[10px] text-gray-600">Students</div>
-            </div>
-            <div className="bg-green-50 rounded-lg p-2 text-center border border-green-100">
-              <Calendar className="w-4 h-4 text-green-600 mx-auto mb-1" />
-              <div className="text-sm font-bold text-gray-900">{school.established}</div>
-              <div className="text-[10px] text-gray-600">Established</div>
-            </div>
-            <div className="bg-yellow-50 rounded-lg p-2 text-center border border-yellow-100">
-              <Star className="w-4 h-4 text-yellow-600 mx-auto mb-1" />
-              <div className="text-sm font-bold text-gray-900">{average.toFixed(1)}</div>
-              <div className="text-[10px] text-gray-600">Rating</div>
-            </div>
-            <div className="bg-purple-50 rounded-lg p-2 text-center border border-purple-100">
-              <GraduationCap className="w-4 h-4 text-purple-600 mx-auto mb-1" />
-              <div className="text-xs font-bold text-gray-900">{school.level}</div>
-              <div className="text-[10px] text-gray-600">Level</div>
-            </div>
-          </div>
-
-          {/* Compact Tabs */}
-          <div className="border-b border-gray-200 mb-4">
-            <nav className="-mb-px flex space-x-4">
-              <button
-                onClick={() => setActiveTab('overview')}
-                className={`py-2 px-2 border-b-2 font-medium text-xs transition-colors ${
-                  activeTab === 'overview'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Overview
-              </button>
-              {allImages.length > 0 && (
-                <button
-                  onClick={() => {
-                    setActiveTab('gallery');
-                    setCurrentImagePage(0);
-                  }}
-                  className={`py-2 px-2 border-b-2 font-medium text-xs transition-colors ${
-                    activeTab === 'gallery'
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  Gallery ({allImages.length})
-                </button>
-              )}
-              <button
-                onClick={() => setActiveTab('details')}
-                className={`py-2 px-2 border-b-2 font-medium text-xs transition-colors ${
-                  activeTab === 'details'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Details
-              </button>
-              <button
-                onClick={() => setActiveTab('contact')}
-                className={`py-2 px-2 border-b-2 font-medium text-xs transition-colors ${
-                  activeTab === 'contact'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Contact
-              </button>
-            </nav>
-          </div>
-
-          {/* Tab Content */}
-          <div className="space-y-6">
-            {/* Overview Tab */}
-            {activeTab === 'overview' && (
-              <div className="space-y-6">
-                {/* Rating */}
-                <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
-                  <div className="flex items-center gap-1">
+          <div className="absolute bottom-6 left-8 right-8 z-10">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2 tracking-tight">
+                  {school.name}
+                </h2>
+                <div className="flex items-center gap-4 text-xs font-medium">
+                  <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+                    <MapPin className="w-3.5 h-3.5 text-purple-500" />
+                    <span>{school.location}</span>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                    school.type === "Public" 
+                      ? "bg-purple-100 text-purple-800 dark:bg-purple-500/10 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20" 
+                      : "bg-indigo-100 text-indigo-800 dark:bg-indigo-500/10 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20"
+                  }`}>
+                    {school.type}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl px-3 py-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl">
+                 <div className="flex gap-0.5">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star
                         key={star}
-                        className={`w-6 h-6 ${
+                        className={`w-3.5 h-3.5 ${
                           star <= rounded
-                            ? "text-yellow-400 fill-yellow-400"
-                            : "text-gray-300"
+                            ? "text-amber-400 fill-amber-400"
+                            : "text-slate-300 dark:text-slate-600"
                         }`}
                       />
                     ))}
                   </div>
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900">{average.toFixed(1)}</div>
-                    <div className="text-sm text-gray-600">Based on {school.rating_count ?? 0} {school.rating_count === 1 ? 'rating' : 'ratings'}</div>
-                  </div>
-                </div>
-
-                {/* Basic Info Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <BookOpen className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-900 mb-1">School Type</div>
-                      <div className="text-gray-700">{school.type}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3 p-4 bg-purple-50 rounded-lg border border-purple-100">
-                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <GraduationCap className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-900 mb-1">Education Level</div>
-                      <div className="text-gray-700">{school.level}</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Description Preview */}
-                {details?.description && (
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-blue-600" />
-                      About
-                    </h4>
-                    <p className="text-gray-700 text-sm line-clamp-3">{details.description}</p>
-                    <button
-                      onClick={() => setActiveTab('details')}
-                      className="text-blue-600 hover:text-blue-800 text-xs font-medium mt-2"
-                    >
-                      Read more →
-                    </button>
-                  </div>
-                )}
+                  <span className="text-xs font-bold text-gray-900 dark:text-white">{average.toFixed(1)}</span>
               </div>
-            )}
-
-            {/* Gallery Tab with Pagination */}
-            {activeTab === 'gallery' && (
-              <div>
-                {allImages.length > 0 ? (
-                  <>
-                    <div className="grid grid-cols-2 gap-2 mb-3">
-                      {currentImages.map((imageUrl, index) => {
-                        const globalIndex = currentImagePage * imagesPerPage + index;
-                        return (
-                          <div
-                            key={globalIndex}
-                            className="relative group cursor-pointer overflow-hidden rounded-lg aspect-square"
-                            onClick={() => setSelectedImageIndex(globalIndex)}
-                          >
-                            <img
-                              src={galleryImages.length > 0 ? `${backendUrl}${imageUrl}` : imageUrl}
-                              alt={`${school.name} image ${globalIndex + 1}`}
-                              className="w-full h-full object-cover transition-transform group-hover:scale-110"
-                            />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                              <ImageIcon className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    
-                    {/* Pagination Controls */}
-                    {totalImagePages > 1 && (
-                      <div className="flex items-center justify-between bg-gray-50 rounded-lg p-2 border border-gray-200">
-                        <button
-                          onClick={() => setCurrentImagePage((prev) => Math.max(0, prev - 1))}
-                          disabled={currentImagePage === 0}
-                          className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 bg-white rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                          Previous
-                        </button>
-                        <span className="text-sm text-gray-600 font-medium">
-                          Page {currentImagePage + 1} of {totalImagePages}
-                        </span>
-                        <button
-                          onClick={() => setCurrentImagePage((prev) => Math.min(totalImagePages - 1, prev + 1))}
-                          disabled={currentImagePage === totalImagePages - 1}
-                          className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 bg-white rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                          Next
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="text-center py-8">
-                    <ImageIcon className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-500 text-sm">No images available</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Details Tab */}
-            {activeTab === 'details' && (
-              <div className="space-y-4">
-                {loading ? (
-                  <div className="flex justify-center py-6">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                  </div>
-                ) : details ? (
-                  <>
-                    {/* Description */}
-                    {details.description && (
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-1.5">
-                          <FileText className="w-4 h-4 text-blue-600" />
-                          About the School
-                        </h3>
-                        <p className="text-gray-700 text-xs leading-relaxed whitespace-pre-wrap bg-gray-50 rounded-lg p-3">{details.description}</p>
-                      </div>
-                    )}
-
-                    {/* Facilities */}
-                    {details.facilities && (
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-1.5">
-                          <Building2 className="w-4 h-4 text-blue-600" />
-                          Facilities
-                        </h3>
-                        <p className="text-gray-700 text-xs leading-relaxed whitespace-pre-wrap bg-gray-50 rounded-lg p-3">{details.facilities}</p>
-                      </div>
-                    )}
-
-                    {/* Programs */}
-                    {details.programs && (
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-1.5">
-                          <BookOpen className="w-4 h-4 text-blue-600" />
-                          Programs Offered
-                        </h3>
-                        <p className="text-gray-700 text-xs leading-relaxed whitespace-pre-wrap bg-gray-50 rounded-lg p-3">{details.programs}</p>
-                      </div>
-                    )}
-
-                    {/* Admission Requirements */}
-                    {details.admission_requirements && (
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-1.5">
-                          <CheckCircle className="w-4 h-4 text-blue-600" />
-                          Admission Requirements
-                        </h3>
-                        <p className="text-gray-700 text-xs leading-relaxed whitespace-pre-wrap bg-gray-50 rounded-lg p-3">{details.admission_requirements}</p>
-                      </div>
-                    )}
-
-                    {/* Fees Information */}
-                    {details.fees_info && (
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-1.5">
-                          <DollarSign className="w-4 h-4 text-blue-600" />
-                          Fees Information
-                        </h3>
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                          <p className="text-gray-700 text-xs leading-relaxed whitespace-pre-wrap">{details.fees_info}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Uniform Information */}
-                    {details.uniform_info && (
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-1.5">
-                          <Shirt className="w-4 h-4 text-blue-600" />
-                          Uniform Requirements
-                        </h3>
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                          <p className="text-gray-700 text-xs leading-relaxed whitespace-pre-wrap">{details.uniform_info}</p>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="text-center py-6">
-                    <p className="text-gray-500 text-sm">No additional details available for this school yet.</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Contact Tab */}
-            {activeTab === 'contact' && (
-              <div>
-                {loading ? (
-                  <div className="flex justify-center py-6">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                  </div>
-                ) : details ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {details.principal_name && (
-                      <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <User className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-600">Principal</div>
-                          <div className="font-medium text-gray-900 text-sm">{details.principal_name}</div>
-                        </div>
-                      </div>
-                    )}
-                    {details.contact_email && (
-                      <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Mail className="w-4 h-4 text-green-600" />
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-600">Email</div>
-                          <a href={`mailto:${details.contact_email}`} className="font-medium text-blue-600 hover:underline text-sm">
-                            {details.contact_email}
-                          </a>
-                        </div>
-                      </div>
-                    )}
-                    {details.contact_phone && (
-                      <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Phone className="w-4 h-4 text-purple-600" />
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-600">Phone</div>
-                          <a href={`tel:${details.contact_phone}`} className="font-medium text-gray-900 text-sm">
-                            {details.contact_phone}
-                          </a>
-                        </div>
-                      </div>
-                    )}
-                    {details.website && (
-                      <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Globe className="w-4 h-4 text-yellow-600" />
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-600">Website</div>
-                          <a href={details.website} target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 hover:underline text-sm">
-                            {details.website}
-                          </a>
-                        </div>
-                      </div>
-                    )}
-                    {details.address && (
-                      <div className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200 md:col-span-2">
-                        <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <MapPin className="w-4 h-4 text-red-600" />
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-600">Address</div>
-                          <div className="font-medium text-gray-900 text-sm">{details.address}</div>
-                        </div>
-                      </div>
-                    )}
-                    {details.working_hours && (
-                      <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Clock className="w-4 h-4 text-indigo-600" />
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-600">Working Hours</div>
-                          <div className="font-medium text-gray-900 text-sm">{details.working_hours}</div>
-                        </div>
-                      </div>
-                    )}
-                    {!details.principal_name && !details.contact_email && !details.contact_phone && !details.website && !details.address && !details.working_hours && (
-                      <div className="text-center py-6 col-span-2">
-                        <p className="text-gray-500 text-sm">No contact information available for this school yet.</p>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <p className="text-gray-500 text-sm">No contact information available for this school yet.</p>
-                  </div>
-                )}
-              </div>
-            )}
+            </div>
           </div>
+        </div>
 
-          {/* Action Buttons */}
-          {onApply && (
-            <div className="border-t pt-4 mt-4 flex gap-2">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
+          <div className="p-5 md:p-8">
+            {/* Premium Stats Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-3 border border-slate-100 dark:border-slate-800 group hover:scale-[1.02] transition-transform">
+                <div className="w-8 h-8 bg-purple-100 dark:bg-purple-500/10 rounded-lg flex items-center justify-center mb-2">
+                  <Users className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div className="text-lg font-black text-gray-900 dark:text-white">{school.students.toLocaleString()}</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Students</div>
+              </div>
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-3 border border-slate-100 dark:border-slate-800 group hover:scale-[1.02] transition-transform">
+                <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-500/10 rounded-lg flex items-center justify-center mb-2">
+                  <Calendar className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <div className="text-lg font-black text-gray-900 dark:text-white">{school.established}</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Established</div>
+              </div>
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-3 border border-slate-100 dark:border-slate-800 group hover:scale-[1.02] transition-transform">
+                <div className="w-8 h-8 bg-pink-100 dark:bg-pink-500/10 rounded-lg flex items-center justify-center mb-2">
+                  <Star className="w-4 h-4 text-pink-600 dark:text-pink-400" />
+                </div>
+                <div className="text-lg font-black text-gray-900 dark:text-white">{school.rating_count || 0}</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Reviews</div>
+              </div>
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-3 border border-slate-100 dark:border-slate-800 group hover:scale-[1.02] transition-transform">
+                <div className="w-8 h-8 bg-violet-100 dark:bg-violet-500/10 rounded-lg flex items-center justify-center mb-2">
+                  <GraduationCap className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                </div>
+                <div className="text-lg font-black text-gray-900 dark:text-white leading-tight truncate">{school.level}</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Level</div>
+              </div>
+            </div>
+
+            {/* Premium Tab Navigation */}
+            <div className="mb-6 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl inline-flex text-xs">
+              {(['overview', 'gallery', 'details', 'contact'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => {
+                    setActiveTab(tab);
+                    if (tab === 'gallery') setCurrentImagePage(0);
+                  }}
+                  className={`px-4 py-1.5 rounded-lg font-bold transition-all ${
+                    activeTab === tab
+                      ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-white shadow-sm'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                  }`}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab Content Area */}
+            <div className="min-h-[300px] animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {activeTab === 'overview' && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-500/10 dark:to-indigo-500/10 p-4 rounded-2xl border border-purple-100 dark:border-purple-500/20">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-7 h-7 bg-purple-600 rounded-lg flex items-center justify-center text-white">
+                          <BookOpen className="w-3.5 h-3.5" />
+                        </div>
+                        <h4 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-[10px]">Academic Profile</h4>
+                      </div>
+                      <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed mb-2">
+                        A {school.type.toLowerCase()} institution providing {school.level.toLowerCase()} education for {school.students} students.
+                      </p>
+                      <div className="space-y-1">
+                         <div className="flex items-center gap-1.5 text-[10px] font-semibold text-purple-700 dark:text-purple-400">
+                            <CheckCircle className="w-3 h-3" />
+                            <span>Rwanda Education Certified</span>
+                         </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-500/10 dark:to-purple-500/10 p-4 rounded-2xl border border-violet-100 dark:border-violet-500/20">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-7 h-7 bg-violet-600 rounded-lg flex items-center justify-center text-white">
+                          <Building2 className="w-3.5 h-3.5" />
+                        </div>
+                        <h4 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-[10px]">Key Features</h4>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {['Verified', 'Community Rated', school.type].map(tag => (
+                          <span key={tag} className="px-2 py-0.5 bg-white/50 dark:bg-slate-900/50 rounded-full text-[9px] font-bold text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-500/20">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {details?.description && (
+                    <div>
+                      <h4 className="text-sm font-black text-gray-900 dark:text-white mb-2">Mission Statement</h4>
+                      <div className="bg-slate-50 dark:bg-slate-800/30 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                        <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed italic">
+                          "{details.description}"
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'gallery' && (
+                <div className="space-y-6">
+                  {allImages.length > 0 ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        {currentImages.map((imageUrl, index) => {
+                          const globalIndex = currentImagePage * imagesPerPage + index;
+                          return (
+                            <div
+                              key={globalIndex}
+                              className="relative group cursor-pointer overflow-hidden rounded-[2rem] aspect-[16/10] border-4 border-slate-100 dark:border-slate-800 shadow-lg"
+                              onClick={() => setSelectedImageIndex(globalIndex)}
+                            >
+                              <img
+                                src={getImageUrl(imageUrl)}
+                                alt={`${school.name} ${globalIndex}`}
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                              />
+                              <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <ImageIcon className="w-6 h-6 text-white" />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      {totalImagePages > 1 && (
+                        <div className="flex items-center justify-center gap-6 mt-8">
+                          <button
+                            onClick={() => setCurrentImagePage((prev) => Math.max(0, prev - 1))}
+                            disabled={currentImagePage === 0}
+                            className="w-12 h-12 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-full text-slate-600 dark:text-slate-300 disabled:opacity-30 transition-all hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95"
+                          >
+                            <ChevronLeft className="w-6 h-6" />
+                          </button>
+                          <span className="text-sm font-black text-slate-500 tracking-[0.2em] uppercase">
+                             {currentImagePage + 1} / {totalImagePages}
+                          </span>
+                          <button
+                            onClick={() => setCurrentImagePage((prev) => Math.min(totalImagePages - 1, prev + 1))}
+                            disabled={currentImagePage === totalImagePages - 1}
+                            className="w-12 h-12 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-full text-slate-600 dark:text-slate-300 disabled:opacity-30 transition-all hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95"
+                          >
+                            <ChevronRight className="w-6 h-6" />
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-center py-20 bg-slate-50 dark:bg-slate-800/30 rounded-[3rem] border border-dashed border-slate-200 dark:border-slate-700">
+                      <ImageIcon className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+                      <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">Visuals coming soon</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'details' && (
+                <div className="space-y-8">
+                  {loading ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-4">
+                      <div className="animate-spin rounded-full h-10 w-10 border-[3px] border-blue-600 border-t-transparent"></div>
+                      <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Gathering details...</p>
+                    </div>
+                  ) : details ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {[
+                        { label: 'Facilities', icon: Building2, content: details.facilities, color: 'blue' },
+                        { label: 'Academic Programs', icon: BookOpen, content: details.programs, color: 'purple' },
+                        { label: 'Admission', icon: CheckCircle, content: details.admission_requirements, color: 'emerald' },
+                        { label: 'Investment & Fees', icon: DollarSign, content: details.fees_info, color: 'amber' },
+                        { label: 'Uniform & Dress Code', icon: Shirt, content: details.uniform_info, color: 'pink' }
+                      ].filter(s => s.content).map(section => (
+                        <div key={section.label} className="group">
+                          <h5 className="flex items-center gap-2 text-sm font-black text-gray-900 dark:text-white uppercase tracking-[0.1em] mb-4">
+                            <section.icon className={`w-4 h-4 text-${section.color}-500`} />
+                            {section.label}
+                          </h5>
+                          <div className={`p-6 bg-white dark:bg-slate-800/50 rounded-[2rem] border border-slate-100 dark:border-slate-800 group-hover:border-${section.color}-500/30 transition-colors shadow-sm`}>
+                            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed whitespace-pre-wrap">{section.content}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-20 bg-slate-50 dark:bg-slate-800/30 rounded-[3rem] border border-slate-200 dark:border-slate-700">
+                      <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">Detailed data unavailable</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'contact' && (
+                <div className="space-y-8">
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[
+                      { label: 'Principal', value: details?.principal_name, icon: User, type: 'text' },
+                      { label: 'Email Address', value: details?.contact_email, icon: Mail, type: 'email' },
+                      { label: 'Contact Number', value: details?.contact_phone, icon: Phone, type: 'tel' },
+                      { label: 'Official Website', value: details?.website, icon: Globe, type: 'url' },
+                      { label: 'Operating Hours', value: details?.working_hours, icon: Clock, type: 'text' }
+                    ].filter(c => c.value).map(contact => (
+                      <div key={contact.label} className="flex items-center gap-4 p-5 bg-slate-50 dark:bg-slate-800/50 rounded-[1.5rem] border border-slate-100 dark:border-slate-800">
+                        <div className="w-12 h-12 bg-white dark:bg-slate-900 rounded-2xl flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-sm">
+                          <contact.icon className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">{contact.label}</p>
+                          {contact.type === 'email' ? (
+                            <a href={`mailto:${contact.value}`} className="text-sm font-bold text-blue-600 truncate block hover:underline">{contact.value}</a>
+                          ) : contact.type === 'tel' ? (
+                            <a href={`tel:${contact.value}`} className="text-sm font-bold text-gray-900 dark:text-white block hover:text-blue-600 transition-colors">{contact.value}</a>
+                          ) : contact.type === 'url' ? (
+                            <a href={contact.value} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-blue-600 truncate block hover:underline">{contact.value}</a>
+                          ) : (
+                            <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{contact.value}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {details?.address && (
+                    <div className="p-6 bg-gradient-to-br from-slate-900 to-slate-800 dark:from-slate-800 dark:to-slate-950 rounded-[2rem] text-white">
+                       <h5 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest mb-4">
+                        <MapPin className="w-4 h-4 text-rose-500" />
+                        Physical Location
+                      </h5>
+                      <p className="text-slate-300 font-medium leading-relaxed">{details.address}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Premium Bottom Bar */}
+        <div className="p-5 md:p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-xl shrink-0">
+          <div className="flex flex-col sm:flex-row gap-4">
+            {onApply && (
               <button
                 onClick={onApply}
-                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors"
+                className="flex-1 group relative flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-xl shadow-purple-600/20 transition-all hover:scale-[1.01] active:scale-[0.99]"
               >
-                Apply to This School
+                Apply to {school.name.split(' ')[0]}
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
-              <button
-                onClick={onClose}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          )}
+            )}
+            <button
+              onClick={onClose}
+              className="px-6 py-3 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-sm transition-all hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              Return Home
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Image Viewer Modal */}
+      {/* Fullscreen Image Viewer */}
       {selectedImageIndex !== null && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[60] p-4">
+        <div className="fixed inset-0 bg-slate-950/95 flex items-center justify-center z-[60] p-8 animate-in fade-in duration-300">
           <button
             onClick={() => setSelectedImageIndex(null)}
-            className="absolute top-4 right-4 text-white hover:text-gray-300 z-10 bg-black/50 rounded-full p-2"
+            className="absolute top-8 right-8 text-white hover:text-slate-400 z-10 bg-white/10 backdrop-blur-md rounded-full p-4 border border-white/20 transition-all"
           >
-            <X className="w-5 h-5" />
+            <X className="w-6 h-6" />
           </button>
-          <div className="max-w-5xl w-full h-full flex items-center justify-center">
+          
+          <div className="relative max-w-6xl w-full h-full flex items-center justify-center group">
             <img
-              src={
-                galleryImages.length > 0
-                  ? `${backendUrl}${allImages[selectedImageIndex]}`
-                  : allImages[selectedImageIndex] || ''
-              }
-              alt={`${school.name} image ${selectedImageIndex + 1}`}
-              className="max-w-full max-h-full object-contain"
+              src={getImageUrl(allImages[selectedImageIndex])}
+              className="max-w-full max-h-full object-contain rounded-3xl shadow-2xl"
+              alt={school.name}
             />
+            
+            {allImages.length > 1 && (
+              <>
+                <button
+                  onClick={() => setSelectedImageIndex((selectedImageIndex - 1 + allImages.length) % allImages.length)}
+                  className="absolute left-0 h-16 w-16 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-full flex items-center justify-center border border-white/20 transition-all -translate-x-full group-hover:translate-x-0 ml-4 lg:-ml-12"
+                >
+                  <ChevronLeft className="w-8 h-8" />
+                </button>
+                <button
+                  onClick={() => setSelectedImageIndex((selectedImageIndex + 1) % allImages.length)}
+                  className="absolute right-0 h-16 w-16 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-full flex items-center justify-center border border-white/20 transition-all translate-x-full group-hover:translate-x-0 mr-4 lg:-mr-12"
+                >
+                  <ChevronRight className="w-8 h-8" />
+                </button>
+              </>
+            )}
+
+            <div className="absolute bottom-8 px-6 py-2 bg-white/10 backdrop-blur-md text-white rounded-full border border-white/20 font-black text-sm tracking-widest lowercase">
+              {selectedImageIndex + 1} // {allImages.length}
+            </div>
           </div>
-          {allImages.length > 1 && (
-            <>
-              <button
-                onClick={() => {
-                  setSelectedImageIndex((selectedImageIndex - 1 + allImages.length) % allImages.length);
-                }}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white rounded-full p-2 transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => {
-                  setSelectedImageIndex((selectedImageIndex + 1) % allImages.length);
-                }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white rounded-full p-2 transition-colors"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-                {selectedImageIndex + 1} / {allImages.length}
-              </div>
-            </>
-          )}
         </div>
       )}
     </div>

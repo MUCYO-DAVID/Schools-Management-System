@@ -5,6 +5,7 @@ import "./globals.css"
 import { LanguageProvider } from "./providers/LanguageProvider"
 import { AuthProvider } from "./providers/AuthProvider"
 import AIChatBotLoader from "./components/AIChatBotLoader"
+import { ThemeProvider } from "@/components/theme-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -20,17 +21,19 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <AuthProvider>
-          <LanguageProvider>
-            {children}
-            <AIChatBotLoader />
-          </LanguageProvider>
-        </AuthProvider>
-        <footer className="bg-gray-800 text-white text-center p-4 mt-8">
-          <p>&copy; {new Date().getFullYear()} Powered by MD</p>
-        </footer>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} min-h-screen bg-slate-50 text-slate-950 antialiased transition-colors duration-300 dark:bg-slate-950 dark:text-slate-50`}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <AuthProvider>
+            <LanguageProvider>
+              {children}
+              <AIChatBotLoader />
+            </LanguageProvider>
+          </AuthProvider>
+          <footer className="border-t border-slate-200 bg-white/80 px-4 py-4 text-center text-sm text-slate-600 backdrop-blur transition-colors duration-300 dark:border-slate-800 dark:bg-slate-950/80 dark:text-slate-300">
+            <p>&copy; {new Date().getFullYear()} Powered by MD</p>
+          </footer>
+        </ThemeProvider>
       </body>
     </html>
   )

@@ -223,10 +223,10 @@ export default function InteractiveSchoolMap({
   return (
     <div className="relative">
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg z-10">
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-900/80 rounded-lg z-10 transition-colors">
           <div className="text-center">
             <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-2" />
-            <p className="text-sm text-gray-600">Loading interactive map...</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Loading interactive map...</p>
           </div>
         </div>
       )}
@@ -248,20 +248,20 @@ export default function InteractiveSchoolMap({
       <div
         ref={mapRef}
         style={{ height, width: "100%" }}
-        className="rounded-lg shadow-lg border border-gray-200"
+        className="rounded-lg shadow-lg border border-slate-200 dark:border-slate-800 transition-colors"
       />
 
       {/* Map Legend */}
       {!error && !isLoading && (
         <>
-          <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3 text-xs z-[1000]">
+          <div className="absolute bottom-4 left-4 bg-white dark:bg-slate-900 dark:text-white rounded-lg shadow-lg p-3 text-xs z-[1000] border border-slate-200 dark:border-slate-800 transition-colors">
             <div className="font-semibold mb-2">Map Legend</div>
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white"></div>
+              <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white dark:border-slate-800"></div>
               <span>Your Location</span>
             </div>
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
+              <div className="w-4 h-4 bg-red-500 rounded-full border-2 border-white dark:border-slate-800"></div>
               <span>Schools ({schoolsWithCoords.length})</span>
             </div>
             {schoolsWithoutCoords.length > 0 && (
@@ -274,9 +274,9 @@ export default function InteractiveSchoolMap({
           </div>
 
           {/* Map Controls Info */}
-          <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-3 text-xs z-[1000] max-w-xs">
+          <div className="absolute top-4 right-4 bg-white dark:bg-slate-900 dark:text-white rounded-lg shadow-lg p-3 text-xs z-[1000] max-w-xs border border-slate-200 dark:border-slate-800 transition-colors">
             <div className="font-semibold mb-1">🗺️ Map Controls</div>
-            <ul className="space-y-1 text-gray-600">
+            <ul className="space-y-1 text-slate-600 dark:text-slate-400">
               <li>• Click markers for details</li>
               <li>• Use + / - to zoom</li>
               <li>• Drag to move around</li>

@@ -36,7 +36,7 @@ export default function SchoolModal({ school, onSave, onClose }: SchoolModalProp
     if (school) {
       setFormData({
         name: school.name,
-        nameRw: school.nameRw,
+        nameRw: school.nameRw || "",
         location: school.location,
         type: school.type,
         level: school.level,
@@ -47,12 +47,22 @@ export default function SchoolModal({ school, onSave, onClose }: SchoolModalProp
         longitude: school.longitude || 30.0619,
       });
       setImagesToDelete([]); // Reset images to delete when school changes
+      setSelectedFiles([]); // Reset selected files
     }
   }, [school]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({ ...formData, image_urls: formData.image_urls.filter(url => !imagesToDelete.includes(url)) }, selectedFiles, imagesToDelete);
+    setIsSaving(true);
+    try {
+      await onSave({ ...formData, image_urls: formData.image_urls.filter(url => !imagesToDelete.includes(url)) }, selectedFiles, imagesToDelete);
+    } catch (error) {
+      console.error("Error saving school:", error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -104,212 +114,225 @@ export default function SchoolModal({ school, onSave, onClose }: SchoolModalProp
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold">{school ? t("editSchool") : t("addSchool")}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X className="w-6 h-6" />
+    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-slate-800">
+        <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
+          <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
+            {school ? t("editSchool") : t("addSchool")}
+          </h2>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("schoolName")} (English)</label>
-            <input
-              aria-label=""
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("schoolName")} (Kinyarwanda)</label>
-            <input
-              type="text"
-              name="nameRw"
-              value={formData.nameRw}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("location")}</label>
-            <div className="space-y-2">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">{t("schoolName")} (English)</label>
               <input
                 type="text"
-                name="location"
-                value={formData.location}
+                name="name"
+                value={formData.name}
                 onChange={handleChange}
                 required
-                placeholder="Enter school address or pick on map"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all text-sm"
               />
-              <button
-                type="button"
-                onClick={() => setShowMapPicker(!showMapPicker)}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors text-sm"
-              >
-                <MapPin className="w-4 h-4" />
-                {showMapPicker ? "Hide Map" : "Pick Location on Map"}
-              </button>
             </div>
-          </div>
 
-          {/* Simple Map Picker using Google Maps embed */}
-          {showMapPicker && (
-            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-3">
-              <p className="text-sm text-gray-700 font-medium">
-                Click on the map to select school location
-              </p>
-              <div className="relative w-full h-96 bg-gray-200 rounded-lg overflow-hidden">
-                <iframe
-                  src={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}&z=15&output=embed`}
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="School Location Map"
-                ></iframe>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Latitude</label>
-                  <input
-                    type="number"
-                    step="0.000001"
-                    value={formData.latitude || -1.9441}
-                    onChange={(e) => {
-                      const lat = parseFloat(e.target.value) || -1.9441;
-                      handleMapClick(lat, formData.longitude || 30.0619);
-                    }}
-                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Longitude</label>
-                  <input
-                    type="number"
-                    step="0.000001"
-                    value={formData.longitude || 30.0619}
-                    onChange={(e) => {
-                      const lng = parseFloat(e.target.value) || 30.0619;
-                      handleMapClick(formData.latitude || -1.9441, lng);
-                    }}
-                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-              <p className="text-xs text-gray-500">
-                💡 Tip: Adjust the latitude and longitude values to precisely set the school location
-              </p>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">{t("schoolName")} (Kinyarwanda)</label>
+              <input
+                type="text"
+                name="nameRw"
+                value={formData.nameRw}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all text-sm"
+              />
             </div>
-          )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("type")}</label>
-            <select
-              name="type"
-              value={formData.type}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="Public">{t("public")}</option>
-              <option value="Private">{t("private")}</option>
-            </select>
-          </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">{t("location")}</label>
+              <div className="space-y-2.5">
+                <input
+                  type="text"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  required
+                  placeholder="Enter school address or pick on map"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowMapPicker(!showMapPicker)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20 rounded-xl hover:bg-purple-100 dark:hover:bg-purple-500/20 transition-colors text-xs font-bold"
+                >
+                  <MapPin className="w-4 h-4" />
+                  {showMapPicker ? "Hide Map" : "Pick Location on Map"}
+                </button>
+              </div>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("level")}</label>
-            <select
-              name="level"
-              value={formData.level}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="Primary">{t("primary")}</option>
-              <option value="Secondary">{t("secondary")}</option>
-              <option value="Primary & Secondary">Primary & Secondary</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("students")}</label>
-            <input
-              type="number"
-              name="students"
-              value={formData.students}
-              onChange={handleChange}
-              min="0"
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("established")}</label>
-            <input
-              type="number"
-              name="established"
-              value={formData.established}
-              onChange={handleChange}
-              min="1900"
-              max={new Date().getFullYear()}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">School Images</label>
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleFileChange}
-              ref={fileInputRef}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            {selectedFiles.length > 0 && (
-              <p className="text-sm text-gray-500 mt-1">{selectedFiles.length} file(s) selected</p>
-            )}
-            {formData.image_urls && formData.image_urls.length > 0 && (
-              <div className="mt-2 grid grid-cols-3 gap-2">
-                {formData.image_urls.map((imageUrl, index) => (
-                  <div key={index} className="relative w-24 h-24 rounded-lg overflow-hidden">
-                    <img src={imageUrl} alt="School" className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveExistingImage(imageUrl)}
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 text-xs"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
+            {showMapPicker && (
+              <div className="border border-slate-200 dark:border-slate-700 rounded-2xl p-4 bg-slate-50 dark:bg-slate-800/50 space-y-3">
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                  Select coordinates
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 mb-1">LATITUDE</label>
+                    <input
+                      type="number"
+                      step="0.000001"
+                      value={formData.latitude || -1.9441}
+                      onChange={(e) => {
+                        const lat = parseFloat(e.target.value) || -1.9441;
+                        handleMapClick(lat, formData.longitude || 30.0619);
+                      }}
+                      className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                    />
                   </div>
-                ))}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 mb-1">LONGITUDE</label>
+                    <input
+                      type="number"
+                      step="0.000001"
+                      value={formData.longitude || 30.0619}
+                      onChange={(e) => {
+                        const lng = parseFloat(e.target.value) || 30.0619;
+                        handleMapClick(formData.latitude || -1.9441, lng);
+                      }}
+                      className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                    />
+                  </div>
+                </div>
               </div>
             )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">{t("type")}</label>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-sm cursor-pointer"
+                >
+                  <option value="Public">{t("public")}</option>
+                  <option value="Private">{t("private")}</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">{t("level")}</label>
+                <select
+                  name="level"
+                  value={formData.level}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-sm cursor-pointer"
+                >
+                  <option value="Primary">{t("primary")}</option>
+                  <option value="Secondary">{t("secondary")}</option>
+                  <option value="Primary & Secondary">Primary & Secondary</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">{t("students")}</label>
+                <input
+                  type="number"
+                  name="students"
+                  value={formData.students}
+                  onChange={handleChange}
+                  min="0"
+                  required
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">{t("established")}</label>
+                <input
+                  type="number"
+                  name="established"
+                  value={formData.established}
+                  onChange={handleChange}
+                  min="1900"
+                  max={new Date().getFullYear()}
+                  required
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">School Images</label>
+              <div className="flex items-center justify-center w-full">
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-2xl cursor-pointer bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border-slate-200 dark:border-slate-700">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6 text-slate-500">
+                    <p className="mb-2 text-sm">Click to upload photos</p>
+                    <p className="text-xs">PNG, JPG or WEBP</p>
+                  </div>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    ref={fileInputRef}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+              
+              {selectedFiles.length > 0 && (
+                <div className="mt-3 flex items-center gap-2 text-xs font-bold text-purple-600 bg-purple-50 dark:bg-purple-500/10 p-2 rounded-lg border border-purple-100 dark:border-purple-500/20">
+                   <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+                   {selectedFiles.length} new file(s) ready to upload
+                </div>
+              )}
+
+              {formData.image_urls && formData.image_urls.length > 0 && (
+                <div className="mt-4 grid grid-cols-4 gap-2">
+                  {formData.image_urls.map((imageUrl, index) => (
+                    <div key={index} className="relative aspect-square rounded-xl overflow-hidden group border border-slate-200 dark:border-slate-700">
+                      <img src={imageUrl} alt="School" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveExistingImage(imageUrl)}
+                        className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-lg transition-transform hover:scale-110"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors"
+              disabled={isSaving}
+              className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-purple-500/20 transition-all disabled:opacity-50 disabled:scale-95 flex items-center justify-center gap-2"
             >
-              {t("save")}
+              {isSaving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                t("save")
+              )}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg transition-colors"
+              disabled={isSaving}
+              className="px-6 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold py-3 rounded-xl transition-all disabled:opacity-50"
             >
               {t("cancel")}
             </button>

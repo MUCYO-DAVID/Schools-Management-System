@@ -3,10 +3,12 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../providers/AuthProvider';
 
 const LoginPage = () => {
   const backendUrl =
-    process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
+    process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -32,18 +34,19 @@ const LoginPage = () => {
 
       const data = await response.json();
       if (data.token && data.user && !data.requiresVerification) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        if (data.user.role === 'admin') {
-          router.push('/admin');
-        } else if (data.user.role === 'leader') {
-          router.push('/schools');
-        } else {
-          router.push('/student');
-        }
-      } else {
+        // Admin: token returned immediately — log in and redirect
+        localStorage.removeItem('userEmailForVerification');
+        localStorage.removeItem('requiresLeaderQuestions');
+        localStorage.removeItem('redirectAfterVerification');
+        login(data.token, data.user);
+        router.push('/admin');
+      } else if (data.requiresVerification === true) {
+        // All other roles: redirect to verify-code screen
         localStorage.setItem('userEmailForVerification', email);
-        localStorage.setItem('requiresLeaderQuestions', data.requiresLeaderQuestions ? 'true' : 'false');
+        localStorage.setItem(
+          'requiresLeaderQuestions',
+          data.verificationType === 'leader_questions' ? 'true' : 'false'
+        );
         router.push('/auth/verify-code');
       }
     } catch (err: any) {

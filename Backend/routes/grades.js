@@ -180,7 +180,15 @@ router.post('/grades', authMiddleware, async (req, res) => {
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('Error creating grade:', err.message);
-    res.status(500).json({ message: 'Server Error' });
+    if (err.code === '23503') {
+      if (err.constraint === 'grades_student_user_id_fkey') {
+        return res.status(400).json({ message: 'Invalid Student ID. Student not found in database.' });
+      }
+      if (err.constraint === 'grades_school_id_fkey') {
+        return res.status(400).json({ message: 'Invalid School ID. School not found in database.' });
+      }
+    }
+    res.status(500).json({ message: 'Server Error: ' + err.message });
   }
 });
 
@@ -285,7 +293,7 @@ router.post('/report-cards/generate', authMiddleware, async (req, res) => {
       const totalScore = gradesResult.rows.reduce((sum, g) => sum + (parseFloat(g.score) || 0), 0);
       const totalMaxScore = gradesResult.rows.reduce((sum, g) => sum + (parseFloat(g.max_score) || 100), 0);
       overall_percentage = (totalScore / totalMaxScore) * 100;
-      
+
       // Calculate letter grade
       if (overall_percentage >= 90) overall_grade = 'A';
       else if (overall_percentage >= 80) overall_grade = 'B';
@@ -322,7 +330,7 @@ router.post('/report-cards/generate', authMiddleware, async (req, res) => {
       for (const parent of parentsResult.rows) {
         const studentResult = await pool.query('SELECT first_name, last_name FROM users WHERE id = $1', [student_user_id]);
         const studentName = studentResult.rows[0] ? `${studentResult.rows[0].first_name} ${studentResult.rows[0].last_name}` : 'Your child';
-        
+
         await createNotification(
           parent.parent_id,
           'Child Report Card Available',
@@ -502,7 +510,7 @@ router.post('/report-cards/bulk-generate', authMiddleware, async (req, res) => {
       WHERE g.school_id = $1 AND g.term = $2 AND g.academic_year = $3
     `;
     const params = [school_id, term, academic_year];
-    
+
     if (student_ids && Array.isArray(student_ids) && student_ids.length > 0) {
       params.push(student_ids);
       studentsQuery += ` AND u.id = ANY($4)`;
@@ -529,7 +537,7 @@ router.post('/report-cards/bulk-generate', authMiddleware, async (req, res) => {
           const totalScore = gradesResult.rows.reduce((sum, g) => sum + (parseFloat(g.score) || 0), 0);
           const totalMaxScore = gradesResult.rows.reduce((sum, g) => sum + (parseFloat(g.max_score) || 100), 0);
           overall_percentage = (totalScore / totalMaxScore) * 100;
-          
+
           if (overall_percentage >= 90) overall_grade = 'A';
           else if (overall_percentage >= 80) overall_grade = 'B';
           else if (overall_percentage >= 70) overall_grade = 'C';

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
 import { useRouter } from 'next/navigation';
-import { FileText, Clock, CheckCircle, XCircle, Trash2, Eye, Search, ArrowRight, AlertCircle, Download, Bell, CreditCard } from 'lucide-react';
+import { FileText, Clock, CheckCircle, XCircle, Trash2, Eye, Search, ArrowRight, AlertCircle, Download, Bell, CreditCard, Inbox } from 'lucide-react';
 import { getStudentApplications, withdrawApplication, StudentApplication } from '../api/student';
 import { formatDistanceToNow } from 'date-fns';
 import { BASE_URL } from '@/api/school';
@@ -27,6 +27,13 @@ export default function StudentDashboard() {
   const [receiptLoading, setReceiptLoading] = useState(false);
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [announcementsLoading, setAnnouncementsLoading] = useState(false);
+
+  const statusColorMap: Record<string, string> = {
+    approved: 'bg-emerald-500/20 text-emerald-400',
+    rejected: 'bg-rose-500/20 text-rose-400',
+    pending: 'bg-amber-500/20 text-amber-400',
+    withdrawn: 'bg-slate-500/20 text-slate-400',
+  };
 
   useEffect(() => {
     // Only fetch applications when authentication is ready and user is authenticated
@@ -278,117 +285,77 @@ export default function StudentDashboard() {
         <span className="text-sm text-gray-600">{applications.length} application(s)</span>
       </div>
 
-      {/* Announcements Section */}
+      {/* Announcements Section - Compact & themed */}
       {announcements.length > 0 && (
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200 p-5">
+        <div className="bg-indigo-950/20 rounded-3xl border border-indigo-500/10 p-4 mb-4">
           <div className="flex items-center gap-2 mb-3">
-            <Bell className="w-5 h-5 text-blue-600" />
-            <h3 className="text-lg font-semibold text-blue-900">Announcements</h3>
+            <Bell className="w-4 h-4 text-indigo-400" />
+            <h3 className="text-xs font-black uppercase tracking-widest text-indigo-300">Announcements</h3>
           </div>
-          <div className="space-y-3">
-            {announcements.slice(0, 3).map((ann) => (
-              <div key={ann.id} className="bg-white rounded-lg p-4 border border-blue-200">
-                <h4 className="text-sm font-semibold text-gray-900 mb-1">{ann.title}</h4>
-                <p className="text-sm text-gray-600 whitespace-pre-wrap">{ann.body}</p>
-                <p className="text-xs text-gray-400 mt-2">
-                  {new Date(ann.created_at).toLocaleString()}
-                </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {announcements.slice(0, 2).map((ann) => (
+              <div key={ann.id} className="bg-black/40 rounded-2xl p-3 border border-white/5">
+                <h4 className="text-xs font-black text-slate-200 mb-1 truncate">{ann.title}</h4>
+                <p className="text-[10px] text-slate-500 line-clamp-2 italic">{ann.body}</p>
               </div>
             ))}
           </div>
-          {announcements.length > 3 && (
-            <p className="text-xs text-blue-700 mt-3">
-              + {announcements.length - 3} more announcement(s)
-            </p>
-          )}
         </div>
       )}
 
-      <div className="bg-white rounded-lg border border-gray-200 p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <CreditCard className="w-5 h-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Fees & Payments</h3>
+      <div className="bg-white/5 rounded-[2rem] border border-white/5 p-4">
+        <div className="flex items-center gap-2 mb-4">
+          <CreditCard className="w-4 h-4 text-purple-400" />
+          <h3 className="text-xs font-black uppercase tracking-widest text-slate-300">Financial Center</h3>
         </div>
-        <p className="text-sm text-gray-600 mb-4">
-          Students can view invoices and pay using the sandbox payment flow.
-          Parents should use the Parent Portal for their own payments.
-        </p>
         {paymentsLoading ? (
-          <p className="text-sm text-gray-500">Loading payment data...</p>
+          <div className="py-4 text-center"><div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto" /></div>
         ) : (
           <div className="grid gap-4 lg:grid-cols-2">
-            <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-2">Available Fee Schedules</h4>
-              {feeSchedules.length === 0 ? (
-                <p className="text-sm text-gray-500">No fee schedules available.</p>
-              ) : (
-                <div className="space-y-2">
-                  {feeSchedules.map((schedule) => (
-                    <div key={schedule.id} className="border border-gray-200 rounded-lg p-3 flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{schedule.title}</p>
-                        <p className="text-xs text-gray-500">
-                          {schedule.amount} {schedule.currency}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => handleCreateInvoice(schedule.id)}
-                        className="text-sm px-3 py-1.5 bg-blue-600 text-white rounded-md"
-                        disabled={paymentsLoading}
-                      >
-                        Create Invoice
-                      </button>
+            <div className="space-y-2">
+               <p className="text-[9px] font-black uppercase text-slate-500 mb-2">Available Fee Schedules</p>
+               {feeSchedules.length === 0 ? (
+                <p className="text-xs italic text-slate-600">No schedules.</p>
+               ) : (
+                feeSchedules.map((schedule) => (
+                  <div key={schedule.id} className="bg-black/20 rounded-xl p-3 border border-white/5 flex items-center justify-between">
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-200">{schedule.title}</p>
+                      <p className="text-[10px] text-purple-400">{schedule.amount} {schedule.currency}</p>
                     </div>
-                  ))}
-                </div>
-              )}
+                    <button
+                      onClick={() => handleCreateInvoice(schedule.id)}
+                      className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 bg-purple-600 text-white rounded-lg"
+                    >
+                      Invoice
+                    </button>
+                  </div>
+                ))
+               )}
             </div>
-
-            <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-2">My Invoices</h4>
-              {feeInvoices.length === 0 ? (
-                <p className="text-sm text-gray-500">No invoices yet.</p>
-              ) : (
-                <div className="space-y-2">
-                  {feeInvoices.map((invoice) => (
-                    <div key={invoice.id} className="border border-gray-200 rounded-lg p-3 flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{invoice.schedule_title || 'Invoice'}</p>
-                        <p className="text-xs text-gray-500">
-                          {invoice.amount} {invoice.currency} • {invoice.status}
-                        </p>
-                      </div>
-                      {invoice.status !== 'paid' && (
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handlePayInvoice(invoice.id)}
-                            className="text-xs px-3 py-1.5 bg-green-600 text-white rounded-md"
-                            disabled={paymentsLoading}
-                          >
-                            Sandbox Pay
-                          </button>
-                          <button
-                            onClick={() => handleStripePay(invoice.id)}
-                            className="text-xs px-3 py-1.5 bg-purple-600 text-white rounded-md"
-                            disabled={paymentsLoading}
-                          >
-                            Stripe Test
-                          </button>
-                        </div>
-                      )}
-                      {invoice.status === 'paid' && (
-                        <button
-                          onClick={() => handleViewReceipt(invoice.id)}
-                          className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-md"
-                          disabled={receiptLoading}
-                        >
-                          View Receipt
-                        </button>
-                      )}
+            <div className="space-y-2 text-right">
+               <p className="text-[9px] font-black uppercase text-slate-500 mb-2">My Invoices</p>
+               {feeInvoices.length === 0 ? (
+                <p className="text-xs italic text-slate-600">Empty.</p>
+               ) : (
+                feeInvoices.map((invoice) => (
+                  <div key={invoice.id} className="bg-black/20 rounded-xl p-3 border border-white/5 flex items-center justify-between gap-4">
+                    <div className="text-left">
+                      <p className="text-[11px] font-bold text-slate-200 truncate w-32">{invoice.schedule_title || 'Invoice'}</p>
+                      <p className="text-[10px] text-slate-500">{invoice.status}</p>
                     </div>
-                  ))}
-                </div>
-              )}
+                    {invoice.status !== 'paid' ? (
+                      <button onClick={() => handlePayInvoice(invoice.id)} className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 bg-emerald-600 text-white rounded-lg">
+                        Pay
+                      </button>
+                    ) : (
+                       <button onClick={() => handleViewReceipt(invoice.id)} className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 bg-white/5 text-slate-400 border border-white/5 rounded-lg">
+                        Receipt
+                      </button>
+                    )}
+                  </div>
+                ))
+               )}
             </div>
           </div>
         )}
@@ -435,26 +402,25 @@ export default function StudentDashboard() {
         </div>
       )}
 
-      <div className="bg-white rounded-lg border border-gray-200 p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold text-gray-900">Messages</h3>
-          <span className="text-xs text-gray-500">
+      <div className="bg-white/5 rounded-[2rem] border border-white/5 p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+            <Inbox className="w-3 h-3" /> Messages
+          </h3>
+          <span className="text-[9px] font-bold text-purple-400">
             {inboxMessages.filter((msg) => !msg.read_at).length} unread
           </span>
         </div>
         {messagesLoading ? (
-          <p className="text-sm text-gray-500">Loading messages...</p>
+          <div className="py-4 text-center"><div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto" /></div>
         ) : inboxMessages.length === 0 ? (
-          <p className="text-sm text-gray-500">No messages yet.</p>
+          <p className="text-xs italic text-slate-600">Inbox empty.</p>
         ) : (
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {inboxMessages.slice(0, 3).map((msg) => (
-              <div key={msg.id} className="border border-gray-200 rounded-lg p-3">
-                <p className="text-xs text-gray-400">
-                  From {msg.sender_first_name} {msg.sender_last_name}
-                </p>
-                <p className="text-sm font-medium text-gray-900">{msg.subject || 'No subject'}</p>
-                <p className="text-sm text-gray-600 line-clamp-2">{msg.body}</p>
+              <div key={msg.id} className="bg-black/20 rounded-2xl p-3 border border-white/5">
+                <p className="text-[11px] font-bold text-slate-200 truncate">{msg.subject || 'No subject'}</p>
+                <p className="text-[9px] text-slate-500 line-clamp-1 italic">{msg.body}</p>
               </div>
             ))}
           </div>
@@ -511,81 +477,38 @@ export default function StudentDashboard() {
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {applications.map((app) => (
           <div
             key={app.id}
-            className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-4"
+            className="bg-black/40 rounded-3xl border border-white/5 p-4 hover:border-purple-500/20 transition-all"
           >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-lg font-semibold text-gray-900">{app.school_name}</h3>
-                  <span
-                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                      app.status
-                    )}`}
-                  >
-                    {getStatusIcon(app.status)}
-                    {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
-                  </span>
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-xs font-black text-slate-100 truncate mb-1 italic">{app.school_name}</h3>
+                <div className="flex items-center gap-2 mb-3">
+                   <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter bg-white/5 text-slate-400`}>
+                    {app.status}
+                   </span>
+                   <span className="text-[8px] font-bold text-slate-600 italic">Applied {formatDistanceToNow(new Date(app.created_at), { addSuffix: true })}</span>
                 </div>
-
-                <div className="space-y-1 text-sm text-gray-600 mb-3">
-                  <p>
-                    <span className="font-medium">Location:</span> {app.school_location}
-                  </p>
-                  <p>
-                    <span className="font-medium">Type:</span> {app.school_type} • {app.school_level}
-                  </p>
-                  <p>
-                    <span className="font-medium">Applied:</span>{' '}
-                    {formatDistanceToNow(new Date(app.created_at), { addSuffix: true })}
-                  </p>
-                  {app.desired_grade && (
-                    <p>
-                      <span className="font-medium">Desired Grade:</span> {app.desired_grade}
-                    </p>
-                  )}
-                </div>
-
-                {app.status === 'rejected' && app.rejection_reason && (
-                  <div className="mt-3 bg-red-50 border border-red-200 rounded-lg p-3">
-                    <p className="text-xs font-medium text-red-900 mb-1 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      Rejection Reason:
-                    </p>
-                    <p className="text-xs text-red-800">{app.rejection_reason}</p>
-                  </div>
-                )}
-
-                {app.status === 'approved' && (
-                  <div className="mt-3 bg-green-50 border border-green-200 rounded-lg p-3">
-                    <p className="text-xs font-medium text-green-900 mb-1 flex items-center gap-1">
-                      <CheckCircle className="w-3 h-3" />
-                      Congratulations!
-                    </p>
-                    <p className="text-xs text-green-800">The school will contact you with next steps for enrollment.</p>
-                  </div>
-                )}
+                <p className="text-[10px] text-slate-500 truncate">{app.school_location} • {app.desired_grade || 'Entry'}</p>
               </div>
 
-              <div className="flex gap-2 ml-4">
+              <div className="flex gap-1">
                 <button
                   onClick={() => setSelectedApp(app)}
-                  className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                  title="View Details"
+                  className="p-2 bg-white/5 rounded-lg text-slate-500 hover:text-white transition-all"
                 >
-                  <Eye className="w-4 h-4" />
+                  <Eye className="w-3 h-3" />
                 </button>
                 {app.status === 'pending' && (
                   <button
                     onClick={() => handleWithdraw(app.id)}
                     disabled={withdrawingId === app.id}
-                    className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                    title="Withdraw Application"
+                    className="p-2 bg-rose-500/10 rounded-lg text-rose-500 hover:bg-rose-500 hover:text-white transition-all"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3 h-3" />
                   </button>
                 )}
               </div>

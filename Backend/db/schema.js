@@ -180,6 +180,7 @@ async function initializeDb() {
       CREATE TABLE IF NOT EXISTS surveys (
         id SERIAL PRIMARY KEY,
         school_id ` + schoolIdType + ` REFERENCES schools(id) ON DELETE SET NULL,
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
         rating INTEGER CHECK (rating BETWEEN 1 AND 5),
         would_recommend BOOLEAN,
         comments TEXT,
@@ -187,6 +188,16 @@ async function initializeDb() {
       );
     `;
     await pool.query(createSurveysSql);
+
+    // Add user_id column if it doesn't exist (for existing databases)
+    try {
+      await pool.query(`
+        ALTER TABLE surveys 
+        ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
+      `);
+    } catch (alterError) {
+      console.warn('⚠️  Could not add user_id column to surveys (may already exist):', alterError.message);
+    }
 
     // Survey Likes - Track likes on survey comments
     await pool.query(`
@@ -820,7 +831,28 @@ async function initializeDb() {
       console.warn('⚠️  Could not create indexes for new features (non-critical):', indexError.message);
     }
 
-    console.log('✅ All tables initialized (including new features: Grades, Events, Galleries, Chat, Scholarships).');
+    // User Connections (Friend Requests)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_connections (
+        id SERIAL PRIMARY KEY,
+        sender_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        receiver_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        status VARCHAR(20) DEFAULT 'pending',
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(sender_id, receiver_id)
+      );
+    `);
+
+    try {
+      await pool.query(`CREATE INDEX IF NOT EXISTS idx_user_connections_sender ON user_connections(sender_id);`);
+      await pool.query(`CREATE INDEX IF NOT EXISTS idx_user_connections_receiver ON user_connections(receiver_id);`);
+      await pool.query(`CREATE INDEX IF NOT EXISTS idx_user_connections_status ON user_connections(status);`);
+    } catch (indexError) {
+      console.warn('⚠️  Could not create user_connections indexes (non-critical):', indexError.message);
+    }
+
+    console.log('✅ All tables initialized (including new features: Grades, Events, Galleries, Chat, Scholarships, Connections).');
 
     // Optionally create default admin user if it doesn't exist
     // This can be disabled by setting CREATE_DEFAULT_ADMIN=false in .env

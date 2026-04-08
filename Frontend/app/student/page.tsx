@@ -1,7 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, MapPin, Users, GraduationCap, Star, FileText, MessageSquare, AlertCircle, Shield, Calendar, Award } from "lucide-react"
+import { 
+  Search, MapPin, Users, GraduationCap, Star, FileText, 
+  MessageSquare, AlertCircle, Shield, Calendar, Award, 
+  ChevronRight, Sparkles, Filter, Globe, School as SchoolIcon,
+  ArrowRight, Inbox, Clock, CheckCircle, BookText, CheckCircle2,
+  Trash2, Eye, Download
+} from "lucide-react"
 import Navigation from "../components/Navigation"
 import { useLanguage } from "../providers/LanguageProvider"
 import { useAuth } from "../providers/AuthProvider"
@@ -16,13 +22,14 @@ import { fetchGrades, fetchReportCards } from "../api/grades"
 import { fetchEvents, rsvpToEvent } from "../api/events"
 import EventCalendar from "../components/EventCalendar"
 import { fetchScholarships, fetchMyApplications, applyForScholarship } from "../api/scholarships"
+import { formatDistanceToNow } from "date-fns"
 
 export default function StudentAccess() {
   const { t, language } = useLanguage()
   const { isAuthenticated, user, loading: authLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [activeTab, setActiveTab] = useState<'browse' | 'applications' | 'comments' | 'grades' | 'events' | 'scholarships' | 'surveys'>('browse')
+  const [activeTab, setActiveTab] = useState<'browse' | 'applications' | 'comments' | 'grades' | 'events' | 'scholarships'>('browse')
   const [schools, setSchools] = useState<School[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null)
@@ -34,9 +41,7 @@ export default function StudentAccess() {
   const [events, setEvents] = useState<any[]>([])
   const [scholarships, setScholarships] = useState<any[]>([])
   const [myScholarshipApps, setMyScholarshipApps] = useState<any[]>([])
-  const [loadingGrades, setLoadingGrades] = useState(false)
-  const [loadingEvents, setLoadingEvents] = useState(false)
-  const [loadingScholarships, setLoadingScholarships] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   const filteredSchools = schools.filter(
     (school) =>
@@ -44,62 +49,35 @@ export default function StudentAccess() {
       school.location.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  // Check authentication and role on mount - only students can access
   useEffect(() => {
-    // Wait for auth to load before checking roles
     if (authLoading) return;
-    
     if (isAuthenticated && user) {
-      // Leaders and admins should not access student page
-      if (user.role === 'leader') {
-        router.push('/schools')
-        return
-      }
-      if (user.role === 'admin') {
-        router.push('/admin')
-        return
-      }
+      if (user.role === 'leader') { router.push('/schools'); return; }
+      if (user.role === 'admin') { router.push('/admin'); return; }
     }
   }, [isAuthenticated, user, router, authLoading])
 
   useEffect(() => {
-    // Wait for auth to be ready before loading schools
     if (authLoading) return;
-    
-    // Only load schools if user is a student or not authenticated (for browsing)
-    if (!isAuthenticated || user?.role === 'student') {
-      let isMounted = true;
-      const loadSchools = async () => {
-        try {
-          console.log('Loading schools...');
-          const schoolsData = await fetchSchools()
-          if (isMounted) {
-            console.log('Schools loaded:', schoolsData.length);
-            setSchools(schoolsData)
-          }
-        } catch (error) {
-          console.error("Error fetching schools:", error)
-        }
-      }
-      loadSchools()
-      return () => {
-        isMounted = false;
+    const loadSchools = async () => {
+      setLoading(true);
+      try {
+        const data = await fetchSchools()
+        setSchools(data || [])
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false);
       }
     }
-  }, [isAuthenticated, user?.role, authLoading])
+    loadSchools()
+  }, [authLoading])
 
-  // Check for tab query parameter on mount
   useEffect(() => {
     const tabParam = searchParams?.get('tab')
-    if (tabParam && (tabParam === 'browse' || tabParam === 'applications' || tabParam === 'comments')) {
-      setActiveTab(tabParam as 'browse' | 'applications' | 'comments')
-    }
-
-    // Check for search query parameter
+    if (tabParam) setActiveTab(tabParam as any)
     const searchParam = searchParams?.get('search')
-    if (searchParam) {
-      setSearchTerm(searchParam)
-    }
+    if (searchParam) setSearchTerm(searchParam)
   }, [searchParams])
 
   useEffect(() => {
@@ -109,613 +87,363 @@ export default function StudentAccess() {
     }
   }, [applicationSuccess])
 
-  const handleRate = async (schoolId: string, value: number) => {
-    try {
-      setRatingSchoolId(schoolId)
-      await rateSchool(schoolId, value)
-      setSchools((prev) =>
-        prev.map((s) =>
-          s.id === schoolId
-            ? {
-              ...s,
-              rating_total: (s.rating_total ?? 0) + value,
-              rating_count: (s.rating_count ?? 0) + 1,
-              average_rating:
-                ((s.rating_total ?? 0) + value) / ((s.rating_count ?? 0) + 1),
-            }
-            : s,
-        ),
-      )
-    } catch (error) {
-      console.error("Failed to rate school:", error)
-    } finally {
-      setRatingSchoolId(null)
-    }
-  }
-
-
   const handleApplyClick = (school: School) => {
-    if (!isAuthenticated) {
-      router.push('/auth/signin')
-      return
-    }
+    if (!isAuthenticated) { router.push('/auth/signin'); return; }
     setSelectedSchool(school)
     setShowApplicationForm(true)
   }
 
   const tabs = [
-    { id: 'browse' as const, label: 'Browse Schools', icon: Search },
-    { id: 'applications' as const, label: 'My Applications', icon: FileText },
-    { id: 'grades' as const, label: 'My Grades', icon: GraduationCap },
-    { id: 'events' as const, label: 'Events', icon: Calendar },
+    { id: 'browse' as const, label: 'Find Schools', icon: Search },
+    { id: 'applications' as const, label: 'Applications', icon: FileText },
+    { id: 'grades' as const, label: 'Grades', icon: GraduationCap },
+    { id: 'events' as const, label: 'Events Hub', icon: Calendar },
     { id: 'scholarships' as const, label: 'Scholarships', icon: Award },
-    { id: 'comments' as const, label: 'Comments', icon: MessageSquare },
+    { id: 'comments' as const, label: 'Reviews', icon: MessageSquare },
   ]
 
-  // Load grades when tab is active
   useEffect(() => {
     if (activeTab === 'grades' && user?.id) {
-      setLoadingGrades(true)
-      Promise.all([
-        fetchGrades({ student_id: user.id }),
-        fetchReportCards(user.id)
-      ])
-        .then(([grades, reportCards]) => {
-          setMyGrades(grades)
-          setMyReportCards(reportCards)
-        })
-        .catch(err => console.error('Error loading grades:', err))
-        .finally(() => setLoadingGrades(false))
+      setLoading(true)
+      Promise.all([fetchGrades({ student_id: user.id }), fetchReportCards(user.id)])
+        .then(([g, r]) => { setMyGrades(g); setMyReportCards(r); })
+        .finally(() => setLoading(false))
+    }
+    if (activeTab === 'events') {
+      setLoading(true)
+      fetchEvents().then(setEvents).finally(() => setLoading(false))
+    }
+    if (activeTab === 'scholarships') {
+      setLoading(true)
+      Promise.all([fetchScholarships({ status: 'active' }), fetchMyApplications()])
+        .then(([s, a]) => { setScholarships(s); setMyScholarshipApps(a); })
+        .finally(() => setLoading(false))
     }
   }, [activeTab, user?.id])
 
-  // Load events when tab is active
-  useEffect(() => {
-    if (activeTab === 'events') {
-      setLoadingEvents(true)
-      fetchEvents()
-        .then(setEvents)
-        .catch(err => console.error('Error loading events:', err))
-        .finally(() => setLoadingEvents(false))
-    }
-  }, [activeTab])
-
-  // Load scholarships when tab is active
-  useEffect(() => {
-    if (activeTab === 'scholarships') {
-      setLoadingScholarships(true)
-      Promise.all([
-        fetchScholarships({ status: 'active' }),
-        fetchMyApplications()
-      ])
-        .then(([scholarshipList, apps]) => {
-          setScholarships(scholarshipList)
-          setMyScholarshipApps(apps)
-        })
-        .catch(err => console.error('Error loading scholarships:', err))
-        .finally(() => setLoadingScholarships(false))
-    }
-  }, [activeTab])
-
-  // Show access denied message if user is a leader or admin
-  if (isAuthenticated && user && (user.role === 'leader' || user.role === 'admin')) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Navigation />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
-            <AlertCircle className="w-16 h-16 mx-auto text-red-600 mb-4" />
-            <h2 className="text-2xl font-bold text-red-900 mb-2">Access Denied</h2>
-            <p className="text-red-700 mb-4">
-              This page is only accessible to students.
-            </p>
-            <p className="text-red-600 text-sm mb-4">
-              School leaders and administrators cannot access the student portal to prevent conflicts of interest.
-            </p>
-            {user.role === 'leader' && (
-              <button
-                onClick={() => router.push('/schools')}
-                className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Go to Schools Management
-              </button>
-            )}
-            {user.role === 'admin' && (
-              <button
-                onClick={() => router.push('/admin')}
-                className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Go to Admin Dashboard
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#0a0a0c] text-slate-100 flex flex-col font-sans">
       <Navigation />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <GraduationCap className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">{t("student")} Portal</h1>
-          </div>
-          <p className="text-gray-600">Find schools, apply, and share your feedback</p>
-          <p className="text-sm text-gray-500 mt-1">Restricted to students only</p>
-        </div>
-
-        {/* Tabs */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-          <div className="flex border-b border-gray-200">
-            {tabs.map((tab) => {
-              const Icon = tab.icon
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-medium transition-colors ${activeTab === tab.id
-                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                    }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {tab.label}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Browse Schools Tab */}
-        {activeTab === 'browse' && (
-          <>
-            {/* Search */}
-            <div className="max-w-2xl mx-auto mb-8">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Search for schools by name or location..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 py-4">
+        {/* Header Section - More Compact */}
+        <div className="relative mb-6 py-6 rounded-[2rem] overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-900/30 via-indigo-900/30 to-transparent blur-2xl opacity-50 pointer-events-none" />
+          <div className="relative z-10 text-center space-y-2">
+            <div className="inline-flex items-center gap-2 bg-purple-600/10 border border-purple-500/20 px-3 py-1 rounded-full mb-1">
+              <Sparkles className="w-3 h-3 text-purple-400" />
+              <span className="text-[8px] font-black uppercase tracking-[0.2em] text-purple-300">Hub</span>
             </div>
+            <h1 className="text-2xl lg:text-4xl font-black tracking-tight text-white italic">
+              Academic <span className="text-purple-500">Workspace</span>
+            </h1>
+          </div>
+        </div>
 
-            {/* School Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredSchools.map((school) => (
-                <div
-                  key={school.id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col"
-                >
-                  {school.image_urls && school.image_urls.length > 0 && (
-                    <div className="relative h-32 w-full overflow-hidden">
-                      <img
-                        src={school.image_urls[0]}
-                        alt={school.name}
-                        className="absolute h-full w-full object-cover"
-                      />
-                    </div>
-                  )}
-                  <div className="p-4 flex-1 flex flex-col">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1 line-clamp-2">
-                      {language === "rw" ? school.nameRw : school.name}
-                    </h3>
+        {/* Cinematic Tabs - Smaller & Tighter */}
+        <div className="flex flex-wrap justify-center gap-1.5 mb-8 sticky top-[80px] z-30 p-1.5 bg-black/60 backdrop-blur-xl border border-white/5 rounded-full shadow-2xl overflow-x-auto no-scrollbar max-w-fit mx-auto">
+          {tabs.map((tab) => {
+            const Icon = tab.icon
+            const active = activeTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 relative shrink-0 ${
+                  active 
+                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' 
+                    : 'text-slate-500 hover:text-slate-100'
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${active ? 'animate-pulse' : ''}`} />
+                <span>{tab.label}</span>
+              </button>
+            )
+          })}
+        </div>
 
-                    <div className="flex items-center mb-2">
-                      {(() => {
-                        const avg =
-                          school.average_rating && school.average_rating > 0
-                            ? school.average_rating
-                            : 0
-                        const rounded = Math.round(avg * 2) / 2
-                        const canRate = !user || user.role === 'student'; // Students and unauthenticated can rate
+        {/* Content Area */}
+        <div className="min-h-[600px]">
+          {activeTab === 'browse' && (
+            <div className="space-y-6">
+              {/* Premium Search */}
+              <div className="max-w-3xl mx-auto relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-[2rem] blur opacity-25 group-hover:opacity-40 transition" />
+                <div className="relative flex items-center bg-[#141418] border border-white/10 rounded-[2rem] shadow-2xl p-0.5">
+                  <Search className="ml-5 text-slate-500 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Search schools..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="flex-1 bg-transparent border-none focus:ring-0 text-slate-100 placeholder:text-slate-600 py-3 px-4 text-xs font-medium"
+                  />
+                </div>
+              </div>
 
-                        return (
-                          <>
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              canRate ? (
-                                <button
-                                  key={star}
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleRate(school.id, star)
-                                  }}
-                                  className="mr-1"
-                                  disabled={ratingSchoolId === school.id}
-                                >
-                                  <Star
-                                    className={`w-4 h-4 ${star <= rounded
-                                      ? "text-yellow-400 fill-yellow-400"
-                                      : "text-gray-300"
-                                      }`}
-                                  />
-                                </button>
-                              ) : (
-                                <Star
-                                  key={star}
-                                  className={`w-4 h-4 mr-1 ${star <= rounded
-                                    ? "text-yellow-400 fill-yellow-400"
-                                    : "text-gray-300"
-                                    }`}
-                                />
-                              )
-                            ))}
-                            <span className="ml-2 text-xs text-gray-500">
-                              {school.rating_count ?? 0}
-                            </span>
-                          </>
-                        )
-                      })()}
-                    </div>
-
-                    <div className="space-y-2 mb-3 text-sm text-gray-600">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4" />
-                        <span>{school.location}</span>
+              {/* School Grid */}
+              {loading && schools.length === 0 ? (
+                <div className="flex justify-center py-40">
+                  <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin shadow-[0_0_10px_rgba(147,51,234,0.3)]" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pb-10">
+                  {filteredSchools.map((school) => (
+                    <div
+                      key={school.id}
+                      className="group bg-[#141418] rounded-3xl border border-white/5 overflow-hidden flex flex-col hover:border-purple-500/40 transition-all duration-500 shadow-xl"
+                    >
+                      <div className="relative h-32 w-full overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#141418] via-transparent to-transparent z-10" />
+                        {school.image_urls && school.image_urls.length > 0 ? (
+                          <img
+                            src={school.image_urls[0]}
+                            alt={school.name}
+                            className="absolute h-full w-full object-cover group-hover:scale-110 transition-transform duration-1000"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 bg-purple-900/20 flex items-center justify-center">
+                            <SchoolIcon className="w-8 h-8 text-white/5" />
+                          </div>
+                        )}
+                        <div className="absolute top-3 left-3 z-20">
+                           <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest backdrop-blur-md border border-white/10 ${school.type === "Public" ? "bg-emerald-500/20 text-emerald-300" : "bg-purple-500/20 text-purple-300"}`}>
+                            {school.type}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4" />
-                        <span>{school.students} students</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <GraduationCap className="w-4 h-4" />
-                        <span>{school.level}</span>
-                      </div>
-                    </div>
 
-                    <div className="mt-auto flex items-center justify-between pt-3 border-t border-gray-100">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${school.type === "Public" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
-                          }`}
-                      >
-                        {school.type}
-                      </span>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setSelectedSchool(school)}
-                          className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                        >
-                          View Details
-                        </button>
-                        {isAuthenticated && (
+                      <div className="p-4 flex-1 flex flex-col">
+                        <h3 className="text-sm font-black text-slate-100 mb-1 truncate group-hover:text-purple-400 transition-colors">
+                          {language === "rw" ? school.nameRw : school.name}
+                        </h3>
+
+                        <div className="flex items-center gap-1 mb-3">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`w-2 h-2 ${star <= Math.round(school.average_rating || 0) ? "text-yellow-400 fill-yellow-400" : "text-white/5"}`}
+                            />
+                          ))}
+                          <span className="text-[8px] font-bold text-slate-500 ml-1 italic">{school.rating_count || 0} reviews</span>
+                        </div>
+
+                        <div className="space-y-1.5 mb-6">
+                          <div className="flex items-center gap-2 text-slate-400 opacity-80">
+                            <MapPin className="w-3 h-3 text-purple-500/70" />
+                            <span className="text-[10px] font-bold truncate">{school.location}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-slate-400 opacity-80">
+                            <GraduationCap className="w-3 h-3 text-indigo-500/70" />
+                            <span className="text-[10px] font-bold truncate">{school.level}</span>
+                          </div>
+                        </div>
+
+                        <div className="mt-auto flex items-center gap-2">
+                          <button
+                            onClick={() => setSelectedSchool(school)}
+                            className="flex-1 px-3 py-2 rounded-xl border border-white/5 text-[9px] font-black uppercase tracking-widest hover:bg-white/5 transition-all text-slate-400"
+                          >
+                            Info
+                          </button>
                           <button
                             onClick={() => handleApplyClick(school)}
-                            className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 font-medium"
+                            className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-purple-600/10 transition-all active:scale-95"
                           >
                             Apply
                           </button>
-                        )}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
+          )}
 
-            {filteredSchools.length === 0 && (
-              <div className="text-center py-12 bg-white rounded-lg">
-                <Search className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No schools found</h3>
-                <p className="text-gray-600">Try adjusting your search terms</p>
+          {activeTab === 'applications' && (
+            <div className="bg-[#141418] rounded-3xl border border-white/5 p-6 shadow-2xl">
+              <div className="mb-6">
+                <h2 className="text-xl font-black text-slate-100 italic tracking-tighter uppercase">My Status</h2>
+                <p className="text-[10px] text-slate-600 font-black uppercase tracking-widest">Enrollment Lifecycle</p>
               </div>
-            )}
-          </>
-        )}
-
-        {/* Applications Tab */}
-        {activeTab === 'applications' && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            {isAuthenticated ? (
-              <StudentDashboard />
-            ) : (
-              <div className="text-center py-12">
-                <FileText className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Sign in to view applications</h3>
-                <p className="text-gray-600 mb-4">You need to be signed in to view and manage your applications</p>
-                <button
-                  onClick={() => router.push('/auth/signin')}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-                >
-                  Sign In
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Comments Tab - Show all comments from all schools */}
-        {activeTab === 'comments' && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">All Comments</h2>
-              <p className="text-gray-600 text-sm">
-                View and interact with comments from all schools in the system. Like and reply to share your thoughts!
-              </p>
+              {isAuthenticated ? (
+                <StudentDashboard />
+              ) : (
+                <div className="text-center py-24 space-y-6">
+                  <div className="w-16 h-16 bg-purple-600/10 rounded-2xl flex items-center justify-center mx-auto border border-purple-500/20">
+                    <FileText className="w-6 h-6 text-purple-400" />
+                  </div>
+                  <h3 className="text-xl font-black text-slate-100">Portal Locked</h3>
+                  <button
+                    onClick={() => router.push('/auth/signin')}
+                    className="bg-purple-600 text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-purple-700 transition-all"
+                  >
+                    Sign In
+                  </button>
+                </div>
+              )}
             </div>
-            <SurveyCommentsFeed />
-          </div>
-        )}
+          )}
 
-        {/* Grades Tab */}
-        {activeTab === 'grades' && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">My Grades & Report Cards</h2>
-              <p className="text-gray-600">
-                View your academic performance and generated report cards
-              </p>
-            </div>
-
-            {loadingGrades ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Loading grades...</p>
+          {activeTab === 'grades' && (
+            <div className="bg-[#141418] rounded-3xl border border-white/5 p-6 shadow-2xl">
+              <div className="mb-6 flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-black text-slate-100 italic tracking-tighter uppercase">Academic Status</h2>
+                  <p className="text-[10px] text-slate-600 font-black uppercase tracking-widest">Official Records</p>
+                </div>
+                {isAuthenticated && (
+                  <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl">
+                    <Shield className="w-3 h-3 text-emerald-500" />
+                    <span className="text-[8px] font-black uppercase tracking-widest text-emerald-400">Verified</span>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="space-y-8">
-                {/* Report Cards Section */}
-                {myReportCards.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Report Cards</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {myReportCards.map((report) => (
-                        <div key={report.id} className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
-                          <div className="flex items-center justify-between mb-4">
-                            <div>
-                              <h4 className="font-semibold text-gray-900">{report.school_name}</h4>
-                              <p className="text-sm text-gray-600">{report.term} {report.academic_year}</p>
-                            </div>
-                            <div className="text-center">
-                              <div className={`text-3xl font-bold ${
-                                report.overall_grade === 'A' ? 'text-green-600' :
-                                report.overall_grade === 'B' ? 'text-blue-600' :
-                                report.overall_grade === 'C' ? 'text-yellow-600' :
-                                'text-red-600'
-                              }`}>
-                                {report.overall_grade}
-                              </div>
-                              <p className="text-xs text-gray-600">{report.overall_percentage?.toFixed(1)}%</p>
-                            </div>
+
+              {loading ? (
+                <div className="flex justify-center py-20">
+                  <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : myGrades.length === 0 ? (
+                <div className="py-20 text-center bg-black/20 rounded-2xl border border-dashed border-white/5">
+                  <BookText className="w-8 h-8 text-slate-700 mx-auto mb-3" />
+                  <p className="text-xs text-slate-500">No grades recorded yet</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Report Cards Summary */}
+                  {myReportCards.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {myReportCards.slice(0, 3).map((report) => (
+                        <div key={report.id} className="bg-white/5 border border-white/5 rounded-2xl p-4">
+                          <div className="flex justify-between items-start mb-4">
+                            <h4 className="text-[11px] font-bold text-slate-200 truncate">{report.school_name}</h4>
+                            <span className="text-lg font-black text-purple-400">{report.overall_grade}</span>
                           </div>
-                          {report.teacher_comments && (
-                            <div className="bg-white rounded p-3 mt-3">
-                              <p className="text-xs font-semibold text-gray-700 mb-1">Teacher Comments:</p>
-                              <p className="text-sm text-gray-600">{report.teacher_comments}</p>
-                            </div>
-                          )}
+                          <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                             <div className="h-full bg-purple-600" style={{ width: `${report.overall_percentage}%` }} />
+                          </div>
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Individual Grades */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">All Grades</h3>
-                  {myGrades.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500">
-                      <GraduationCap className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                      <p>No grades available yet</p>
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grade</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Term</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">School</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Comments</th>
+                  {/* Detailed Table */}
+                  <div className="overflow-hidden bg-black/20 rounded-2xl border border-white/5">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-white/5">
+                          <th className="px-4 py-3 text-[8px] font-black uppercase text-slate-500 tracking-[0.2em]">Subject</th>
+                          <th className="px-4 py-3 text-[8px] font-black uppercase text-slate-500 tracking-[0.2em]">Status</th>
+                          <th className="px-4 py-3 text-[8px] font-black uppercase text-slate-500 tracking-[0.2em]">Score</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {myGrades.map((grade) => (
+                          <tr key={grade.id} className="hover:bg-white/5 transition-all">
+                            <td className="px-4 py-3 text-[11px] font-bold text-slate-200">{grade.subject}</td>
+                            <td className="px-4 py-3">
+                              <span className="text-[10px] font-black uppercase text-purple-400">Graded {grade.grade}</span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-[10px] font-black text-slate-500">{grade.score}/{grade.max_score}</span>
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                          {myGrades.map((grade) => (
-                            <tr key={grade.id} className="hover:bg-gray-50">
-                              <td className="px-4 py-3 text-sm font-medium text-gray-900">{grade.subject}</td>
-                              <td className="px-4 py-3">
-                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                  grade.grade === 'A' ? 'bg-green-100 text-green-800' :
-                                  grade.grade === 'B' ? 'bg-blue-100 text-blue-800' :
-                                  grade.grade === 'C' ? 'bg-yellow-100 text-yellow-800' :
-                                  'bg-red-100 text-red-800'
-                                }`}>
-                                  {grade.grade}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-600">{grade.score}/{grade.max_score}</td>
-                              <td className="px-4 py-3 text-sm text-gray-600">{grade.term} {grade.academic_year}</td>
-                              <td className="px-4 py-3 text-sm text-gray-600">{grade.school_name}</td>
-                              <td className="px-4 py-3 text-sm text-gray-500">{grade.comments || '-'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Events Tab */}
-        {activeTab === 'events' && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Upcoming Events</h2>
-              <p className="text-gray-600">
-                Stay updated with school events and activities
-              </p>
-            </div>
-
-            <EventCalendar
-              onEventClick={(event) => {
-                // Show event details and allow RSVP
-                const rsvp = confirm(`Event: ${event.title}\nDate: ${new Date(event.start_date).toLocaleString()}\n${event.description || ''}\n\nWould you like to RSVP?`);
-                if (rsvp) {
-                  rsvpToEvent(event.id, 'attending')
-                    .then(() => alert('RSVP confirmed!'))
-                    .catch(err => alert('Failed to RSVP'));
-                }
-              }}
-              schoolId={undefined}
-            />
-          </div>
-        )}
-
-        {/* Scholarships Tab */}
-        {activeTab === 'scholarships' && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Scholarship Opportunities</h2>
-              <p className="text-gray-600">
-                Explore and apply for scholarships to support your education
-              </p>
-            </div>
-
-            {loadingScholarships ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Loading scholarships...</p>
-              </div>
-            ) : (
-              <div className="space-y-8">
-                {/* My Applications */}
-                {myScholarshipApps.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">My Applications</h3>
-                    <div className="space-y-3">
-                      {myScholarshipApps.map((app) => (
-                        <div key={app.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                          <div>
-                            <h4 className="font-semibold text-gray-900">{app.scholarship_title}</h4>
-                            <p className="text-sm text-gray-600">{app.school_name}</p>
-                          </div>
-                          <span className={`px-3 py-1 text-xs font-medium rounded-full ${
-                            app.status === 'approved' ? 'bg-green-100 text-green-700' :
-                            app.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                            'bg-yellow-100 text-yellow-700'
-                          }`}>
-                            {app.status}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                )}
-
-                {/* Available Scholarships */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Available Scholarships</h3>
-                  {scholarships.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500">
-                      <Award className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                      <p>No scholarships available at this time</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {scholarships.map((scholarship) => {
-                        const alreadyApplied = myScholarshipApps.some(app => app.scholarship_id === scholarship.id);
-                        return (
-                          <div key={scholarship.id} className="bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
-                            <div className="flex items-start gap-4 mb-4">
-                              <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <Award className="w-6 h-6 text-white" />
-                              </div>
-                              <div className="flex-1">
-                                <h4 className="font-bold text-gray-900 mb-1">{scholarship.title}</h4>
-                                <p className="text-sm text-gray-600 line-clamp-2">{scholarship.description}</p>
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4 mb-4">
-                              <div>
-                                <p className="text-xs text-gray-500">Amount</p>
-                                <p className="font-semibold text-gray-900">
-                                  {scholarship.amount?.toLocaleString()} {scholarship.currency}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500">Deadline</p>
-                                <p className="font-semibold text-gray-900">
-                                  {scholarship.application_deadline ? new Date(scholarship.application_deadline).toLocaleDateString() : 'Open'}
-                                </p>
-                              </div>
-                            </div>
-                            {scholarship.eligibility_criteria && (
-                              <div className="bg-white rounded p-3 mb-4">
-                                <p className="text-xs font-semibold text-gray-700 mb-1">Eligibility:</p>
-                                <p className="text-xs text-gray-600 line-clamp-2">{scholarship.eligibility_criteria}</p>
-                              </div>
-                            )}
-                            <button
-                              onClick={() => {
-                                if (alreadyApplied) {
-                                  alert('You have already applied for this scholarship');
-                                } else {
-                                  router.push(`/scholarships/${scholarship.id}/apply`);
-                                }
-                              }}
-                              disabled={alreadyApplied}
-                              className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
-                                alreadyApplied
-                                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                  : 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white'
-                              }`}
-                            >
-                              {alreadyApplied ? 'Already Applied' : 'Apply Now'}
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          )}
 
-        {/* School Details Modal */}
+          {activeTab === 'events' && (
+            <div className="bg-[#141418] rounded-3xl border border-white/5 p-6 shadow-2xl">
+              <div className="mb-6">
+                <h2 className="text-xl font-black text-slate-100 italic tracking-tighter uppercase">Calendar</h2>
+                <p className="text-[10px] text-slate-600 font-black uppercase tracking-widest">Schedules</p>
+              </div>
+              <div className="p-2 bg-white/5 rounded-2xl border border-white/5">
+                <EventCalendar onEventClick={() => {}} />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'scholarships' && (
+            <div className="bg-[#141418] rounded-3xl border border-white/5 p-6 shadow-2xl">
+              <div className="mb-6">
+                <h2 className="text-xl font-black text-slate-100 italic tracking-tighter uppercase">Scholarships</h2>
+                <p className="text-[10px] text-slate-600 font-black uppercase tracking-widest">Opportunities</p>
+              </div>
+              {loading ? (
+                 <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" /></div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {scholarships.map((s) => {
+                    const applied = myScholarshipApps.some(app => app.scholarship_id === s.id);
+                    return (
+                      <div key={s.id} className="bg-white/5 border border-white/5 rounded-2xl p-4 hover:border-amber-500/20 transition-all group">
+                        <div className="flex justify-between items-start mb-3">
+                          <h4 className="text-[11px] font-bold text-slate-100 italic truncate w-32">{s.title}</h4>
+                          <Award className={`w-4 h-4 ${applied ? 'text-emerald-500' : 'text-amber-500/20'}`} />
+                        </div>
+                        <p className="text-[9px] text-slate-500 line-clamp-2 italic mb-4">{s.description}</p>
+                        <div className="flex items-center justify-between text-[10px] mb-4">
+                           <span className="text-amber-500 font-black">{s.amount?.toLocaleString()} {s.currency}</span>
+                           <span className="text-slate-600">Available</span>
+                        </div>
+                        <button
+                          onClick={() => router.push(`/scholarships/${s.id}/apply`)}
+                          disabled={applied}
+                          className={`w-full py-2 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all ${
+                            applied ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-600 text-white'
+                          }`}
+                        >
+                          {applied ? 'Applied' : 'Apply'}
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'comments' && (
+            <div className="bg-[#141418] rounded-3xl border border-white/5 p-6 shadow-2xl">
+              <div className="mb-6">
+                <h2 className="text-xl font-black text-slate-100 italic tracking-tighter uppercase">Community</h2>
+                <p className="text-[10px] text-slate-600 font-black uppercase tracking-widest">Verified Feedback</p>
+              </div>
+              <SurveyCommentsFeed showAll={true} />
+            </div>
+          )}
+        </div>
+
+        {/* Modals */}
         {selectedSchool && !showApplicationForm && (
           <SchoolDetailsModal
             school={selectedSchool}
             onClose={() => setSelectedSchool(null)}
             onApply={() => {
-              if (isAuthenticated) {
-                setShowApplicationForm(true)
-              } else {
-                router.push('/auth/signin')
-              }
+              if (isAuthenticated) { setShowApplicationForm(true) } else { router.push('/auth/signin') }
             }}
           />
         )}
-
-        {/* Application Form Modal */}
         {showApplicationForm && selectedSchool && (
           <ApplicationForm
             school={selectedSchool}
-            onClose={() => {
-              setShowApplicationForm(false)
-              setSelectedSchool(null)
-            }}
-            onSuccess={() => {
-              setApplicationSuccess(true)
-              setShowApplicationForm(false)
-            }}
+            onClose={() => { setShowApplicationForm(false); setSelectedSchool(null); }}
+            onSuccess={() => { setApplicationSuccess(true); setShowApplicationForm(false); }}
           />
         )}
-      </div>
+      </main>
+
+      <footer className="mt-20 py-8 border-t border-white/5 text-center">
+         <p className="text-[8px] uppercase font-black tracking-[0.4em] text-slate-800">© 2026 RSBS ECOSYSTEM</p>
+      </footer>
     </div>
   )
 }
