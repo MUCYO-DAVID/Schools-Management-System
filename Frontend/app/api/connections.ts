@@ -1,5 +1,6 @@
-const backendUrl =
-  process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
+import { BASE_URL } from '@/api/school';
+
+const backendUrl = BASE_URL;
 
 export async function searchUsers(query: string) {
   const token = localStorage.getItem('token');
@@ -13,8 +14,34 @@ export async function searchUsers(query: string) {
   return res.json();
 }
 
+export async function fetchSuggestedUsers() {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${backendUrl}/api/connections/suggested`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error('Failed to fetch suggested users');
+  return res.json();
+}
+
+export async function fetchAllUsers() {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${backendUrl}/api/connections/all-users`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error('Failed to fetch all users');
+  return res.json();
+}
+
 export async function sendConnectionRequest(receiverId: number) {
   const token = localStorage.getItem('token');
+  console.log('API: sendConnectionRequest to', receiverId, 'with token', token?.substring(0, 10) + '...');
+  
   const res = await fetch(`${backendUrl}/api/connections/request`, {
     method: 'POST',
     headers: {
@@ -24,7 +51,11 @@ export async function sendConnectionRequest(receiverId: number) {
     body: JSON.stringify({ receiver_id: receiverId }),
   });
 
-  if (!res.ok) throw new Error('Failed to send request');
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    console.error('API Error details:', errorData);
+    throw new Error(errorData.message || 'Failed to send request');
+  }
   return res.json();
 }
 
@@ -64,5 +95,18 @@ export async function fetchPendingRequests() {
   });
 
   if (!res.ok) throw new Error('Failed to fetch pending requests');
+  return res.json();
+}
+
+export async function removeConnection(userId: number) {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${backendUrl}/api/connections/${userId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error('Failed to remove connection');
   return res.json();
 }

@@ -3,6 +3,23 @@ const router = express.Router();
 const pool = require('../db');
 const authMiddleware = require('../middleware/auth');
 
+const multer = require('multer');
+const path = require('path');
+
+// Multer storage configuration for chat attachments
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, '..', 'uploads'));
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    const ext = path.extname(file.originalname);
+    cb(null, `chat-${uniqueSuffix}${ext}`);
+  },
+});
+
+const upload = multer({ storage });
+
 // Get or create direct chat room between two users
 router.post('/chat/rooms/direct', authMiddleware, async (req, res) => {
   try {
@@ -166,10 +183,16 @@ router.get('/chat/rooms/:roomId/messages', authMiddleware, async (req, res) => {
 });
 
 // Send message
-router.post('/chat/rooms/:roomId/messages', authMiddleware, async (req, res) => {
+router.post('/chat/rooms/:roomId/messages', authMiddleware, upload.single('attachment'), async (req, res) => {
   try {
     const { roomId } = req.params;
-    const { message, message_type, attachment_url } = req.body;
+    const { message, message_type } = req.body;
+    let attachment_url = req.body.attachment_url;
+
+    // If a file was uploaded, use its URL
+    if (req.file) {
+      attachment_url = `/uploads/${req.file.filename}`;
+    }
 
     if (!message && !attachment_url) {
       return res.status(400).json({ message: 'Message or attachment is required' });
@@ -189,7 +212,13 @@ router.post('/chat/rooms/:roomId/messages', authMiddleware, async (req, res) => 
       `INSERT INTO chat_messages (room_id, sender_id, message, message_type, attachment_url)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [roomId, req.user.id, message || '', message_type || 'text', attachment_url || null]
+      [
+        roomId, 
+        req.user.id, 
+        message || '', 
+        message_type || (req.file ? (req.file.mimetype.startsWith('image/') ? 'image' : 'document') : 'text'), 
+        attachment_url || null
+      ]
     );
 
     // Get sender info

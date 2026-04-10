@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Navigation from '../components/Navigation';
+import { useLanguage } from '../providers/LanguageProvider';
 import { useAuth } from '../providers/AuthProvider';
+import { toast } from 'sonner';
 import {
   createAnnouncement,
   fetchAnnouncements,
@@ -18,7 +20,7 @@ import { fetchFeeSchedules, createFeeSchedule } from '../api/payments';
 import { BASE_URL } from '@/api/school';
 import { fetchGrades, createGrade } from '../api/grades';
 import { fetchEvents, createEvent } from '../api/events';
-import { GraduationCap, Calendar, Plus } from 'lucide-react';
+import { GraduationCap, Calendar, Plus, MessageCircle, ChevronRight } from 'lucide-react';
 import EventCalendar from '../components/EventCalendar';
 
 export default function TeacherPortal() {
@@ -48,7 +50,7 @@ export default function TeacherPortal() {
   // Grades state
   const [grades, setGrades] = useState<any[]>([]);
   const [gradeStudentId, setGradeStudentId] = useState('');
-  const [gradeSchoolId, setGradeSchoolId] = useState('');
+  const [gradeSchoolId, setGradeSchoolId] = useState(user?.school_id || '');
   const [gradeSubject, setGradeSubject] = useState('');
   const [gradeGrade, setGradeGrade] = useState('');
   const [gradeScore, setGradeScore] = useState('');
@@ -56,6 +58,8 @@ export default function TeacherPortal() {
   const [gradeTerm, setGradeTerm] = useState('');
   const [gradeAcademicYear, setGradeAcademicYear] = useState('');
   const [gradeComments, setGradeComments] = useState('');
+  const [isDocumentUpload, setIsDocumentUpload] = useState(false);
+  const [gradeDocumentUrl, setGradeDocumentUrl] = useState('');
 
   // Events state
   const [events, setEvents] = useState<any[]>([]);
@@ -158,9 +162,10 @@ export default function TeacherPortal() {
       setAnnouncementTitle('');
       setAnnouncementBody('');
       setAnnouncementAudience('all');
-    } catch (error) {
+      toast.success('Announcement created successfully!');
+    } catch (error: any) {
       console.error('Failed to create announcement:', error);
-      alert('Failed to create announcement');
+      toast.error(error.message || 'Failed to create announcement');
     } finally {
       setIsSubmitting(false);
     }
@@ -209,27 +214,40 @@ export default function TeacherPortal() {
   };
 
   const handleCreateGrade = async () => {
-    if (!gradeStudentId || !gradeSchoolId || !gradeSubject.trim() || !gradeGrade.trim() || !gradeTerm.trim() || !gradeAcademicYear.trim()) {
-      alert('Please fill in all required fields');
+    if (!gradeStudentId || !gradeSchoolId || !gradeSubject.trim() || !gradeTerm.trim() || !gradeAcademicYear.trim()) {
+      toast.error('Please fill in all required fields');
       return;
     }
+
+    if (!isDocumentUpload && !gradeGrade.trim()) {
+      toast.error('Grade is required');
+      return;
+    }
+
+    if (isDocumentUpload && !gradeDocumentUrl.trim()) {
+      toast.error('Document URL is required');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const created = await createGrade({
         student_user_id: Number(gradeStudentId),
         school_id: gradeSchoolId,
         subject: gradeSubject.trim(),
-        grade: gradeGrade.trim(),
-        score: gradeScore ? Number(gradeScore) : undefined,
-        max_score: gradeMaxScore ? Number(gradeMaxScore) : undefined,
+        grade: isDocumentUpload ? 'DOC' : gradeGrade.trim(),
+        score: (!isDocumentUpload && gradeScore) ? Number(gradeScore) : undefined,
+        max_score: (!isDocumentUpload && gradeMaxScore) ? Number(gradeMaxScore) : undefined,
         term: gradeTerm.trim(),
         academic_year: gradeAcademicYear.trim(),
         comments: gradeComments.trim() || undefined,
+        is_document: isDocumentUpload,
+        document_url: isDocumentUpload ? gradeDocumentUrl.trim() : undefined,
       });
       setGrades((prev) => [created, ...prev]);
       // Reset form
       setGradeStudentId('');
-      setGradeSchoolId('');
+      // Keep school ID
       setGradeSubject('');
       setGradeGrade('');
       setGradeScore('');
@@ -237,10 +255,11 @@ export default function TeacherPortal() {
       setGradeTerm('');
       setGradeAcademicYear('');
       setGradeComments('');
-      alert('Grade added successfully!');
+      setGradeDocumentUrl('');
+      toast.success('Grade added successfully!');
     } catch (error: any) {
       console.error('Failed to create grade:', error);
-      alert(error.message || 'Failed to create grade');
+      toast.error(error.message || 'Failed to create grade');
     } finally {
       setIsSubmitting(false);
     }
@@ -248,7 +267,7 @@ export default function TeacherPortal() {
 
   const handleCreateEvent = async () => {
     if (!eventTitle.trim() || !eventStartDate) {
-      alert('Title and start date are required');
+      toast.error('Title and start date are required');
       return;
     }
     setIsSubmitting(true);
@@ -271,10 +290,10 @@ export default function TeacherPortal() {
       setEventEndDate('');
       setEventLocation('');
       setEventAudience('all');
-      alert('Event created successfully!');
+      toast.success('Event created successfully!');
     } catch (error) {
       console.error('Failed to create event:', error);
-      alert('Failed to create event');
+      toast.error('Failed to create event');
     } finally {
       setIsSubmitting(false);
     }
@@ -364,84 +383,21 @@ export default function TeacherPortal() {
           )}
 
           {activeTab === 'messages' && (
-            <div className="p-6 space-y-6">
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Send a message</h3>
-                <div className="grid gap-3 md:grid-cols-3">
-                  <select
-                    value={messageRecipient}
-                    onChange={(e) => setMessageRecipient(Number(e.target.value))}
-                    className="border border-gray-300 rounded-md px-3 py-2 text-sm"
-                  >
-                    <option value="">Select a parent</option>
-                    {recipients.map((recipient: any) => (
-                      <option key={recipient.id} value={recipient.id}>
-                        {recipient.first_name} {recipient.last_name}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    value={messageSubject}
-                    onChange={(e) => setMessageSubject(e.target.value)}
-                    placeholder="Subject (optional)"
-                    className="border border-gray-300 rounded-md px-3 py-2 text-sm"
-                  />
-                  <button
-                    disabled={isSubmitting || !messageRecipient || !messageBody.trim()}
-                    onClick={handleSendMessage}
-                    className="bg-blue-600 text-white text-sm px-4 py-2 rounded-md disabled:opacity-50"
-                  >
-                    Send
-                  </button>
-                </div>
-                <textarea
-                  value={messageBody}
-                  onChange={(e) => setMessageBody(e.target.value)}
-                  placeholder="Write your message..."
-                  className="mt-3 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                  rows={4}
-                />
+            <div className="p-12 space-y-6 flex flex-col items-center justify-center text-center bg-white rounded-lg border border-gray-200 min-h-[400px]">
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                <MessageCircle className="w-10 h-10 text-blue-600" />
               </div>
-
-              <div className="grid gap-6 lg:grid-cols-2">
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Inbox</h4>
-                  <div className="space-y-3">
-                    {inbox.length === 0 ? (
-                      <p className="text-sm text-gray-500">No messages yet.</p>
-                    ) : (
-                      inbox.map((msg: any) => (
-                        <div key={msg.id} className="border border-gray-200 rounded-lg p-3">
-                          <p className="text-xs text-gray-400">
-                            From {msg.sender_first_name} {msg.sender_last_name}
-                          </p>
-                          <p className="text-sm font-medium text-gray-900">{msg.subject || 'No subject'}</p>
-                          <p className="text-sm text-gray-600 whitespace-pre-wrap">{msg.body}</p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Sent</h4>
-                  <div className="space-y-3">
-                    {sent.length === 0 ? (
-                      <p className="text-sm text-gray-500">No sent messages.</p>
-                    ) : (
-                      sent.map((msg: any) => (
-                        <div key={msg.id} className="border border-gray-200 rounded-lg p-3">
-                          <p className="text-xs text-gray-400">
-                            To {msg.recipient_first_name} {msg.recipient_last_name}
-                          </p>
-                          <p className="text-sm font-medium text-gray-900">{msg.subject || 'No subject'}</p>
-                          <p className="text-sm text-gray-600 whitespace-pre-wrap">{msg.body}</p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
+              <h3 className="text-2xl font-bold text-gray-900">Messaging has moved!</h3>
+              <p className="text-gray-500 mb-6 max-w-md text-base leading-relaxed">
+                We've upgraded our communication system. You can now chat directly with teachers, school leaders, and parents in real-time.
+              </p>
+              <button
+                onClick={() => router.push('/inbox')}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full transition-all flex items-center gap-2 shadow-lg hover:shadow-blue-600/30 hover:-translate-y-0.5"
+              >
+                Go to Messenger
+                <ChevronRight className="w-5 h-5 -mr-1" />
+              </button>
             </div>
           )}
 
@@ -564,9 +520,21 @@ export default function TeacherPortal() {
           {activeTab === 'grades' && (
             <div className="p-6 space-y-6">
               <div className="border border-gray-200 rounded-lg p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <GraduationCap className="w-5 h-5" />
-                  Enter Student Grade
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <GraduationCap className="w-5 h-5" />
+                    Enter Student Grade
+                  </div>
+                  <div className="flex items-center gap-2 text-xs font-medium">
+                    <span className={isDocumentUpload ? 'text-gray-500' : 'text-blue-600'}>Standard</span>
+                    <button 
+                      onClick={() => setIsDocumentUpload(!isDocumentUpload)}
+                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isDocumentUpload ? 'bg-blue-600' : 'bg-gray-200'}`}
+                    >
+                      <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isDocumentUpload ? 'translate-x-5' : 'translate-x-1'}`} />
+                    </button>
+                    <span className={isDocumentUpload ? 'text-blue-600' : 'text-gray-500'}>Document</span>
+                  </div>
                 </h3>
                 <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                   <input
@@ -581,6 +549,7 @@ export default function TeacherPortal() {
                     onChange={(e) => setGradeSchoolId(e.target.value)}
                     placeholder="School ID"
                     className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                    readOnly={!!user?.school_id}
                   />
                   <input
                     value={gradeSubject}
@@ -588,32 +557,43 @@ export default function TeacherPortal() {
                     placeholder="Subject (e.g., Mathematics)"
                     className="border border-gray-300 rounded-md px-3 py-2 text-sm"
                   />
-                  <select
-                    value={gradeGrade}
-                    onChange={(e) => setGradeGrade(e.target.value)}
-                    className="border border-gray-300 rounded-md px-3 py-2 text-sm"
-                  >
-                    <option value="">Select Grade</option>
-                    <option value="A">A - Excellent</option>
-                    <option value="B">B - Good</option>
-                    <option value="C">C - Satisfactory</option>
-                    <option value="D">D - Needs Improvement</option>
-                    <option value="F">F - Failing</option>
-                  </select>
-                  <input
-                    value={gradeScore}
-                    onChange={(e) => setGradeScore(e.target.value)}
-                    placeholder="Score (e.g., 85)"
-                    type="number"
-                    className="border border-gray-300 rounded-md px-3 py-2 text-sm"
-                  />
-                  <input
-                    value={gradeMaxScore}
-                    onChange={(e) => setGradeMaxScore(e.target.value)}
-                    placeholder="Max Score (default: 100)"
-                    type="number"
-                    className="border border-gray-300 rounded-md px-3 py-2 text-sm"
-                  />
+                  {isDocumentUpload ? (
+                    <input
+                      value={gradeDocumentUrl}
+                      onChange={(e) => setGradeDocumentUrl(e.target.value)}
+                      placeholder="Document URL (e.g., Cloud link)"
+                      className="border border-gray-300 rounded-md px-3 py-2 text-sm md:col-span-2 lg:col-span-3"
+                    />
+                  ) : (
+                    <>
+                      <select
+                        value={gradeGrade}
+                        onChange={(e) => setGradeGrade(e.target.value)}
+                        className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                      >
+                        <option value="">Select Grade</option>
+                        <option value="A">A - Excellent</option>
+                        <option value="B">B - Good</option>
+                        <option value="C">C - Satisfactory</option>
+                        <option value="D">D - Needs Improvement</option>
+                        <option value="F">F - Failing</option>
+                      </select>
+                      <input
+                        value={gradeScore}
+                        onChange={(e) => setGradeScore(e.target.value)}
+                        placeholder="Score (e.g., 85)"
+                        type="number"
+                        className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                      />
+                      <input
+                        value={gradeMaxScore}
+                        onChange={(e) => setGradeMaxScore(e.target.value)}
+                        placeholder="Max Score (default: 100)"
+                        type="number"
+                        className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                      />
+                    </>
+                  )}
                   <input
                     value={gradeTerm}
                     onChange={(e) => setGradeTerm(e.target.value)}

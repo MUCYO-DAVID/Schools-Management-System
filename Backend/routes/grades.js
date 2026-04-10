@@ -135,18 +135,38 @@ router.post('/grades', authMiddleware, async (req, res) => {
       max_score,
       term,
       academic_year,
-      comments
+      comments,
+      is_document,
+      document_url
     } = req.body;
 
-    if (!student_user_id || !school_id || !subject || !grade) {
+    if (!student_user_id || !school_id || !subject) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
+    // Validation for non-document grades
+    if (!is_document && !grade) {
+      return res.status(400).json({ message: 'Grade is required for non-document uploads' });
+    }
+
     const result = await pool.query(
-      `INSERT INTO grades (student_user_id, school_id, subject, grade, score, max_score, term, academic_year, teacher_id, comments)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `INSERT INTO grades (student_user_id, school_id, subject, grade, score, max_score, term, academic_year, teacher_id, comments, is_document, document_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
-      [student_user_id, school_id, subject, grade, score || null, max_score || 100, term, academic_year, req.user.id, comments || null]
+      [
+        student_user_id, 
+        school_id, 
+        subject, 
+        grade || 'DOC', 
+        score || null, 
+        max_score || 100, 
+        term, 
+        academic_year, 
+        req.user.id, 
+        comments || null,
+        is_document || false,
+        document_url || null
+      ]
     );
 
     // Send notification to student

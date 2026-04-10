@@ -60,15 +60,30 @@ export async function fetchChatMessages(roomId: number, limit: number = 50, offs
 }
 
 // Send message
-export async function sendChatMessage(roomId: number, message: string, messageType: string = 'text', attachmentUrl?: string) {
+export async function sendChatMessage(roomId: number, message: string, messageType: string = 'text', attachment?: File) {
   const token = localStorage.getItem('token');
+  
+  let body: any;
+  let headers: any = {
+    'Authorization': `Bearer ${token}`,
+  };
+
+  if (attachment) {
+    const formData = new FormData();
+    formData.append('message', message);
+    formData.append('message_type', messageType);
+    formData.append('attachment', attachment);
+    body = formData;
+    // Don't set Content-Type header for FormData, browser will do it automatically
+  } else {
+    headers['Content-Type'] = 'application/json';
+    body = JSON.stringify({ message, message_type: messageType });
+  }
+
   const res = await fetch(`${backendUrl}/api/chat/rooms/${roomId}/messages`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-    body: JSON.stringify({ message, message_type: messageType, attachment_url: attachmentUrl }),
+    headers,
+    body,
   });
 
   if (!res.ok) throw new Error('Failed to send message');

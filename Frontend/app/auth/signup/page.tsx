@@ -17,23 +17,48 @@ const SignUpPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState<'student' | 'leader' | 'teacher'>('student');
   const [schoolName, setSchoolName] = useState('');
+  const [selectedSchoolId, setSelectedSchoolId] = useState('');
+  const [schools, setSchools] = useState<School[]>([]);
   const [subject, setSubject] = useState('');
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { login } = useAuth();
 
+  useEffect(() => {
+    const loadSchools = async () => {
+      try {
+        const data = await fetchSchools();
+        setSchools(data);
+      } catch (err) {
+        console.error('Error loading schools:', err);
+      }
+    };
+    loadSchools();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     setError('');
+    setIsLoading(true);
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
+      setIsLoading(false);
       return;
     }
 
     if (!agreeToTerms) {
       setError('You must agree to the terms and conditions');
+      setIsLoading(false);
+      return;
+    }
+
+    if ((role === 'student' || role === 'teacher') && !selectedSchoolId) {
+      setError('Please select your school');
+      setIsLoading(false);
       return;
     }
 
@@ -43,12 +68,14 @@ const SignUpPage = () => {
         last_name: lastName,
         email,
         password,
-        role
+        role,
+        school_id: selectedSchoolId
       };
 
       // Add teacher-specific fields if role is teacher
       if (role === 'teacher') {
-        payload.school_name = schoolName;
+        const school = schools.find(s => s.id === selectedSchoolId);
+        payload.school_name = school?.name || '';
         payload.subject = subject;
       }
 
@@ -86,6 +113,8 @@ const SignUpPage = () => {
       }
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -194,34 +223,50 @@ const SignUpPage = () => {
               </p>
             )}
 
+            {/* Role-Specific Fields */}
             {role === 'teacher' && (
-              <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="relative">
-                  <input
-                    id="schoolName"
-                    type="text"
-                    className="w-full bg-[#333] hover:bg-[#444] rounded-lg px-5 pt-6 pb-2 text-white border-none focus:outline-none focus:ring-2 focus:ring-purple-500 peer h-14"
-                    placeholder=" "
-                    value={schoolName}
-                    onChange={(e) => setSchoolName(e.target.value)}
-                  />
-                  <label htmlFor="schoolName" className="absolute left-5 top-4 text-[#8c8c8c] text-sm transition-all peer-focus:text-[11px] peer-focus:top-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#8c8c8c] peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:top-2 pointer-events-none">
-                    School Name
-                  </label>
-                </div>
-                <div className="relative">
-                  <input
-                    id="subject"
-                    type="text"
-                    className="w-full bg-[#333] hover:bg-[#444] rounded-lg px-5 pt-6 pb-2 text-white border-none focus:outline-none focus:ring-2 focus:ring-purple-500 peer h-14"
-                    placeholder=" "
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                  />
-                  <label htmlFor="subject" className="absolute left-5 top-4 text-[#8c8c8c] text-sm transition-all peer-focus:text-[11px] peer-focus:top-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#8c8c8c] peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:top-2 pointer-events-none">
-                    Subject/Lesson
-                  </label>
-                </div>
+              <div className="relative animate-in fade-in slide-in-from-top-2 duration-300">
+                <input
+                  id="subject"
+                  type="text"
+                  className="w-full bg-[#333] hover:bg-[#444] transition-all rounded-lg px-5 pt-6 pb-2 text-white border-none focus:outline-none focus:ring-2 focus:ring-purple-500 peer h-14"
+                  placeholder=" "
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  required
+                />
+                <label
+                  htmlFor="subject"
+                  className="absolute left-5 top-4 text-[#8c8c8c] text-sm transition-all peer-focus:text-[11px] peer-focus:top-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#8c8c8c] peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:top-2 pointer-events-none"
+                >
+                  Subject/Lesson
+                </label>
+              </div>
+            )}
+
+            {/* School Selection for Students and Teachers */}
+            {(role === 'student' || role === 'teacher') && (
+              <div className="relative animate-in fade-in slide-in-from-top-2 duration-300">
+                <select
+                  id="selectedSchoolId"
+                  value={selectedSchoolId}
+                  onChange={(e) => setSelectedSchoolId(e.target.value)}
+                  className="w-full bg-[#333] hover:bg-[#444] transition-all rounded-lg px-4 pt-6 pb-2 text-white border-none focus:outline-none focus:ring-2 focus:ring-purple-500 h-14 appearance-none cursor-pointer"
+                  required
+                >
+                  <option value="" disabled className="bg-[#333]">Select your school</option>
+                  {schools.map((school: any) => (
+                    <option key={school.id} value={school.id} className="bg-[#333]">
+                      {school.name}
+                    </option>
+                  ))}
+                </select>
+                <label
+                  htmlFor="selectedSchoolId"
+                  className="absolute left-4 top-2 text-[#8c8c8c] text-[10px] uppercase tracking-widest font-bold pointer-events-none"
+                >
+                  Select Your School
+                </label>
               </div>
             )}
 
@@ -277,9 +322,18 @@ const SignUpPage = () => {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 transition-all text-white font-bold py-3.5 rounded-lg mt-4 shadow-lg shadow-purple-500/20 active:scale-95"
+              disabled={isLoading}
+              className={`w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 transition-all text-white font-bold py-3.5 rounded-lg mt-4 shadow-lg shadow-purple-500/20 active:scale-95 flex items-center justify-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              Sign Up
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Signing Up...
+                </>
+              ) : 'Sign Up'}
             </button>
           </form>
 

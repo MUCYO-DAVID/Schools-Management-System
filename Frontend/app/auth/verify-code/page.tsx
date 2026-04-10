@@ -16,6 +16,8 @@ export default function VerifyCodePage() {
   const [requiresLeaderQuestions, setRequiresLeaderQuestions] = useState(false);
   const [leaderAnswer1, setLeaderAnswer1] = useState('');
   const [leaderAnswer2, setLeaderAnswer2] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const router = useRouter();
   const { login } = useAuth();
 
@@ -36,7 +38,9 @@ export default function VerifyCodePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isVerifying) return;
     setError('');
+    setIsVerifying(true);
 
     if (!emailForVerification) {
       setError('Email not found for verification. Please sign in again.');
@@ -108,11 +112,15 @@ export default function VerifyCodePage() {
       }
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred during verification');
+    } finally {
+      setIsVerifying(false);
     }
   };
 
   const handleResendCode = async () => {
+    if (isResending) return;
     setError('');
+    setIsResending(true);
     if (!emailForVerification) {
       setError('Email not found to resend code.');
       return;
@@ -141,6 +149,8 @@ export default function VerifyCodePage() {
       alert('Verification code sent to your email!');
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred while resending code');
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -244,9 +254,18 @@ export default function VerifyCodePage() {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 transition-all text-white font-bold py-3.5 rounded-lg mt-6 shadow-lg shadow-purple-500/20 active:scale-95"
+              disabled={isVerifying}
+              className={`w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 transition-all text-white font-bold py-3.5 rounded-lg mt-6 shadow-lg shadow-purple-500/20 active:scale-95 flex items-center justify-center gap-2 ${isVerifying ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              {requiresLeaderQuestions ? 'Verify Leadership' : 'Verify Code'}
+              {isVerifying ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Verifying...
+                </>
+              ) : (requiresLeaderQuestions ? 'Verify Leadership' : 'Verify Code')}
             </button>
 
             {!requiresLeaderQuestions && (
@@ -254,9 +273,18 @@ export default function VerifyCodePage() {
                 <button
                   type="button"
                   onClick={handleResendCode}
-                  className="text-[#b3b3b3] hover:text-white hover:underline text-sm font-medium transition-colors underline-offset-4 decoration-purple-500"
+                  disabled={isResending}
+                  className={`text-[#b3b3b3] hover:text-white hover:underline text-sm font-medium transition-colors underline-offset-4 decoration-purple-500 flex items-center justify-center gap-1 mx-auto ${isResending ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
-                  Resend Code
+                  {isResending ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Resending...
+                    </>
+                  ) : 'Resend Code'}
                 </button>
               </div>
             )}

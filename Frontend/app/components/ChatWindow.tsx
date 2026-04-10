@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Send, X, Users, MessageCircle, Clock, Check, CheckCheck } from 'lucide-react';
 import { fetchChatMessages, sendChatMessage, fetchChatRooms, createDirectChat } from '../api/realtime-chat';
 import { useAuth } from '../providers/AuthProvider';
+import { toast } from 'sonner';
 
 interface Message {
   id: number;
@@ -129,7 +130,7 @@ export default function ChatWindow({ onClose, initialRoomId, initialUserId }: Ch
       loadRooms();
     } catch (error) {
       console.error('Error sending message:', error);
-      alert('Failed to send message');
+      toast.error('Failed to send message');
       setMessageInput(messageText); // Restore message on error
     } finally {
       setSending(false);
@@ -143,7 +144,7 @@ export default function ChatWindow({ onClose, initialRoomId, initialUserId }: Ch
       await loadRooms();
     } catch (error) {
       console.error('Error creating direct chat:', error);
-      alert('Failed to start chat');
+      toast.error('Failed to start chat');
     }
   };
 

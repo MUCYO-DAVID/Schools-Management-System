@@ -106,7 +106,7 @@ router.post('/auth/login', async (req, res) => {
 // POST /auth/signup
 // ─────────────────────────────────────────────
 router.post('/auth/signup', async (req, res) => {
-  const { first_name, last_name, email, password, role, school_name, subject } = req.body;
+  const { first_name, last_name, email, password, role, school_name, subject, school_id } = req.body;
 
   try {
     const validRoles = ['student', 'leader', 'teacher'];
@@ -122,8 +122,8 @@ router.post('/auth/signup', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const newUser = await pool.query(
-      'INSERT INTO users (first_name, last_name, email, password, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, first_name, last_name, email, role',
-      [first_name, last_name, email, hashedPassword, userRole]
+      'INSERT INTO users (first_name, last_name, email, password, role, school_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, first_name, last_name, email, role, school_id',
+      [first_name, last_name, email, hashedPassword, userRole, school_id || null]
     );
 
     const userId = newUser.rows[0].id;

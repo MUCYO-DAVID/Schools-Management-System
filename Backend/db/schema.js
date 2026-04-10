@@ -19,6 +19,7 @@ async function initializeDb() {
         bio TEXT,
         location VARCHAR(255),
         date_of_birth DATE,
+        school_id VARCHAR(255),
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
@@ -32,7 +33,8 @@ async function initializeDb() {
         ADD COLUMN IF NOT EXISTS avatar_url TEXT,
         ADD COLUMN IF NOT EXISTS bio TEXT,
         ADD COLUMN IF NOT EXISTS location VARCHAR(255),
-        ADD COLUMN IF NOT EXISTS date_of_birth DATE;
+        ADD COLUMN IF NOT EXISTS date_of_birth DATE,
+        ADD COLUMN IF NOT EXISTS school_id VARCHAR(255);
       `);
     } catch (alterError) {
       console.warn('⚠️  Could not add profile columns to users (may already exist):', alterError.message);
@@ -604,18 +606,31 @@ async function initializeDb() {
         student_user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
         school_id ` + schoolIdType + ` REFERENCES schools(id) ON DELETE CASCADE,
         subject VARCHAR(255) NOT NULL,
-        grade VARCHAR(10) NOT NULL,
+        grade VARCHAR(10),
         score DECIMAL(5, 2),
         max_score DECIMAL(5, 2) DEFAULT 100,
         term VARCHAR(50),
         academic_year VARCHAR(20),
         teacher_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
         comments TEXT,
+        is_document BOOLEAN DEFAULT false,
+        document_url TEXT,
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
     `;
     await pool.query(createGradesSql);
+
+    // Add document columns if they don't exist
+    try {
+      await pool.query(`
+        ALTER TABLE grades 
+        ADD COLUMN IF NOT EXISTS is_document BOOLEAN DEFAULT false,
+        ADD COLUMN IF NOT EXISTS document_url TEXT;
+      `);
+    } catch (alterError) {
+      console.warn('⚠️  Could not add document columns to grades (may already exist):', alterError.message);
+    }
 
     // Report Cards - Generated report summaries
     const createReportCardsSql = `

@@ -113,13 +113,51 @@ router.post('/portal/messages', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'recipient_id and body are required' });
     }
 
-    const result = await pool.query(
+    // 1. Save to traditional messages table (legacy support)
+    const legacyResult = await pool.query(
       `INSERT INTO messages (sender_id, recipient_id, subject, body)
        VALUES ($1, $2, $3, $4)
        RETURNING *`,
       [req.user.id, recipient_id, subject || null, body]
     );
-    res.status(201).json(result.rows[0]);
+
+    // 2. Unify with Real-time Chat system
+    // Check if a direct room already exists
+    let roomResult = await pool.query(
+      `SELECT cr.id FROM chat_rooms cr
+       INNER JOIN chat_room_members crm1 ON cr.id = crm1.room_id
+       INNER JOIN chat_room_members crm2 ON cr.id = crm2.room_id
+       WHERE cr.room_type = 'direct'
+       AND crm1.user_id = $1 AND crm2.user_id = $2`,
+      [req.user.id, recipient_id]
+    );
+
+    let roomId;
+    if (roomResult.rows.length === 0) {
+      // Create new direct room
+      const newRoom = await pool.query(
+        `INSERT INTO chat_rooms (room_type, created_by) VALUES ('direct', $1) RETURNING id`,
+        [req.user.id]
+      );
+      roomId = newRoom.rows[0].id;
+      
+      // Add both users to room
+      await pool.query(
+        `INSERT INTO chat_room_members (room_id, user_id) VALUES ($1, $2), ($1, $3)`,
+        [roomId, req.user.id, recipient_id]
+      );
+    } else {
+      roomId = roomResult.rows[0].id;
+    }
+
+    // Add message to chat_messages
+    await pool.query(
+      `INSERT INTO chat_messages (room_id, sender_id, message)
+       VALUES ($1, $2, $3)`,
+      [roomId, req.user.id, body]
+    );
+
+    res.status(201).json(legacyResult.rows[0]);
   } catch (err) {
     console.error('Error sending message:', err.message);
     res.status(500).send('Server Error');

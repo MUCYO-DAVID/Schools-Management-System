@@ -13,7 +13,9 @@ import { useLanguage } from "../providers/LanguageProvider"
 import { useAuth } from "../providers/AuthProvider"
 import type { School } from "../types"
 import { fetchSchools, rateSchool } from "@/api/school"
+import { getImageUrl } from "@/lib/image-utils"
 import ApplicationForm from "../components/ApplicationForm"
+import { toast } from "sonner"
 import StudentDashboard from "../components/StudentDashboard"
 import SchoolDetailsModal from "../components/SchoolDetailsModal"
 import SurveyCommentsFeed from "../components/SurveyCommentsFeed"
@@ -89,6 +91,11 @@ export default function StudentAccess() {
 
   const handleApplyClick = (school: School) => {
     if (!isAuthenticated) { router.push('/auth/signin'); return; }
+    // Only students can apply to schools
+    if (user?.role !== 'student') {
+      toast.error('Only students can apply to schools.');
+      return;
+    }
     setSelectedSchool(school)
     setShowApplicationForm(true)
   }
@@ -195,17 +202,15 @@ export default function StudentAccess() {
                     >
                       <div className="relative h-32 w-full overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-t from-[#141418] via-transparent to-transparent z-10" />
-                        {school.image_urls && school.image_urls.length > 0 ? (
-                          <img
-                            src={school.image_urls[0]}
-                            alt={school.name}
-                            className="absolute h-full w-full object-cover group-hover:scale-110 transition-transform duration-1000"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 bg-purple-900/20 flex items-center justify-center">
-                            <SchoolIcon className="w-8 h-8 text-white/5" />
-                          </div>
-                        )}
+                        <img
+                          src={getImageUrl(school.image_urls?.[0])}
+                          alt={school.name}
+                          className="absolute h-full w-full object-cover group-hover:scale-110 transition-transform duration-1000"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=600&auto=format&fit=crop';
+                          }}
+                        />
                         <div className="absolute top-3 left-3 z-20">
                            <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest backdrop-blur-md border border-white/10 ${school.type === "Public" ? "bg-emerald-500/20 text-emerald-300" : "bg-purple-500/20 text-purple-300"}`}>
                             {school.type}
@@ -344,10 +349,24 @@ export default function StudentAccess() {
                           <tr key={grade.id} className="hover:bg-white/5 transition-all">
                             <td className="px-4 py-3 text-[11px] font-bold text-slate-200">{grade.subject}</td>
                             <td className="px-4 py-3">
-                              <span className="text-[10px] font-black uppercase text-purple-400">Graded {grade.grade}</span>
+                              {grade.is_document ? (
+                                <a 
+                                  href={grade.document_url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 text-[10px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors"
+                                >
+                                  <FileText className="w-3 h-3" />
+                                  View Grade Doc
+                                </a>
+                              ) : (
+                                <span className="text-[10px] font-black uppercase text-purple-400">Graded {grade.grade}</span>
+                              )}
                             </td>
                             <td className="px-4 py-3">
-                              <span className="text-[10px] font-black text-slate-500">{grade.score}/{grade.max_score}</span>
+                              <span className="text-[10px] font-black text-slate-500">
+                                {grade.is_document ? 'N/A' : `${grade.score}/${grade.max_score}`}
+                              </span>
                             </td>
                           </tr>
                         ))}
@@ -428,7 +447,15 @@ export default function StudentAccess() {
             school={selectedSchool}
             onClose={() => setSelectedSchool(null)}
             onApply={() => {
-              if (isAuthenticated) { setShowApplicationForm(true) } else { router.push('/auth/signin') }
+              if (isAuthenticated) { 
+                if (user?.role !== 'student') {
+                  toast.error('Only students can apply to schools.');
+                  return;
+                }
+                setShowApplicationForm(true) 
+              } else { 
+                router.push('/auth/signin') 
+              }
             }}
           />
         )}

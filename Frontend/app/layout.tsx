@@ -6,6 +6,7 @@ import { LanguageProvider } from "./providers/LanguageProvider"
 import { AuthProvider } from "./providers/AuthProvider"
 import AIChatBotLoader from "./components/AIChatBotLoader"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "sonner"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -26,6 +27,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AuthProvider>
             <LanguageProvider>
+              <Toaster richColors position="top-right" theme="dark" />
               {children}
               <AIChatBotLoader />
             </LanguageProvider>

@@ -4,16 +4,20 @@ import { useState, useEffect, useRef } from 'react';
 import { 
   Send, Search, UserPlus, Check, X, Clock, MessageCircle, 
   Users, UserCheck, Shield, ChevronRight, MoreVertical,
-  PlusCircle, Inbox as InboxIcon, Sparkles, Filter
+  PlusCircle, Inbox as InboxIcon, Sparkles, Filter, Paperclip, Image as ImageIcon, FileText, UserX
 } from 'lucide-react';
 import { 
   fetchChatMessages, sendChatMessage, fetchChatRooms, createDirectChat 
 } from '../api/realtime-chat';
 import { 
-  searchUsers, sendConnectionRequest, fetchFriends, fetchPendingRequests, respondToConnectionRequest 
+  searchUsers, fetchSuggestedUsers, fetchAllUsers, sendConnectionRequest, fetchFriends, fetchPendingRequests, respondToConnectionRequest, removeConnection 
 } from '../api/connections';
 import { useAuth } from '../providers/AuthProvider';
 import Navigation from '../components/Navigation';
+import UserProfile from '../components/UserProfile';
+import ConfirmModal from '../components/ConfirmModal';
+import { toast } from 'sonner';
+import { getImageUrl } from '@/lib/image-utils';
 
 interface Message {
   id: number;
@@ -52,11 +56,25 @@ export default function InboxPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showChatMenu, setShowChatMenu] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [suggestedUsers, setSuggestedUsers] = useState<any[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
   const [friends, setFriends] = useState<any[]>([]);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [selectedUserForDetail, setSelectedUserForDetail] = useState<number | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string,
+    message: string,
+    onConfirm: () => void,
+    variant?: 'danger'|'warning'|'info',
+    confirmText?: string
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [msgLoading, setMsgLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -81,16 +99,29 @@ export default function InboxPage() {
   const loadInitialData = async () => {
     setLoading(true);
     try {
-      const [roomsData, friendsData, pendingData] = await Promise.all([
+      // Use individual try-catch or Promise.allSettled for robustness
+      const results = await Promise.allSettled([
         fetchChatRooms(),
         fetchFriends(),
-        fetchPendingRequests()
+        fetchPendingRequests(),
+        fetchSuggestedUsers(),
+        fetchAllUsers()
       ]);
-      setRooms(roomsData);
-      setFriends(friendsData);
-      setPendingRequests(pendingData);
+
+      if (results[0].status === 'fulfilled') setRooms(results[0].value);
+      if (results[1].status === 'fulfilled') setFriends(results[1].value);
+      if (results[2].status === 'fulfilled') setPendingRequests(results[2].value);
+      if (results[3].status === 'fulfilled') setSuggestedUsers(results[3].value);
+      if (results[4].status === 'fulfilled') setAllUsers(results[4].value);
+
+      // Log errors if any failed
+      results.forEach((res, idx) => {
+        if (res.status === 'rejected') {
+          console.error(`Error loading data at index ${idx}:`, res.reason);
+        }
+      });
     } catch (err) {
-      console.error('Error loading inbox data:', err);
+      console.error('Fatal error loading inbox data:', err);
     } finally {
       setLoading(false);
     }
@@ -125,23 +156,51 @@ export default function InboxPage() {
   };
 
   const handleSendMessage = async () => {
-    if (!messageInput.trim() || !selectedRoom) return;
+    if ((!messageInput.trim() && !selectedFile) || !selectedRoom) return;
 
     const text = messageInput.trim();
+    const file = selectedFile;
+    
     setMessageInput('');
+    setSelectedFile(null);
+    setIsUploading(true);
+
     try {
-      const newMsg = await sendChatMessage(selectedRoom, text);
+      let messageType = 'text';
+      if (file) {
+        messageType = file.type.startsWith('image/') ? 'image' : 'document';
+      }
+
+      const newMsg = await sendChatMessage(selectedRoom, text, messageType, file || undefined);
       setMessages(prev => [...prev, newMsg]);
       refreshRooms();
     } catch (err) {
       console.error('Error sending message:', err);
       setMessageInput(text);
+      setSelectedFile(file);
+      toast.error('Failed to send message');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        toast.error('File is too large (max 10MB)');
+        return;
+      }
+      setSelectedFile(file);
     }
   };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.length < 2) return;
+    if (searchQuery.length < 2) {
+      setSearchResults([]);
+      return;
+    }
     setLoading(true);
     try {
       const results = await searchUsers(searchQuery);
@@ -155,14 +214,22 @@ export default function InboxPage() {
 
   const handleAddFriend = async (targetUserId: number) => {
     try {
-      await sendConnectionRequest(targetUserId);
-      // Refresh search results to show pending status
-      const updatedResults = searchResults.map(u => 
-        u.id === targetUserId ? { ...u, connection_status: 'pending', request_sender_id: user?.id } : u
+      console.log('Sending friend request to:', targetUserId);
+      const res = await sendConnectionRequest(targetUserId);
+      console.log('Friend request response:', res);
+      
+      // Refresh lists to show pending status
+      const updateList = (list: any[]) => list.map(u => 
+        Number(u.id) === Number(targetUserId) ? { ...u, connection_status: 'pending', request_sender_id: user?.id } : u
       );
-      setSearchResults(updatedResults);
-    } catch (err) {
+      setSearchResults(prev => updateList(prev));
+      setSuggestedUsers(prev => updateList(prev));
+      setAllUsers(prev => updateList(prev));
+      
+      toast.success('Friend request sent!');
+    } catch (err: any) {
       console.error('Error adding friend:', err);
+      toast.error('Failed to send request: ' + (err.message || 'Unknown error'));
     }
   };
 
@@ -173,6 +240,13 @@ export default function InboxPage() {
       if (action === 'accepted') {
         const updatedFriends = await fetchFriends();
         setFriends(updatedFriends);
+        // Refresh rooms to see the new direct chat room
+        refreshRooms();
+        // Maybe even start chat immediately
+        const acceptedReq = pendingRequests.find(r => r.request_id === requestId);
+        if (acceptedReq) {
+          startChat(acceptedReq.id);
+        }
       }
     } catch (err) {
       console.error('Error responding to request:', err);
@@ -188,6 +262,33 @@ export default function InboxPage() {
     } catch (err: any) {
       alert(err.message || 'Failed to start chat');
     }
+  };
+
+  const handleUnfollow = (targetUserId: number) => {
+    setConfirmAction({
+      title: 'Unfollow Person',
+      message: 'Are you sure you want to unfollow this person? They will be removed from your connections.',
+      confirmText: 'Unfollow',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmAction(null);
+        try {
+          await removeConnection(targetUserId);
+          toast.success('Unfollowed successfully');
+          
+          const updateList = (list: any[]) => list.map(u => 
+            Number(u.id) === Number(targetUserId) ? { ...u, connection_status: null, request_sender_id: null } : u
+          );
+          setSearchResults(prev => updateList(prev));
+          setSuggestedUsers(prev => updateList(prev));
+          setAllUsers(prev => updateList(prev));
+          setFriends(prev => prev.filter(f => Number(f.id) !== Number(targetUserId)));
+        } catch (err: any) {
+          console.error('Error unfollowing:', err);
+          toast.error('Failed to unfollow');
+        }
+      }
+    });
   };
 
   const scrollToBottom = () => {
@@ -301,75 +402,127 @@ export default function InboxPage() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                     <input
                       type="text"
-                      placeholder="Find people..."
+                      placeholder="Find anyone in the system..."
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        if (e.target.value.length === 0) setSearchResults([]);
+                      }}
                       className="w-full bg-black/40 border border-white/10 rounded-2xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-purple-600/50 transition-all placeholder:text-slate-600"
                     />
                   </form>
 
-                  {/* Search Results */}
-                  {searchResults.length > 0 && (
-                    <div className="space-y-4">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Search Results</p>
-                      {searchResults.map((u) => (
-                        <div key={u.id} className="bg-white/5 rounded-2xl p-3 flex items-center gap-3 border border-white/5">
-                          <div className="w-10 h-10 rounded-xl bg-purple-600/20 flex items-center justify-center font-bold text-purple-400">
-                            {u.first_name[0]}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold truncate">{u.first_name} {u.last_name}</p>
-                            <p className="text-[10px] text-slate-500 capitalize">{u.role}</p>
-                          </div>
-                          {u.connection_status === 'accepted' ? (
-                            <button onClick={() => startChat(u.id)} className="p-2 rounded-xl text-purple-400 bg-purple-400/10 hover:bg-purple-400/20 transition-all">
-                              <MessageCircle className="w-4 h-4" />
-                            </button>
-                          ) : u.connection_status === 'pending' ? (
-                            u.request_sender_id === user?.id ? (
-                              <span className="text-[10px] text-slate-500 font-bold italic px-2">Sent</span>
-                            ) : (
-                              <button onClick={() => setActiveTab('requests')} className="text-[10px] bg-amber-500/20 text-amber-500 px-3 py-1.5 rounded-lg font-bold">Accept?</button>
-                            )
-                          ) : (
-                            <button 
-                              onClick={() => handleAddFriend(u.id)}
-                              className="p-2 rounded-xl bg-purple-600 text-white hover:bg-purple-700 shadow-lg shadow-purple-600/20 transition-all"
-                            >
-                              <UserPlus className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Friends List */}
+                  {/* People Grid */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between pl-1">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Your Friends</p>
-                      <span className="text-[10px] text-purple-500 font-bold">{friends.length}</span>
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                        {searchQuery.length > 0 ? 'Search Results' : 'Everyone'}
+                      </p>
+                      <span className="text-[10px] text-purple-500 font-bold">
+                        {loading ? 'Fetching...' : `${(searchQuery.length > 0 ? searchResults : allUsers).length} People`}
+                      </span>
                     </div>
-                    {friends.length === 0 ? (
-                      <p className="text-xs text-slate-600 text-center py-4 bg-white/5 rounded-2xl border border-dashed border-white/10">Find and add people to start chatting</p>
-                    ) : (
-                      friends.map((f) => (
-                        <button
-                          key={f.id}
-                          onClick={() => startChat(f.id)}
-                          className="w-full text-left group flex items-center gap-3 p-2 hover:bg-white/5 rounded-2xl transition-all"
+                    
+                    {loading && (searchQuery.length > 0 ? searchResults : allUsers).length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-10 opacity-50">
+                        <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-4" />
+                        <p className="text-xs">Loading people...</p>
+                      </div>
+                    ) : (searchQuery.length > 0 ? searchResults : allUsers).length === 0 ? (
+                      <div className="text-center py-10 bg-white/5 rounded-3xl border border-dashed border-white/10">
+                        <Users className="w-10 h-10 text-slate-600 mx-auto mb-3 opacity-20" />
+                        <p className="text-xs text-slate-500">No one found in the system</p>
+                        <button 
+                          onClick={loadInitialData}
+                          className="mt-4 text-[10px] text-purple-400 font-bold uppercase tracking-widest hover:text-purple-300 transition-colors"
                         >
-                          <div className="w-10 h-10 rounded-xl bg-indigo-600/20 flex items-center justify-center font-bold text-indigo-400 group-hover:scale-105 transition-transform">
-                            {f.avatar_url ? <img src={f.avatar_url} className="w-full h-full rounded-xl object-cover" /> : f.first_name[0]}
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold">{f.first_name} {f.last_name}</p>
-                            <p className="text-[10px] text-slate-500">{f.role}</p>
-                          </div>
+                          Retry Refresh
                         </button>
-                      ))
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-3">
+                        {(searchQuery.length > 0 ? searchResults : allUsers).map((u) => (
+                          <div 
+                            key={u.id} 
+                            className="bg-[#1a1a1e] hover:bg-[#202024] rounded-3xl p-4 flex items-center gap-4 border border-white/5 transition-all group"
+                          >
+                            {/* Profile Pic with focus - CLICKABLE TO SEE PROFILE */}
+                            <div 
+                              className="relative shrink-0 cursor-pointer" 
+                              onClick={() => setSelectedUserForDetail(u.id)}
+                            >
+                              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border border-white/10 flex items-center justify-center font-bold text-xl text-purple-400 overflow-hidden shadow-lg group-hover:scale-105 transition-transform duration-300">
+                                {u.avatar_url ? (
+                                  <img src={u.avatar_url} className="w-full h-full object-cover" alt={u.first_name} />
+                                ) : (
+                                  u.first_name[0].toUpperCase()
+                                )}
+                              </div>
+                              <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[#1a1a1e]" />
+                            </div>
+
+                            {/* Info - CLICKABLE TO SEE PROFILE */}
+                            <div 
+                              className="flex-1 min-w-0 cursor-pointer"
+                              onClick={() => setSelectedUserForDetail(u.id)}
+                            >
+                              <h4 className="text-sm font-black text-slate-200 truncate">
+                                {u.first_name} {u.last_name}
+                              </h4>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter ${
+                                  u.role === 'admin' ? 'bg-red-500/10 text-red-400' :
+                                  u.role === 'teacher' ? 'bg-blue-500/10 text-blue-400' :
+                                  u.role === 'parent' ? 'bg-amber-500/10 text-amber-400' :
+                                  'bg-purple-500/10 text-purple-400'
+                                }`}>
+                                  {u.role}
+                                </span>
+                                {u.email && <span className="text-[9px] text-slate-500 truncate hidden sm:inline">{u.email}</span>}
+                              </div>
+                            </div>
+
+                            {/* Action Button */}
+                            <div className="shrink-0">
+                              {u.connection_status === 'accepted' ? (
+                              <button 
+                                onClick={() => startChat(u.id)} 
+                                className="p-3 rounded-2xl text-purple-400 bg-purple-400/10 hover:bg-purple-400/20 transition-all hover:scale-110 active:scale-95"
+                                title="Message"
+                              >
+                                <MessageCircle className="w-5 h-5" />
+                              </button>
+                            ) : u.connection_status === 'pending' ? (
+                              Number(u.request_sender_id) === Number(user?.id) ? (
+                                <div className="flex flex-col items-center px-3 py-1 bg-white/5 rounded-xl border border-white/5">
+                                  <Clock className="w-4 h-4 text-slate-500 mb-0.5" />
+                                  <span className="text-[8px] text-slate-500 font-bold uppercase">Sent</span>
+                                </div>
+                              ) : (
+                                <button 
+                                  onClick={() => setActiveTab('requests')} 
+                                  className="px-4 py-2 bg-amber-500/20 text-amber-500 hover:bg-amber-500/30 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all"
+                                >
+                                  Accept?
+                                </button>
+                              )
+                            ) : (
+                                <button 
+                                  onClick={() => handleAddFriend(u.id)}
+                                  className="p-3 rounded-2xl bg-purple-600 text-white hover:bg-purple-700 shadow-lg shadow-purple-600/20 transition-all hover:scale-110 active:scale-95 group-hover:shadow-purple-600/40"
+                                  title="Add Friend"
+                                >
+                                  <UserPlus className="w-5 h-5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
+
+                  {/* Friends section removed as it's now integrated or redundant with "Everyone" grid if they are friends */}
                 </div>
               )}
 
@@ -473,9 +626,27 @@ export default function InboxPage() {
                       Admin Bypass Active
                     </div>
                   )}
-                  <button className="p-2.5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all text-slate-400">
-                    <MoreVertical className="w-5 h-5" />
-                  </button>
+                  <div className="relative">
+                    <button 
+                      onClick={() => setShowChatMenu(!showChatMenu)}
+                      className="p-2.5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all text-slate-400"
+                    >
+                      <MoreVertical className="w-5 h-5" />
+                    </button>
+                    {showChatMenu && (
+                      <div className="absolute right-0 mt-2 w-48 bg-[#1a1a1e] border border-white/10 rounded-2xl shadow-xl z-50 overflow-hidden text-sm">
+                        <button 
+                          onClick={() => {
+                            setShowChatMenu(false);
+                            if (currentRoom?.other_user) handleUnfollow(currentRoom.other_user.id);
+                          }}
+                          className="w-full text-left px-4 py-3 text-red-400 hover:bg-white/5 transition-colors flex items-center gap-2"
+                        >
+                          <UserX className="w-4 h-4" /> Unfollow
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -499,6 +670,38 @@ export default function InboxPage() {
                             </p>
                           )}
                           <p className="text-sm font-medium leading-relaxed">{msg.message}</p>
+                          
+                          {msg.message_type === 'image' && msg.attachment_url && (
+                            <div className="mt-2 rounded-2xl overflow-hidden border border-white/10 shadow-lg">
+                              <img 
+                                src={getImageUrl(msg.attachment_url)} 
+                                alt="Attachment" 
+                                className="max-w-full h-auto object-cover hover:scale-[1.02] transition-transform cursor-pointer"
+                                onClick={() => window.open(getImageUrl(msg.attachment_url), '_blank')}
+                              />
+                            </div>
+                          )}
+
+                          {msg.message_type === 'document' && msg.attachment_url && (
+                            <a 
+                              href={getImageUrl(msg.attachment_url)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`mt-2 flex items-center gap-3 p-3 rounded-2xl border transition-all ${
+                                isOwn ? 'bg-white/10 border-white/20 hover:bg-white/20' : 'bg-black/20 border-white/5 hover:bg-black/30'
+                              }`}
+                            >
+                              <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center shrink-0">
+                                <FileText className="w-5 h-5 text-blue-400" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Document</p>
+                                <p className="text-xs font-bold truncate text-slate-200">View Attachment</p>
+                              </div>
+                              <ChevronRight className="w-4 h-4 text-slate-500" />
+                            </a>
+                          )}
+
                           <div className={`flex items-center gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity ${isOwn ? 'justify-end' : ''}`}>
                             <span className="text-[9px] font-bold text-slate-500 uppercase">{formatTime(msg.created_at)}</span>
                             {isOwn && <Check className="w-2.5 h-2.5 text-purple-300" />}
@@ -513,10 +716,49 @@ export default function InboxPage() {
 
               {/* Composer */}
               <div className="p-6 bg-black/20 border-t border-white/5">
+                {/* File Preview */}
+                {selectedFile && (
+                  <div className="mb-4 p-3 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between animate-in fade-in slide-in-from-bottom-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-purple-600/20 flex items-center justify-center">
+                        {selectedFile.type.startsWith('image/') ? (
+                          <ImageIcon className="w-5 h-5 text-purple-400" />
+                        ) : (
+                          <FileText className="w-5 h-5 text-purple-400" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold truncate text-slate-200">{selectedFile.name}</p>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => setSelectedFile(null)}
+                      className="p-2 hover:bg-white/5 rounded-lg text-slate-500 hover:text-red-400 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+
                 <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-3xl p-2 pl-5 focus-within:border-purple-600/50 transition-all shadow-inner">
                   <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    accept="image/*,.pdf,.doc,.docx,.txt"
+                  />
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-2 hover:bg-white/5 rounded-xl text-slate-500 hover:text-purple-400 transition-colors"
+                    title="Attach File"
+                  >
+                    <Paperclip className="w-5 h-5" />
+                  </button>
+                  <input
                     type="text"
-                    placeholder="Type your message..."
+                    placeholder={selectedFile ? "Add a caption..." : "Type your message..."}
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -524,10 +766,14 @@ export default function InboxPage() {
                   />
                   <button 
                     onClick={handleSendMessage}
-                    disabled={!messageInput.trim()}
+                    disabled={(!messageInput.trim() && !selectedFile) || isUploading}
                     className="bg-purple-600 p-3 rounded-2xl text-white disabled:opacity-50 disabled:grayscale transition-all shadow-lg shadow-purple-600/20 active:scale-95"
                   >
-                    <Send className="w-5 h-5" />
+                    {isUploading ? (
+                      <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <Send className="w-5 h-5" />
+                    )}
                   </button>
                 </div>
                 <p className="mt-3 text-[10px] text-center text-slate-600 font-bold uppercase tracking-widest">
@@ -538,6 +784,64 @@ export default function InboxPage() {
           )}
         </div>
       </main>
+
+      {/* Profile Detail Modal */}
+      {selectedUserForDetail && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm" 
+            onClick={() => setSelectedUserForDetail(null)}
+          />
+          <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#141418] rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl flex flex-col">
+            <div className="flex justify-between items-center p-6 border-b border-white/5 bg-black/20">
+              <div className="flex items-center gap-4">
+                <h3 className="text-xl font-black">User Profile</h3>
+                {(() => {
+                  const target = [...allUsers, ...searchResults].find(u => u.id === selectedUserForDetail);
+                  if (target?.connection_status === 'accepted') {
+                    return (
+                      <button 
+                        onClick={() => {
+                          startChat(selectedUserForDetail);
+                          setSelectedUserForDetail(null);
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-purple-600/20"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        Send Message
+                      </button>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+              <button 
+                onClick={() => setSelectedUserForDetail(null)}
+                className="p-2 hover:bg-white/5 rounded-xl transition-all"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto bg-[#0a0a0c]">
+              <UserProfile 
+                userId={selectedUserForDetail} 
+                onClose={() => setSelectedUserForDetail(null)} 
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmAction && (
+        <ConfirmModal
+          title={confirmAction.title}
+          message={confirmAction.message}
+          confirmText={confirmAction.confirmText}
+          variant={confirmAction.variant}
+          onConfirm={confirmAction.onConfirm}
+          onCancel={() => setConfirmAction(null)}
+        />
+      )}
     </div>
   );
 }

@@ -426,8 +426,8 @@ export default function Home() {
                                                             alt=""
                                                             className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                                                             onError={(e) => {
-                                                                e.currentTarget.onerror = null;
-                                                                e.currentTarget.src = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=600&auto=format&fit=crop';
+                                                                const target = e.target as HTMLImageElement;
+                                                                target.src = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=600&auto=format&fit=crop';
                                                             }}
                                                         />
                                                         <div className="absolute left-4 top-4 z-20 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
@@ -549,31 +549,31 @@ export default function Home() {
                         </div>
                     </section>
 
-                    <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_25%),linear-gradient(135deg,#020617_0%,#0f172a_35%,#0c4a6e_65%,#047857_100%)] px-4 py-8 text-white shadow-[0_40px_120px_-60px_rgba(2,6,23,0.9)] sm:px-6">
+                    <section className="overflow-hidden rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-[linear-gradient(135deg,#f8fafc_0%,#e2e8f0_100%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_25%),linear-gradient(135deg,#020617_0%,#0f172a_35%,#0c4a6e_65%,#047857_100%)] px-4 py-8 text-slate-900 dark:text-white shadow-[0_40px_120px_-60px_rgba(2,6,23,0.9)] sm:px-6">
                         <div>
                             <div className="mb-8 max-w-2xl">
-                                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-white/70">
+                                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-white/70">
                                     National impact
                                 </p>
                                 <h2 className="mt-3 text-2xl font-semibold sm:text-3xl">
                                     A stronger digital experience for Rwanda&apos;s school ecosystem
                                 </h2>
-                                <p className="mt-3 text-sm leading-7 text-white/80">
+                                <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-white/80">
                                     The refreshed visual system makes school data, actions, and community insights feel more organized, more modern, and easier to trust.
                                 </p>
                             </div>
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                                <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-5 backdrop-blur-md">
-                                    <div className="text-3xl font-bold text-blue-200 mb-1">500+</div>
-                                    <div className="text-sm text-white/80">Registered Schools</div>
+                                <div className="rounded-[1.5rem] border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/10 p-5 backdrop-blur-md">
+                                    <div className="text-3xl font-bold text-blue-600 dark:text-blue-200 mb-1">500+</div>
+                                    <div className="text-sm text-slate-600 dark:text-white/80">Registered Schools</div>
                                 </div>
-                                <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-5 backdrop-blur-md">
-                                    <div className="text-3xl font-bold text-emerald-200 mb-1">50,000+</div>
-                                    <div className="text-sm text-white/80">Students</div>
+                                <div className="rounded-[1.5rem] border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/10 p-5 backdrop-blur-md">
+                                    <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-200 mb-1">50,000+</div>
+                                    <div className="text-sm text-slate-600 dark:text-white/80">Students</div>
                                 </div>
-                                <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-5 backdrop-blur-md">
-                                    <div className="text-3xl font-bold text-amber-200 mb-1">30</div>
-                                    <div className="text-sm text-white/80">Districts Covered</div>
+                                <div className="rounded-[1.5rem] border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/10 p-5 backdrop-blur-md">
+                                    <div className="text-3xl font-bold text-amber-600 dark:text-amber-200 mb-1">30</div>
+                                    <div className="text-sm text-slate-600 dark:text-white/80">Districts Covered</div>
                                 </div>
                             </div>
                         </div>
