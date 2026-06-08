@@ -272,6 +272,48 @@ router.put('/users/preferences', authMiddleware, async (req, res) => {
   }
 });
 
+// Search students (staff only) - helps avoid typing numeric IDs in UI
+router.get('/users/students/search', authMiddleware, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin' && req.user.role !== 'teacher' && req.user.role !== 'leader') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const qRaw = (req.query.q || '').toString().trim();
+    const schoolId = (req.query.school_id || '').toString().trim();
+    const limit = Math.min(Number(req.query.limit) || 20, 50);
+
+    if (!qRaw || qRaw.length < 2) {
+      return res.json([]);
+    }
+
+    const q = `%${qRaw}%`;
+    const params = [q, limit];
+    let query = `
+      SELECT id, first_name, last_name, email, school_id
+      FROM users
+      WHERE role = 'student'
+        AND (first_name ILIKE $1 OR last_name ILIKE $1 OR email ILIKE $1)
+    `;
+
+    if (req.user.role === 'teacher' && req.user.school_id) {
+      params.push(req.user.school_id);
+      query += ` AND school_id = $${params.length}`;
+    } else if (schoolId) {
+      params.push(schoolId);
+      query += ` AND school_id = $${params.length}`;
+    }
+
+    query += ` ORDER BY first_name ASC, last_name ASC LIMIT $2`;
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error searching students:', err.message);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
 // ========== ADMIN ROUTES (for managing other users) ==========
 
 router.put('/users/:id', authMiddleware, adminMiddleware, async (req, res) => {

@@ -1,5 +1,4 @@
-const backendUrl =
-  process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
+import { BACKEND_URL as backendUrl } from '@/lib/backend';
 
 // Get or create direct chat room between two users
 export async function createDirectChat(otherUserId: number) {

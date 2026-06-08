@@ -17,6 +17,7 @@ import {
   Settings,
   Sparkles,
   Sun,
+  Trash2,
   User,
   Users,
   X,
@@ -27,6 +28,7 @@ import { useAuth } from "../providers/AuthProvider"
 import { fetchInbox, markMessageRead } from "../api/portal"
 import ChatWindow from "./ChatWindow"
 import { fetchUnreadCount } from "../api/realtime-chat"
+import { BACKEND_URL as backendUrl } from "@/lib/backend"
 
 type NavItem = {
   path: string
@@ -78,8 +80,6 @@ const formatLabelFromPath = (pathname: string) => {
 }
 
 export default function Navigation() {
-  const backendUrl =
-    process.env.NEXT_PUBLIC_BACKEND_URL || "https://rwandaschoolsbridgesystem.onrender.com"
   const pathname = usePathname()
   const { language, setLanguage, t } = useLanguage()
   const { user, isAuthenticated, logout } = useAuth()
@@ -374,6 +374,36 @@ export default function Navigation() {
     }
   }
 
+  const handleDeleteNotification = async (id: number) => {
+    // Optimistic UI: remove immediately, revert if request fails
+    const previous = notifications
+    const toDelete = notifications.find((n: any) => n.id === id)
+    setNotifications((prev) => prev.filter((n: any) => n.id !== id))
+    if (toDelete && !toDelete.read) {
+      setNotificationCount((prev) => Math.max(prev - 1, 0))
+    }
+
+    try {
+      const token = localStorage.getItem("token")
+      const response = await fetch(`${backendUrl}/api/notifications/${id}`, {
+        method: "DELETE",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      })
+      if (!response.ok) {
+        throw new Error("Failed to delete notification")
+      }
+    } catch (error) {
+      console.error("Failed to delete notification:", error)
+      // revert
+      setNotifications(previous)
+      if (toDelete && !toDelete.read) {
+        setNotificationCount((prev) => prev + 1)
+      }
+    }
+  }
+
   const isActive = (path: string) => pathname === path
   const sidebarVisible = isSidebarOpen
 
@@ -453,7 +483,7 @@ export default function Navigation() {
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="hidden lg:flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <Sparkles className="h-4 w-4 text-purple-500" />
-              <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+              <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
                 {isAuthenticated ? "Workspace active" : "Explore RSBS"}
               </span>
             </div>
@@ -522,23 +552,44 @@ export default function Navigation() {
                               System
                             </div>
                             {notifications.map((notif) => (
-                              <button
+                              <div
                                 key={notif.id}
-                                type="button"
-                                onClick={() => handleMarkNotificationRead(notif.id)}
                                 className={`w-full border-t border-slate-100 px-4 py-3 text-left transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900 ${!notif.read ? "bg-purple-50/80 dark:bg-purple-500/10" : ""
                                   }`}
                               >
-                                <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                                  {notif.title}
-                                </p>
-                                <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-                                  {notif.message}
-                                </p>
-                                <p className="mt-2 text-[11px] text-slate-400 dark:text-slate-500">
-                                  {new Date(notif.created_at).toLocaleDateString()}
-                                </p>
-                              </button>
+                                <div className="flex items-start gap-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMarkNotificationRead(notif.id)}
+                                    className="min-w-0 flex-1 text-left"
+                                    title="Mark as read"
+                                  >
+                                    <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                                      {notif.title}
+                                    </p>
+                                    <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                                      {notif.message}
+                                    </p>
+                                    <p className="mt-2 text-[11px] text-slate-400 dark:text-slate-500">
+                                      {new Date(notif.created_at).toLocaleDateString()}
+                                    </p>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      handleDeleteNotification(notif.id)
+                                    }}
+                                    className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:border-rose-500/40 dark:hover:bg-rose-500/10 dark:hover:text-rose-200"
+                                    title="Delete notification"
+                                    aria-label="Delete notification"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </div>
                             ))}
                           </div>
                         )}
@@ -637,7 +688,7 @@ export default function Navigation() {
 
       <aside
         id="rsbs-sidebar"
-        className={`fixed bottom-0 left-0 top-0 z-40 w-72 border-r border-slate-200/70 bg-white/90 px-4 py-5 shadow-2xl shadow-slate-900/10 backdrop-blur-xl transition-transform duration-300 dark:border-slate-800 dark:bg-slate-950/90 ${sidebarVisible ? "translate-x-0" : "-translate-x-full"
+        className={`fixed bottom-0 left-0 top-0 z-40 w-72 border-r border-slate-200 bg-white px-4 py-5 shadow-2xl shadow-slate-900/10 transition-transform duration-300 dark:border-slate-800 dark:bg-slate-950 ${sidebarVisible ? "translate-x-0" : "-translate-x-full"
           }`}
       >
         <div className="flex h-full flex-col gap-5 overflow-y-auto">

@@ -24,6 +24,7 @@ export default function SchoolModal({ school, onSave, onClose }: SchoolModalProp
     students: 0,
     established: new Date().getFullYear(),
     image_urls: [],
+    description: "",
     latitude: -1.9441, // Default to Kigali, Rwanda
     longitude: 30.0619,
   });
@@ -43,6 +44,7 @@ export default function SchoolModal({ school, onSave, onClose }: SchoolModalProp
         students: school.students,
         established: school.established,
         image_urls: school.image_urls || [],
+        description: school.description || "",
         latitude: school.latitude || -1.9441,
         longitude: school.longitude || 30.0619,
       });
@@ -65,7 +67,7 @@ export default function SchoolModal({ school, onSave, onClose }: SchoolModalProp
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
@@ -266,6 +268,24 @@ export default function SchoolModal({ school, onSave, onClose }: SchoolModalProp
                   className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-sm"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                School Description
+              </label>
+              <textarea
+                name="description"
+                value={(formData as any).description ?? ""}
+                onChange={handleChange}
+                required
+                rows={4}
+                placeholder="Write a short description about the school (mission, values, what makes it special)."
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all text-sm resize-none"
+              />
+              <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                This will appear in the school Details section.
+              </p>
             </div>
 
             <div>

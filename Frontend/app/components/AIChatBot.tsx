@@ -10,8 +10,7 @@ interface Message {
   timestamp: Date;
 }
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
+import { BACKEND_URL } from '@/lib/backend';
 
 export default function AIChatBot() {
   const { user } = useAuth();
@@ -21,7 +20,22 @@ export default function AIChatBot() {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [geo, setGeo] = useState<{ latitude: number; longitude: number } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) =>
+          setGeo({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          }),
+        () => {},
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
+      );
+    }
+  }, []);
 
   // Load quick suggestions when opening
   useEffect(() => {
@@ -91,26 +105,25 @@ export default function AIChatBot() {
         headers,
         body: JSON.stringify({
           message: textToSend,
-          conversationHistory
+          conversationHistory,
+          ...(geo ? { latitude: geo.latitude, longitude: geo.longitude } : {}),
         })
       });
 
-      if (!response.ok) {
+      const data = await response.json();
+
+      if (!response.ok && !data?.message) {
         throw new Error('Failed to get response');
       }
 
-      const data = await response.json();
-
-      if (data.success) {
-        const assistantMessage: Message = {
-          role: 'assistant',
-          content: data.message,
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, assistantMessage]);
-      } else {
-        throw new Error(data.message || 'Failed to get response');
-      }
+      const assistantMessage: Message = {
+        role: 'assistant',
+        content: data.success
+          ? data.message
+          : data.message || 'I could not process that request. Please try again.',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, assistantMessage]);
     } catch (error: any) {
       console.error('Chat error:', error);
       const errorMessage: Message = {
@@ -308,7 +321,7 @@ export default function AIChatBot() {
           </button>
         </div>
         <p className="text-xs text-gray-500 mt-2 text-center">
-          Powered by AI • Responds in ~3 seconds
+          Powered by Groq AI • Fast responses
         </p>
       </div>
     </div>

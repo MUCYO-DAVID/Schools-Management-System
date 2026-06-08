@@ -137,6 +137,7 @@ router.post('/schools', authMiddleware, leaderMiddleware, upload.array('images',
     established,
     latitude,
     longitude,
+    description,
   } = req.body;
 
   const schoolId = randomUUID();
@@ -171,6 +172,22 @@ router.post('/schools', authMiddleware, leaderMiddleware, upload.array('images',
         longitude ? Number(longitude) : null,
       ]
     );
+
+    // Save initial school description into school_details (required on frontend)
+    if (description && String(description).trim().length > 0) {
+      try {
+        await pool.query(
+          `INSERT INTO school_details (school_id, description)
+           VALUES ($1, $2)
+           ON CONFLICT (school_id) DO UPDATE
+           SET description = EXCLUDED.description,
+               updated_at = CURRENT_TIMESTAMP`,
+          [schoolId, String(description).trim()]
+        );
+      } catch (detailsErr) {
+        console.warn('Warning: school created but failed to save school_details:', detailsErr.message);
+      }
+    }
 
     res.status(201).json(newSchool.rows[0]);
   } catch (error) {
@@ -273,6 +290,7 @@ router.put('/schools/:id', authMiddleware, leaderMiddleware, upload.array('image
     imagesToDelete,
     latitude,
     longitude,
+    description,
   } = req.body;
 
   try {
@@ -380,6 +398,25 @@ router.put('/schools/:id', authMiddleware, leaderMiddleware, upload.array('image
 
     if (result.rows.length === 0) {
       return res.status(404).send('School not found');
+    }
+
+    // Persist description into school_details when provided
+    if (description !== undefined) {
+      const normalized = String(description || '').trim();
+      if (normalized.length > 0) {
+        try {
+          await pool.query(
+            `INSERT INTO school_details (school_id, description)
+             VALUES ($1, $2)
+             ON CONFLICT (school_id) DO UPDATE
+             SET description = EXCLUDED.description,
+                 updated_at = CURRENT_TIMESTAMP`,
+            [id, normalized]
+          );
+        } catch (detailsErr) {
+          console.warn('Warning: school updated but failed to save school_details:', detailsErr.message);
+        }
+      }
     }
 
     res.json(result.rows[0]);

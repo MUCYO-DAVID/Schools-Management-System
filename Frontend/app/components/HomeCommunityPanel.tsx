@@ -18,6 +18,7 @@ import {
 import { useAuth } from '../providers/AuthProvider';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
+import { BACKEND_URL } from '@/lib/backend';
 
 interface Survey {
     id: number;
@@ -40,8 +41,7 @@ interface SchoolOption {
     name: string;
 }
 
-const BACKEND =
-    process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
+const BACKEND = BACKEND_URL;
 
 function Avatar({ firstName, lastName, avatarUrl, size = 8 }: { firstName?: string; lastName?: string; avatarUrl?: string; size?: number }) {
     const initials = ((firstName?.[0] || '') + (lastName?.[0] || '')).toUpperCase() || 'U';
@@ -209,7 +209,7 @@ export default function HomeCommunityPanel() {
                             setShowForm(true);
                             setTimeout(() => textareaRef.current?.focus(), 100);
                         }}
-                        className="w-full flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-400 hover:border-purple-300 hover:bg-purple-50/60 hover:text-purple-600 transition-all dark:border-slate-700 dark:bg-slate-900 dark:text-slate-500 dark:hover:border-purple-500/40 dark:hover:bg-purple-500/10 dark:hover:text-purple-300"
+                        className="w-full flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 hover:border-purple-300 hover:bg-purple-50/60 hover:text-purple-700 transition-all dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-purple-500/40 dark:hover:bg-purple-500/10 dark:hover:text-purple-300"
                     >
                         <Sparkles className="h-4 w-4 flex-shrink-0" />
                         <span>Share your school experience...</span>

@@ -5,6 +5,7 @@ import { X, MapPin, Users, Calendar, BookOpen, GraduationCap, Star, Mail, Phone,
 import type { School } from '../types';
 import { fetchGalleries, fetchGallery } from '../api/galleries';
 import { getImageUrl } from '../../lib/image-utils';
+import { BACKEND_URL } from '@/lib/backend';
 
 interface SchoolDetails {
   description?: string;
@@ -32,8 +33,7 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
   const [loading, setLoading] = useState(true);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'gallery' | 'details' | 'contact'>('overview');
-  const backendUrl =
-    process.env.NEXT_PUBLIC_BACKEND_URL || "https://rwandaschoolsbridgesystem.onrender.com";
+  const backendUrl = BACKEND_URL;
 
   useEffect(() => {
     fetchSchoolDetails();
@@ -85,7 +85,7 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
 
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [currentImagePage, setCurrentImagePage] = useState(0);
-  const imagesPerPage = 4;
+  const imagesPerPage = 12;
   
   // Robust image URL list construction (handling potential stringified JSON)
   const schoolImageUrls = useMemo(() => {
@@ -277,13 +277,13 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
                 <div className="space-y-6">
                   {allImages.length > 0 ? (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
                         {currentImages.map((imageUrl, index) => {
                           const globalIndex = currentImagePage * imagesPerPage + index;
                           return (
                             <div
                               key={globalIndex}
-                              className="relative group cursor-pointer overflow-hidden rounded-[2rem] aspect-[16/10] border-4 border-slate-100 dark:border-slate-800 shadow-lg"
+                              className="relative group cursor-pointer overflow-hidden rounded-2xl aspect-square border border-slate-200/70 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow"
                               onClick={() => setSelectedImageIndex(globalIndex)}
                             >
                               <img
@@ -291,8 +291,8 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
                                 alt={`${school.name} ${globalIndex}`}
                                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                               />
-                              <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <ImageIcon className="w-6 h-6 text-white" />
+                              <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/50 to-transparent flex items-end p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <ImageIcon className="w-4 h-4 text-white" />
                               </div>
                             </div>
                           );
@@ -338,14 +338,27 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
                       <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Gathering details...</p>
                     </div>
                   ) : details ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      {[
+                    <div className="space-y-8">
+                      {details.description && (
+                        <div className="p-6 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/40 dark:to-slate-900/40 rounded-[2rem] border border-slate-100 dark:border-slate-800">
+                          <h5 className="flex items-center gap-2 text-sm font-black text-gray-900 dark:text-white uppercase tracking-[0.1em] mb-4">
+                            <FileText className="w-4 h-4 text-purple-500" />
+                            Description
+                          </h5>
+                          <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed whitespace-pre-wrap">
+                            {details.description}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {[
                         { label: 'Facilities', icon: Building2, content: details.facilities, color: 'blue' },
                         { label: 'Academic Programs', icon: BookOpen, content: details.programs, color: 'purple' },
                         { label: 'Admission', icon: CheckCircle, content: details.admission_requirements, color: 'emerald' },
                         { label: 'Investment & Fees', icon: DollarSign, content: details.fees_info, color: 'amber' },
                         { label: 'Uniform & Dress Code', icon: Shirt, content: details.uniform_info, color: 'pink' }
-                      ].filter(s => s.content).map(section => (
+                        ].filter(s => s.content).map(section => (
                         <div key={section.label} className="group">
                           <h5 className="flex items-center gap-2 text-sm font-black text-gray-900 dark:text-white uppercase tracking-[0.1em] mb-4">
                             <section.icon className={`w-4 h-4 text-${section.color}-500`} />
@@ -355,7 +368,8 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
                             <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed whitespace-pre-wrap">{section.content}</p>
                           </div>
                         </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   ) : (
                     <div className="text-center py-20 bg-slate-50 dark:bg-slate-800/30 rounded-[3rem] border border-slate-200 dark:border-slate-700">

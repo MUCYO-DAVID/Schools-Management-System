@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../providers/AuthProvider';
 import { formatDistanceToNow } from 'date-fns';
+import { BACKEND_URL as BACKEND } from '@/lib/backend';
 
 interface Survey {
   id: number;
@@ -49,9 +50,6 @@ interface SchoolOption {
   id: string;
   name: string;
 }
-
-const BACKEND =
-  process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
 
 function Avatar({
   firstName,

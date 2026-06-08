@@ -112,7 +112,7 @@ const sendApplicationStatusEmail = async (application, status, rejectionReason =
           <p style="margin-top: 30px;">If you have any questions, please contact the school directly or reach out to our support team.</p>
         </div>
         <div class="footer">
-          <p>This is an automated message from Rwanda School Browsing System</p>
+          <p>This is an automated message from Rwanda School Bridge System</p>
           <p>Please do not reply to this email</p>
         </div>
       </div>
@@ -121,7 +121,7 @@ const sendApplicationStatusEmail = async (application, status, rejectionReason =
   `;
 
   const mailOptions = {
-    from: process.env.EMAIL_FROM || 'Rwanda School System <noreply@rsbs.rw>',
+    from: process.env.EMAIL_FROM || 'Rwanda School Bridge System <noreply@rsbs.rw>',
     to: email,
     subject: `Application ${statusText} - ${school_name}`,
     html: htmlContent
@@ -214,7 +214,7 @@ const sendVerificationCode = async (email, code) => {
     <body>
       <div class="container">
         <div class="header">
-          <h1>Rwanda School Browsing System</h1>
+          <h1>Rwanda School Bridge System</h1>
           <p>Login Verification Code</p>
         </div>
         <div class="content">
@@ -229,7 +229,7 @@ const sendVerificationCode = async (email, code) => {
           <p>If you didn't request this code, please ignore this email or contact support if you have concerns.</p>
         </div>
         <div class="footer">
-          <p>This is an automated message from Rwanda School Browsing System</p>
+          <p>This is an automated message from Rwanda School Bridge System</p>
           <p>Please do not reply to this email</p>
         </div>
       </div>
@@ -238,7 +238,7 @@ const sendVerificationCode = async (email, code) => {
   `;
 
   const mailOptions = {
-    from: process.env.EMAIL_FROM || 'Rwanda School System <noreply@rsbs.rw>',
+    from: process.env.EMAIL_FROM || 'Rwanda School Bridge System <noreply@rsbs.rw>',
     to: email,
     subject: 'Your Login Verification Code',
     html: htmlContent

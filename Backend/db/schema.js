@@ -867,7 +867,45 @@ async function initializeDb() {
       console.warn('⚠️  Could not create user_connections indexes (non-critical):', indexError.message);
     }
 
-    console.log('✅ All tables initialized (including new features: Grades, Events, Galleries, Chat, Scholarships, Connections).');
+    // Advertisement campaigns (schools & companies)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ad_campaigns (
+        id SERIAL PRIMARY KEY,
+        advertiser_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        advertiser_name VARCHAR(255) NOT NULL,
+        advertiser_email VARCHAR(255) NOT NULL,
+        company_name VARCHAR(255),
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        media_type VARCHAR(20) NOT NULL CHECK (media_type IN ('image', 'video')),
+        media_url TEXT NOT NULL,
+        click_url TEXT,
+        placement VARCHAR(50) DEFAULT 'global',
+        amount NUMERIC(12, 2) NOT NULL DEFAULT 10000,
+        currency VARCHAR(10) DEFAULT 'RWF',
+        payment_provider VARCHAR(50),
+        payment_reference VARCHAR(255),
+        payment_status VARCHAR(50) DEFAULT 'trial',
+        status VARCHAR(50) DEFAULT 'pending_review',
+        admin_notes TEXT,
+        reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        reviewed_at TIMESTAMPTZ,
+        starts_at TIMESTAMPTZ,
+        ends_at TIMESTAMPTZ,
+        trial_ends_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    try {
+      await pool.query(`CREATE INDEX IF NOT EXISTS idx_ad_campaigns_status ON ad_campaigns(status);`);
+      await pool.query(`CREATE INDEX IF NOT EXISTS idx_ad_campaigns_payment ON ad_campaigns(payment_status);`);
+    } catch (indexError) {
+      console.warn('⚠️  Could not create ad_campaigns indexes (non-critical):', indexError.message);
+    }
+
+    console.log('✅ All tables initialized (including new features: Grades, Events, Galleries, Chat, Scholarships, Connections, Ads).');
 
     // Optionally create default admin user if it doesn't exist
     // This can be disabled by setting CREATE_DEFAULT_ADMIN=false in .env

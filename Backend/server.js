@@ -24,11 +24,22 @@ const scholarshipsRouter = require('./routes/scholarships');
 const parentChildRouter = require('./routes/parentChild');
 const surveyTemplatesRouter = require('./routes/surveyTemplates');
 const connectionsRouter = require('./routes/connections');
+const adsRouter = require('./routes/ads');
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-app.use(cors());
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:3000',
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // Serve uploaded images
@@ -56,6 +67,7 @@ app.use('/api', scholarshipsRouter);
 app.use('/api', parentChildRouter);
 app.use('/api', surveyTemplatesRouter);
 app.use('/api', connectionsRouter);
+app.use('/api', adsRouter);
 
 // Start server after DB init
 (async () => {

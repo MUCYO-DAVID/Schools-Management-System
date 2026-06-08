@@ -1,14 +1,22 @@
-const OpenAI = require('openai');
-const axios = require('axios');
+const aiConfig = require('../config/aiConfig');
+const { getActiveProvider, isConfigured: isAiProviderConfigured } = require('../providers');
+const { buildRsbsContext } = require('./rsbsContextService');
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-
-// System knowledge about the Rwanda School Browsing System
+// Platform context (RSBS) — assistant also answers general topics
 const SYSTEM_KNOWLEDGE = `
-You are an AI assistant for the Rwanda School Browsing System (RSBS), a comprehensive platform for managing schools in Rwanda.
+You are embedded in the Rwanda School Bridge System (RSBS), a platform for managing schools in Rwanda.
+
+GENERAL CAPABILITIES:
+You are a general-purpose AI assistant. Answer questions clearly and accurately on technology, programming, education, science, mathematics, business, history, writing, productivity, and general knowledge — not only RSBS topics.
+
+Guidelines:
+- Keep answers SHORT: 2–4 sentences, or a few bullet points. Only go longer if the user asks for detail.
+- Be clear, friendly, and factual.
+- For school ratings, nearby schools, or listings: ALWAYS use LIVE RSBS DATA when provided in context — do not invent school names or ratings.
+- For general topics (math, coding, history, etc.), answer from your knowledge.
+- If unsure, say so briefly.
+
+RSBS PLATFORM:
 
 SYSTEM FEATURES:
 - School browsing and search with filters
@@ -56,56 +64,81 @@ const getRolePrompt = (userRole) => {
     case 'student':
       return `${basePrompt}
 
-STUDENT ASSISTANT MODE:
-You are helping a STUDENT user. Focus on:
-- Guiding them through the application process
-- Helping them find suitable schools
-- Explaining application requirements
-- Tracking their application status
-- Answering questions about schools in Rwanda
-- Providing tips for successful applications
-
-Be friendly, encouraging, and supportive. Help them make informed decisions about their education.`;
+STUDENT CONTEXT:
+The user is a STUDENT on RSBS. When relevant, help with applications, school search, documents, and status — but still answer any general questions they ask. Be friendly and encouraging.`;
 
     case 'leader':
       return `${basePrompt}
 
-SCHOOL LEADER ASSISTANT MODE:
-You are helping a SCHOOL LEADER. Focus on:
-- Managing and reviewing student applications efficiently
-- Best practices for evaluating applications
-- Tips for improving school reputation and ratings
-- How to attract quality students
-- Administrative guidance for school management
-- Analyzing application trends
-
-Be professional and provide actionable advice for school improvement.`;
+LEADER CONTEXT:
+The user is a SCHOOL LEADER on RSBS. When relevant, help with reviewing applications and school management — but still answer any general questions. Be professional and actionable.`;
 
     case 'admin':
       return `${basePrompt}
 
-ADMIN ASSISTANT MODE:
-You are helping a SYSTEM ADMINISTRATOR. Focus on:
-- System analytics and reporting
-- User management insights
-- Application trends and statistics
-- System performance optimization
-- Data analysis and visualization suggestions
-- Best practices for system administration
-
-Provide technical, data-driven insights and recommendations.`;
+ADMIN CONTEXT:
+The user is a SYSTEM ADMINISTRATOR on RSBS. When relevant, help with analytics, users, and operations — but still answer any general questions. Be technical and clear.`;
 
     default:
       return `${basePrompt}
 
-GENERAL ASSISTANT MODE:
-You are helping a visitor. Focus on:
-- Explaining the system features
-- Guiding them through signup/login
-- Answering general questions about schools in Rwanda
-- Encouraging them to create an account
-- Explaining the benefits of the platform`;
+GUEST CONTEXT:
+The user may be a visitor. Explain RSBS when asked; otherwise act as a general assistant.`;
   }
+};
+
+const normalizeConversationHistory = (conversationHistory = []) => {
+  return conversationHistory
+    .filter(
+      (entry) =>
+        entry &&
+        (entry.role === 'user' || entry.role === 'assistant') &&
+        typeof entry.content === 'string' &&
+        entry.content.trim().length > 0
+    )
+    .slice(-aiConfig.maxHistoryMessages)
+    .map((entry) => ({
+      role: entry.role,
+      content: entry.content.trim().slice(0, aiConfig.maxMessageLength),
+    }));
+};
+
+const mapProviderError = (error) => {
+  const status = error?.status || error?.response?.status;
+  const code = error?.code || error?.error?.code;
+
+  if (status === 429 || code === 'rate_limit_exceeded') {
+    return {
+      success: false,
+      message:
+        'The AI service is receiving too many requests. Please wait a moment and try again.',
+      error: 'rate_limit',
+    };
+  }
+
+  if (status === 401 || code === 'invalid_api_key' || code === 'config_error') {
+    return {
+      success: false,
+      message:
+        'AI service is not configured correctly. Please contact the administrator.',
+      error: 'config_error',
+    };
+  }
+
+  if (status === 400) {
+    return {
+      success: false,
+      message: 'Your message could not be processed. Please shorten it or rephrase.',
+      error: 'invalid_request',
+    };
+  }
+
+  return {
+    success: false,
+    message:
+      "I'm having trouble right now. Please try again in a moment, or browse /student and /contact for help.",
+    error: error?.message || 'unknown_error',
+  };
 };
 
 // Enhanced prompt for internet search capability
@@ -122,86 +155,89 @@ Note: If this question requires current information about schools in Rwanda (ran
   return userMessage;
 };
 
-// Main chat function
-const getChatResponse = async (message, conversationHistory = [], userRole = 'guest', userContext = {}) => {
-  try {
-    // Enhance message if search is needed
-    const enhancedMessage = enhancePromptWithSearch(message, userRole);
+// Main chat function — Groq (via pluggable provider)
+const getChatResponse = async (
+  message,
+  conversationHistory = [],
+  userRole = 'guest',
+  userContext = {},
+  geoContext = {}
+) => {
+  const trimmedMessage = typeof message === 'string' ? message.trim() : '';
 
-    // Build messages array for OpenAI
+  if (!trimmedMessage) {
+    return {
+      success: false,
+      message: 'Please enter a message.',
+      error: 'empty_message',
+    };
+  }
+
+  if (!isAiProviderConfigured()) {
+    return {
+      success: false,
+      message: 'AI assistant is not configured. Please set GROQ_API_KEY on the server.',
+      error: 'config_error',
+    };
+  }
+
+  try {
+    const provider = getActiveProvider();
+    const enhancedMessage = enhancePromptWithSearch(trimmedMessage, userRole);
+    const history = normalizeConversationHistory(conversationHistory);
+
     const messages = [
-      {
-        role: 'system',
-        content: getRolePrompt(userRole)
-      },
-      ...conversationHistory.slice(-10), // Last 10 messages for context
-      {
-        role: 'user',
-        content: enhancedMessage
-      }
+      { role: 'system', content: getRolePrompt(userRole) },
     ];
 
-    // Add user context if available
     if (Object.keys(userContext).length > 0) {
-      const contextMessage = `
-User Context:
-- Name: ${userContext.name || 'Not provided'}
-- Email: ${userContext.email || 'Not provided'}
-- Role: ${userRole}
-${userContext.applicationCount ? `- Has ${userContext.applicationCount} application(s)` : ''}
-${userContext.schoolName ? `- School: ${userContext.schoolName}` : ''}
-      `;
-      messages.splice(1, 0, { role: 'system', content: contextMessage });
+      messages.push({
+        role: 'system',
+        content: `User context: Name: ${userContext.name || 'N/A'} | Role: ${userRole}${
+          userContext.applicationCount ? ` | Applications: ${userContext.applicationCount}` : ''
+        }${userContext.schoolName ? ` | School: ${userContext.schoolName}` : ''}`,
+      });
     }
 
-    console.log(`AI Request from ${userRole}: "${message.substring(0, 50)}..."`);
+    const rsbsData = await buildRsbsContext(trimmedMessage, userRole, geoContext);
+    if (rsbsData) {
+      messages.push({
+        role: 'system',
+        content: rsbsData,
+      });
+    }
 
-    // Call OpenAI API
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo', // Fast and cost-effective
-      messages: messages,
-      max_tokens: 500,
-      temperature: 0.7,
-      presence_penalty: 0.6,
-      frequency_penalty: 0.3
-    });
+    messages.push(...history, { role: 'user', content: enhancedMessage.slice(0, aiConfig.maxMessageLength) });
 
-    const response = completion.choices[0].message.content;
-    console.log(`AI Response length: ${response.length} characters`);
+    console.log(
+      `[AI/${provider.name}] ${userRole} | model=${aiConfig.groq.model} | "${trimmedMessage.substring(0, 50)}..."`
+    );
+
+    const completion = await provider.createChatCompletion({ messages });
+
+    const responseText = completion?.choices?.[0]?.message?.content?.trim();
+    if (!responseText) {
+      return {
+        success: false,
+        message: 'The AI returned an empty response. Please try again.',
+        error: 'empty_response',
+      };
+    }
+
+    console.log(`[AI] Response length: ${responseText.length} chars`);
 
     return {
       success: true,
-      message: response,
-      tokens: completion.usage.total_tokens
+      message: responseText,
+      tokens: completion.usage?.total_tokens ?? null,
+      model: completion.model || aiConfig.groq.model,
+      provider: provider.name,
     };
-
   } catch (error) {
     console.error('AI Service Error:', error.message);
-    console.error('Error code:', error.code);
-    console.error('Error status:', error.status);
-
-    // Handle specific errors
-    if (error.status === 429 || error.code === 'insufficient_quota') {
-      return {
-        success: false,
-        message: "⚠️ AI service quota exceeded. The administrator needs to add billing at platform.openai.com. For now, here are some helpful links:\n\n📚 Application Guide: /student?tab=browse\n📧 Contact Support: /contact\n❓ FAQ: Check our About page",
-        error: 'quota_exceeded'
-      };
-    }
-
-    if (error.code === 'invalid_api_key' || error.status === 401) {
-      return {
-        success: false,
-        message: "⚠️ AI service configuration error. Please contact the administrator to configure the OpenAI API key.",
-        error: 'config_error'
-      };
-    }
-
-    return {
-      success: false,
-      message: "I'm having trouble processing your request right now. Please try rephrasing your question or try again in a moment.\n\nYou can also:\n• Browse schools at /student\n• Contact us at /contact\n• Check the About page for more info",
-      error: error.message
-    };
+    if (error.status) console.error('AI status:', error.status);
+    if (error.code) console.error('AI code:', error.code);
+    return mapProviderError(error);
   }
 };
 
@@ -209,11 +245,11 @@ ${userContext.schoolName ? `- School: ${userContext.schoolName}` : ''}
 const getQuickSuggestions = (userRole) => {
   const suggestions = {
     student: [
+      "Which schools are highest rated?",
+      "Schools near me",
       "How do I apply to a school?",
-      "What documents do I need?",
-      "Top schools in Kigali?",
-      "How long does approval take?",
-      "Can I apply to multiple schools?"
+      "Explain photosynthesis simply",
+      "Top schools in Kigali?"
     ],
     leader: [
       "How to review applications?",
@@ -231,10 +267,10 @@ const getQuickSuggestions = (userRole) => {
     ],
     guest: [
       "What is Rwanda School Bridge System?",
-      "How do I sign up?",
-      "What are the benefits?",
-      "Who can use this system?",
-      "Is it free to use?"
+      "Explain async/await in JavaScript",
+      "Tips for studying mathematics",
+      "How do I sign up on RSBS?",
+      "What is photosynthesis?"
     ]
   };
 
@@ -1053,5 +1089,11 @@ Or click a suggestion above to get detailed help! 👆`;
 module.exports = {
   getChatResponse,
   getQuickSuggestions,
-  getFallbackResponse
+  getFallbackResponse,
+  isAiConfigured: isAiProviderConfigured,
+  getAiStatus: () => ({
+    provider: aiConfig.provider,
+    model: aiConfig.groq.model,
+    configured: isAiProviderConfigured(),
+  }),
 };

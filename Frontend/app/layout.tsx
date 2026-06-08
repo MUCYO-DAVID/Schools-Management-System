@@ -22,8 +22,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} min-h-screen bg-slate-50 text-slate-950 antialiased transition-colors duration-300 dark:bg-slate-950 dark:text-slate-50`}>
+    <html lang="en" suppressHydrationWarning className="min-h-full">
+      <body className={`${inter.className} min-h-screen text-slate-950 antialiased transition-colors duration-300 dark:text-slate-50`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AuthProvider>
             <LanguageProvider>
@@ -32,8 +32,8 @@ export default function RootLayout({
               <AIChatBotLoader />
             </LanguageProvider>
           </AuthProvider>
-          <footer className="border-t border-slate-200 bg-white/80 px-4 py-4 text-center text-sm text-slate-600 backdrop-blur transition-colors duration-300 dark:border-slate-800 dark:bg-slate-950/80 dark:text-slate-300">
-            <p>&copy; {new Date().getFullYear()} Powered by MD</p>
+          <footer className="border-t border-slate-200 bg-white/80 px-4 py-4 text-center text-sm text-slate-800 backdrop-blur transition-colors duration-300 dark:border-slate-800 dark:bg-slate-950/80 dark:text-slate-200">
+            <p>&copy; 2026 RSBS powered by MD</p>
           </footer>
         </ThemeProvider>
       </body>

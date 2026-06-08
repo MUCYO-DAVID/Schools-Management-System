@@ -1,5 +1,4 @@
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
+import { BACKEND_URL } from '@/lib/backend';
 
 export interface StudentApplication {
   id: number;

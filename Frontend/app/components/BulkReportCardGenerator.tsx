@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { FileText, AlertCircle, CheckCircle, X, Mail } from 'lucide-react';
+import { BACKEND_URL } from '@/lib/backend';
 
 interface BulkReportCardGeneratorProps {
   schoolId: string;
@@ -12,7 +13,7 @@ interface BulkReportCardGeneratorProps {
 }
 
 export default function BulkReportCardGenerator({ schoolId, term, academicYear, onClose, onSuccess }: BulkReportCardGeneratorProps) {
-  const [studentIds, setStudentIds] = useState<string>('');
+  const [studentEmails, setStudentEmails] = useState<string>('');
   const [sendEmails, setSendEmails] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
@@ -35,17 +36,17 @@ export default function BulkReportCardGenerator({ schoolId, term, academicYear, 
         send_emails: sendEmails,
       };
 
-      // If specific student IDs provided, parse them
-      if (studentIds.trim()) {
-        const ids = studentIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
-        if (ids.length > 0) {
-          payload.student_ids = ids;
-        }
+      // If specific student emails provided, parse them
+      if (studentEmails.trim()) {
+        const emails = studentEmails
+          .split(',')
+          .map((e) => e.trim())
+          .filter((e) => e.includes('@'));
+        if (emails.length > 0) payload.student_emails = emails;
       }
 
       const token = localStorage.getItem('token');
-      const backendUrl =
-        process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
+      const backendUrl = BACKEND_URL;
       const res = await fetch(`${backendUrl}/api/report-cards/bulk-generate`, {
         method: 'POST',
         headers: {
@@ -84,7 +85,7 @@ export default function BulkReportCardGenerator({ schoolId, term, academicYear, 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800">
               This will generate report cards for all students with grades in the selected term and academic year.
-              Leave "Student IDs" empty to generate for all students, or enter comma-separated student IDs for specific students.
+              Leave "Student emails" empty to generate for all students, or enter comma-separated student emails for specific students.
             </p>
           </div>
 
@@ -118,13 +119,13 @@ export default function BulkReportCardGenerator({ schoolId, term, academicYear, 
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Student IDs (Optional)
+              Student emails (Optional)
             </label>
             <input
               type="text"
-              value={studentIds}
-              onChange={(e) => setStudentIds(e.target.value)}
-              placeholder="Leave empty for all students, or enter comma-separated IDs (e.g., 1, 2, 3)"
+              value={studentEmails}
+              onChange={(e) => setStudentEmails(e.target.value)}
+              placeholder="Leave empty for all students, or enter comma-separated emails (e.g., a@b.com, c@d.com)"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <p className="text-xs text-gray-500 mt-1">Leave empty to generate for all students with grades</p>

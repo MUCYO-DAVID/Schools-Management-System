@@ -12,21 +12,53 @@
 
 html {
   scroll-behavior: smooth;
+  min-height: 100%;
+}
+
+html,
+body {
+  @apply bg-slate-50 dark:bg-slate-950;
+}
+
+@layer components {
+  .page-shell {
+    @apply min-h-screen flex flex-col font-sans bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100;
+  }
+
+  .surface-panel {
+    @apply bg-white border border-slate-200 dark:bg-slate-900 dark:border-white/10;
+  }
+
+  .surface-card {
+    @apply bg-white border border-slate-200 dark:bg-slate-900 dark:border-white/10;
+  }
+
+  .text-body {
+    @apply text-slate-900 dark:text-slate-100;
+  }
+
+  .text-muted {
+    @apply text-slate-600 dark:text-slate-400;
+  }
+
+  .text-subtle {
+    @apply text-slate-500 dark:text-slate-500;
+  }
 }
 
 body {
-  background:
-    radial-gradient(circle at top, rgba(0, 161, 222, 0.16), transparent 28%),
-    radial-gradient(circle at right top, rgba(250, 210, 1, 0.12), transparent 22%),
-    linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(237, 242, 247, 0.92));
   min-height: 100vh;
+  background-color: rgb(248 250 252);
+  background-image:
+    radial-gradient(circle at top, rgba(0, 161, 222, 0.14), transparent 28%),
+    radial-gradient(circle at right top, rgba(250, 210, 1, 0.1), transparent 22%);
 }
 
 .dark body {
-  background:
-    radial-gradient(circle at top, rgba(0, 161, 222, 0.16), transparent 24%),
-    radial-gradient(circle at right top, rgba(250, 210, 1, 0.1), transparent 18%),
-    linear-gradient(180deg, rgba(2, 6, 23, 0.99), rgba(8, 15, 32, 0.98));
+  background-color: rgb(2 6 23);
+  background-image:
+    radial-gradient(circle at top, rgba(0, 161, 222, 0.14), transparent 24%),
+    radial-gradient(circle at right top, rgba(250, 210, 1, 0.08), transparent 18%);
 }
 
 
@@ -167,13 +199,27 @@ body {
 
 /* Sidebar Layout Transitions */
 @media (min-width: 1024px) {
-  body.sidebar-open main {
-    margin-left: 18rem;
-    width: calc(100% - 18rem);
+  .page-shell {
+    transition: padding-left 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    padding-left: 0;
   }
 
-  main {
+  body.sidebar-open .page-shell {
+    padding-left: 18rem;
+  }
+
+  body.sidebar-open .page-shell nav {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  footer {
     transition: margin-left 300ms cubic-bezier(0.4, 0, 0.2, 1), width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  body.sidebar-open footer {
+    margin-left: 18rem;
+    width: calc(100% - 18rem);
   }
 }
 

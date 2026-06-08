@@ -517,7 +517,7 @@ router.post('/report-cards/bulk-generate', authMiddleware, async (req, res) => {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    const { school_id, term, academic_year, student_ids, send_emails } = req.body;
+    const { school_id, term, academic_year, student_ids, student_emails, send_emails } = req.body;
     if (!school_id || !term || !academic_year) {
       return res.status(400).json({ message: 'Missing required fields: school_id, term, academic_year' });
     }
@@ -531,9 +531,13 @@ router.post('/report-cards/bulk-generate', authMiddleware, async (req, res) => {
     `;
     const params = [school_id, term, academic_year];
 
+    // Accept either numeric IDs or emails to avoid hunting for IDs in UI
     if (student_ids && Array.isArray(student_ids) && student_ids.length > 0) {
       params.push(student_ids);
       studentsQuery += ` AND u.id = ANY($4)`;
+    } else if (student_emails && Array.isArray(student_emails) && student_emails.length > 0) {
+      params.push(student_emails);
+      studentsQuery += ` AND u.email = ANY($4)`;
     }
 
     const studentsResult = await pool.query(studentsQuery, params);

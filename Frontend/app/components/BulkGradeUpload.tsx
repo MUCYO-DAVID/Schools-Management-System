@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Upload, FileText, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { BACKEND_URL } from '@/lib/backend';
 
 interface BulkGradeUploadProps {
   schoolId: string;
@@ -47,8 +48,7 @@ export default function BulkGradeUpload({ schoolId, term, academicYear, onClose,
       formData.append('academic_year', academicYear);
 
       const token = localStorage.getItem('token');
-      const backendUrl =
-        process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwandaschoolsbridgesystem.onrender.com';
+      const backendUrl = BACKEND_URL;
       const res = await fetch(`${backendUrl}/api/grades/bulk-upload`, {
         method: 'POST',
         headers: {

@@ -8,6 +8,7 @@ export interface School {
   students: number
   established: number
   image_urls: string[]
+  description?: string
   rating_total?: number
   rating_count?: number
   average_rating?: number

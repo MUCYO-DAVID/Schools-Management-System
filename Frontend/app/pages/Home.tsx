@@ -17,6 +17,8 @@ import {
 } from "lucide-react"
 import Navigation from "../components/Navigation"
 import HomeCommunityPanel from "../components/HomeCommunityPanel"
+import AdPlacement from "../components/AdPlacement"
+import AdvertiseModal from "../components/AdvertiseModal"
 import { useAuth } from "../providers/AuthProvider"
 import { useLanguage } from "../providers/LanguageProvider"
 import type { School } from "../types"
@@ -51,6 +53,7 @@ export default function Home() {
     const [loadingMap, setLoadingMap] = useState(true)
     const [ratingSchoolId, setRatingSchoolId] = useState<string | null>(null)
     const [selectedSchool, setSelectedSchool] = useState<School | null>(null)
+    const [showAdvertise, setShowAdvertise] = useState(false)
 
     useEffect(() => {
         let mounted = true
@@ -223,7 +226,7 @@ export default function Home() {
     ]
 
     return (
-        <div className="min-h-screen">
+        <div className="page-shell">
             <Navigation />
             <section className="w-full px-4 pb-4 pt-6 sm:px-6 lg:px-8">
                 <div className="w-full mx-auto">
@@ -294,7 +297,15 @@ export default function Home() {
 
             <div className="flex flex-col gap-6 w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:flex-row">
                 <aside className="w-full lg:w-80 lg:flex-shrink-0 order-2 lg:order-1">
-                    <div className="lg:sticky lg:top-20 max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
+                    <div className="lg:sticky lg:top-20 space-y-4 max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
+                        <AdPlacement placement="home" className="mx-auto lg:mx-0" />
+                        <button
+                            type="button"
+                            onClick={() => setShowAdvertise(true)}
+                            className="w-full max-w-[280px] mx-auto lg:mx-0 block text-center text-[10px] font-semibold text-amber-700 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300"
+                        >
+                            Advertise on RSBS
+                        </button>
                         <HomeCommunityPanel />
                     </div>
                 </aside>
@@ -460,7 +471,7 @@ export default function Home() {
                                                         <span className="inline-flex rounded-full bg-purple-600/10 px-2.5 py-1 text-[11px] font-semibold text-purple-700 dark:text-purple-300">
                                                             {school.type}
                                                         </span>
-                                                        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                                                        <span className="text-[11px] font-medium text-slate-700 dark:text-slate-400">
                                                             {average > 0 ? `${average.toFixed(1)} / 5` : "New"}
                                                         </span>
                                                     </div>
@@ -492,11 +503,11 @@ export default function Home() {
                                                                 />
                                                             )
                                                         })}
-                                                        <span className="ml-1.5 text-xs text-gray-500 dark:text-slate-400">
+                                                        <span className="ml-1.5 text-xs text-slate-700 dark:text-slate-400">
                                                             {school.rating_count ?? 0} review{(school.rating_count ?? 0) === 1 ? "" : "s"}
                                                         </span>
                                                     </div>
-                                                    <div className="rounded-[1.15rem] bg-slate-50/90 p-3 text-xs text-slate-600 dark:bg-slate-900/80 dark:text-slate-300 line-clamp-3">
+                                                    <div className="rounded-[1.15rem] bg-slate-50/90 p-3 text-xs text-slate-800 dark:bg-slate-900/80 dark:text-slate-300 line-clamp-3">
                                                         {school.description || 'Rate this school and help the community discover great educational institutions.'}
                                                     </div>
                                                     <div className="mt-auto flex items-center justify-between pt-3">
@@ -588,6 +599,8 @@ export default function Home() {
                     onClose={() => setSelectedSchool(null)}
                 />
             )}
+
+            {showAdvertise && <AdvertiseModal onClose={() => setShowAdvertise(false)} />}
         </div>
     )
 }

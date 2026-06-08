@@ -5,6 +5,7 @@ import { Search, MapPin, Users, Calendar, BookOpen, GraduationCap } from "lucide
 import type { School } from "../types"
 import { useLanguage } from "../providers/LanguageProvider"
 import { fetchSchools } from "@/api/school";
+import { BACKEND_URL } from "@/lib/backend";
 
 interface StudentAccessProps {
   schools?: School[] // optional: if parent passes schools we use them, otherwise fetch from API
@@ -34,8 +35,7 @@ export default function StudentAccess({ schools: initialSchools }: StudentAccess
       } catch (helperErr) {
         // helper failed — fallback to explicit fetch (keeps parity with Schools page)
         console.warn("fetchSchools helper failed, falling back to direct fetch:", helperErr)
-        const backendUrl =
-          process.env.NEXT_PUBLIC_BACKEND_URL || "https://rwandaschoolsbridgesystem.onrender.com";
+        const backendUrl = BACKEND_URL;
         const res = await fetch(`${backendUrl}/api/schools`)
         if (!res.ok) {
           const bodyText = await res.text().catch(() => "")

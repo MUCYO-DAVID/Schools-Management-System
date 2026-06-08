@@ -1,5 +1,4 @@
-const backendUrl =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "https://rwandaschoolsbridgesystem.onrender.com";
+import { BACKEND_URL as backendUrl } from "@/lib/backend";
 
 export async function fetchScholarships(filters: {
   school_id?: string;
