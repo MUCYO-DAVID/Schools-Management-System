@@ -58,7 +58,7 @@ export default function LandingPage() {
   return (
     <AuthBackground>
       {/* Header */}
-      <header className="relative z-20 px-6 sm:px-12 py-6 flex justify-between items-center">
+      <header className="relative z-20 px-4 sm:px-12 py-4 sm:py-6 flex justify-between items-center gap-3">
         <Link href="/" className="flex items-center gap-2 group">
           <img src="/logo.png" alt="RSBS Logo" className="w-10 h-10 md:w-12 md:h-12 object-contain" />
           <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight group-hover:text-purple-400 transition-colors">
@@ -67,19 +67,19 @@ export default function LandingPage() {
         </Link>
         <Link
           href="/auth/signin"
-          className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold px-6 py-2 rounded-lg transition-all shadow-lg shadow-purple-500/20 active:scale-95"
+          className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold px-4 sm:px-6 py-2 text-sm sm:text-base rounded-lg transition-all shadow-lg shadow-purple-500/20 active:scale-95 shrink-0"
         >
           Sign In
         </Link>
       </header>
 
       {/* Main Content */}
-      <main className="relative z-20 flex flex-1 flex-col items-center justify-center text-center px-4 sm:px-6 lg:px-8 pb-32">
-        <div className="max-w-[950px] mx-auto">
-          <h1 className="text-white text-[3.5rem] sm:text-[4.5rem] font-extrabold leading-[1.05] mb-6 tracking-tight">
+      <main className="relative z-20 flex flex-1 flex-col items-center justify-center text-center px-4 sm:px-6 lg:px-8 pb-20 sm:pb-32">
+        <div className="max-w-[950px] mx-auto w-full">
+          <h1 className="text-white text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.1] sm:leading-[1.05] mb-4 sm:mb-6 tracking-tight">
             Unlimited learning, <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">schools</span>, and more.
           </h1>
-          <h2 className="text-slate-200 text-xl sm:text-2xl font-medium mb-10 max-w-2xl mx-auto leading-relaxed">
+          <h2 className="text-slate-200 text-base sm:text-xl md:text-2xl font-medium mb-6 sm:mb-10 max-w-2xl mx-auto leading-relaxed px-2">
             Connecting Rwanda's educational landscape. Discover anywhere. Access anytime.
           </h2>
 

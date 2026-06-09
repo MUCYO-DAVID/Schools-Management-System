@@ -19,15 +19,15 @@ export default function AuthShell({
 }) {
   return (
     <AuthBackground>
-      <header className="relative z-20 px-6 py-6 sm:px-12">
+      <header className="relative z-20 px-4 py-4 sm:px-12 sm:py-6">
         <Link href="/" className="flex items-center gap-2">
           <img src="/logo.png" alt="RSBS Logo" className="h-10 w-10 object-contain" />
           <span className="text-2xl font-black tracking-tight text-white">RSBS</span>
         </Link>
       </header>
 
-      <main className="relative z-20 flex flex-1 items-center justify-center px-4 pb-20">
-        <div className="w-full max-w-5xl overflow-hidden rounded-2xl border border-white/10 bg-black/70 shadow-2xl backdrop-blur-md">
+      <main className="relative z-20 flex flex-1 items-center justify-center px-3 sm:px-4 pb-12 sm:pb-20">
+        <div className="w-full max-w-5xl overflow-hidden rounded-xl sm:rounded-2xl border border-white/10 bg-black/70 shadow-2xl backdrop-blur-md">
           <div className="grid md:grid-cols-2">
             <section className="hidden md:block border-r border-white/10 p-10">
               {side ?? (
@@ -50,9 +50,9 @@ export default function AuthShell({
               )}
             </section>
 
-            <section className="p-8 md:p-10">
-              <div className="mb-6 space-y-2">
-                <h1 className="text-3xl font-bold tracking-tight text-white">{title}</h1>
+            <section className="p-5 sm:p-8 md:p-10">
+              <div className="mb-4 sm:mb-6 space-y-2">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">{title}</h1>
                 {subtitle ? <div className="text-sm text-white/70">{subtitle}</div> : null}
               </div>
 

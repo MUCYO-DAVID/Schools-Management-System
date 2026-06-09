@@ -108,13 +108,13 @@ export default function SurveyPage() {
 
       <Navigation />
       
-      <div className="relative z-10 max-w-2xl w-full mx-auto px-6 py-16">
+      <div className="relative z-10 max-w-2xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-16">
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-600/10 border border-purple-500/20 text-purple-400 text-xs font-semibold uppercase tracking-widest mb-4">
             <MessageSquare className="w-3.5 h-3.5" />
             School Experience Survey
           </div>
-          <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white mb-4 tracking-tight">
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white mb-4 tracking-tight">
             How was your <span className="text-purple-600 dark:text-purple-500">experience?</span>
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-lg">
@@ -122,7 +122,7 @@ export default function SurveyPage() {
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-8 md:p-12 shadow-2xl">
+        <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-[2rem] p-5 sm:p-8 md:p-12 shadow-2xl">
           {error && (
             <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-sm flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
   Send, Search, UserPlus, Check, X, Clock, MessageCircle, 
-  Users, UserCheck, Shield, ChevronRight, MoreVertical,
+  Users, UserCheck, Shield, ChevronRight, ChevronLeft, MoreVertical,
   PlusCircle, Inbox as InboxIcon, Sparkles, Filter, Paperclip, Image as ImageIcon, FileText, UserX
 } from 'lucide-react';
 import { 
@@ -307,9 +307,9 @@ export default function InboxPage() {
     <div className="page-shell">
       <Navigation />
       
-      <main className="flex-1 flex max-w-[1600px] w-full mx-auto p-4 lg:p-6 gap-6 overflow-hidden max-h-[calc(100vh-80px)]">
+      <main className="flex-1 flex flex-col lg:flex-row max-w-[1600px] w-full mx-auto p-3 sm:p-4 lg:p-6 gap-4 lg:gap-6 overflow-hidden min-h-0 lg:max-h-[calc(100vh-80px)]">
         {/* Left Sidebar: Navigation & Lists */}
-        <div className="w-full lg:w-[400px] flex flex-col gap-4 shrink-0">
+        <div className={`w-full lg:w-[400px] flex flex-col gap-4 shrink-0 min-h-0 ${selectedRoom ? 'hidden lg:flex' : 'flex'}`}>
           <div className="surface-panel rounded-3xl border border-slate-200 dark:border-white/5 flex flex-col overflow-hidden shadow-2xl">
             {/* Sidebar Tabs */}
             <div className="flex border-b border-slate-200 dark:border-white/5 p-2 bg-slate-100 dark:bg-black/20">
@@ -570,7 +570,7 @@ export default function InboxPage() {
         </div>
 
         {/* Right Section: Chat Interface */}
-        <div className="flex-1 surface-panel rounded-[2.5rem] border border-slate-200 dark:border-white/5 flex flex-col overflow-hidden shadow-2xl relative">
+        <div className={`flex-1 surface-panel rounded-2xl sm:rounded-[2.5rem] border border-slate-200 dark:border-white/5 flex flex-col overflow-hidden shadow-2xl relative min-h-[60vh] lg:min-h-0 ${selectedRoom ? 'flex' : 'hidden lg:flex'}`}>
           {!selectedRoom ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-12 bg-gradient-to-b from-purple-900/10 via-transparent to-transparent">
               <div className="relative mb-8">
@@ -602,8 +602,16 @@ export default function InboxPage() {
           ) : (
             <>
               {/* Chat Header */}
-              <div className="p-5 border-b border-slate-200 dark:border-white/5 flex items-center justify-between bg-slate-50 dark:bg-black/20 backdrop-blur-md">
-                <div className="flex items-center gap-4">
+              <div className="p-3 sm:p-5 border-b border-slate-200 dark:border-white/5 flex items-center justify-between bg-slate-50 dark:bg-black/20 backdrop-blur-md gap-2">
+                <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRoom(null)}
+                    className="lg:hidden inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 dark:border-white/10 dark:bg-slate-900 dark:text-slate-200"
+                    aria-label="Back to conversations"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center border border-slate-200 dark:border-white/10 overflow-hidden shadow-lg">
                     {currentRoom?.other_user?.avatar_url ? (
                       <img src={currentRoom.other_user.avatar_url} className="w-full h-full object-cover" />

@@ -353,7 +353,7 @@ export default function TeacherPortal() {
       <Navigation />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
             {user?.role === 'teacher' ? 'Teacher Portal' : 'Staff Portal'}
           </h1>
           <p className="text-sm text-gray-600">
@@ -362,12 +362,12 @@ export default function TeacherPortal() {
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200">
-          <div className="flex border-b border-gray-200 overflow-x-auto">
+          <div className="mobile-tabs border-b border-gray-200">
             {['announcements', 'messages', 'documents', 'fees', 'grades', 'events'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab as any)}
-                className={`px-6 py-3 text-sm font-medium whitespace-nowrap ${activeTab === tab ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600'
+                className={`px-4 sm:px-6 py-3 text-sm font-medium whitespace-nowrap shrink-0 ${activeTab === tab ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600'
                   }`}
               >
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}

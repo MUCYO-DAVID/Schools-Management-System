@@ -166,7 +166,7 @@ export default function AIChatBot() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-full shadow-2xl hover:shadow-3xl hover:scale-110 transition-all duration-300 group animate-bounce"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 sm:p-4 rounded-full shadow-2xl hover:shadow-3xl hover:scale-110 transition-all duration-300 group animate-bounce"
         aria-label="Open AI Chat"
       >
         <div className="relative">
@@ -182,8 +182,11 @@ export default function AIChatBot() {
 
   return (
     <div
-      className={`fixed ${isExpanded ? 'inset-4' : 'bottom-6 right-6'} z-50 flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-200 transition-all duration-300 ${isExpanded ? 'w-auto h-auto' : 'w-96 h-[600px]'
-        }`}
+      className={`fixed z-50 flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-200 transition-all duration-300 ${
+        isExpanded
+          ? 'inset-3 sm:inset-4 w-auto h-auto'
+          : 'bottom-4 right-4 sm:bottom-6 sm:right-6 w-[calc(100vw-2rem)] sm:w-96 h-[min(600px,calc(100vh-6rem))]'
+      }`}
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-2xl">

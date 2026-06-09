@@ -423,17 +423,17 @@ export default function LeaderDashboard() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
             <School className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">School Leader Dashboard</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">School Leader Dashboard</h1>
           </div>
           <p className="text-gray-600">View and manage applications to your schools</p>
         </div>
 
         {/* Tabs */}
         <div className="mb-6 border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
+          <nav className="-mb-px mobile-tabs">
             <button
               onClick={() => setActiveTab('applications')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-sm whitespace-nowrap shrink-0 ${
                 activeTab === 'applications'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -444,7 +444,7 @@ export default function LeaderDashboard() {
             </button>
             <button
               onClick={() => setActiveTab('gallery')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-sm whitespace-nowrap shrink-0 ${
                 activeTab === 'gallery'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -455,7 +455,7 @@ export default function LeaderDashboard() {
             </button>
             <button
               onClick={() => setActiveTab('surveys')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-sm whitespace-nowrap shrink-0 ${
                 activeTab === 'surveys'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'

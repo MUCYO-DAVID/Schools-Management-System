@@ -1,61 +1,131 @@
 const nodemailer = require('nodemailer');
 
-// Create transporter - configure with your email service
-const createTransporter = () => {
-  // For development, use ethereal email (fake SMTP service)
-  // For production, use your actual email service (Gmail, SendGrid, etc.)
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.RENDER;
 
-  if (process.env.EMAIL_SERVICE === 'gmail') {
+const resolveEmailService = () => {
+  if (process.env.EMAIL_SERVICE) {
+    return process.env.EMAIL_SERVICE.toLowerCase();
+  }
+  if (process.env.RESEND_API_KEY) {
+    return 'resend';
+  }
+  if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
+    return 'gmail';
+  }
+  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
+    return 'smtp';
+  }
+  return null;
+};
+
+const emailServiceType = resolveEmailService();
+
+const sendViaResend = async (mailOptions) => {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error('RESEND_API_KEY is not configured');
+  }
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: process.env.EMAIL_FROM || 'Rwanda School Bridge System <onboarding@resend.dev>',
+      to: [mailOptions.to],
+      subject: mailOptions.subject,
+      html: mailOptions.html,
+      text: mailOptions.text,
+    }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || data.error || `Resend API error (${response.status})`);
+  }
+
+  return { messageId: data.id || `resend-${Date.now()}` };
+};
+
+const createTransporter = () => {
+  if (emailServiceType === 'gmail') {
     return nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-      }
+        pass: process.env.EMAIL_PASSWORD,
+      },
     });
   }
 
-  if (process.env.EMAIL_SERVICE === 'smtp') {
+  if (emailServiceType === 'smtp') {
     return nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT) || 587,
+      port: parseInt(process.env.SMTP_PORT, 10) || 587,
       secure: process.env.SMTP_SECURE === 'true',
       auth: {
         user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD
+        pass: process.env.SMTP_PASSWORD,
       },
       tls: {
-        rejectUnauthorized: false
-      }
+        rejectUnauthorized: false,
+      },
     });
   }
 
-  // Default: use console logging for development
+  if (emailServiceType === 'resend') {
+    return {
+      sendMail: sendViaResend,
+    };
+  }
+
+  if (isProduction) {
+    console.error(
+      '❌ EMAIL NOT CONFIGURED FOR PRODUCTION. Set EMAIL_SERVICE=gmail (with EMAIL_USER + EMAIL_PASSWORD), EMAIL_SERVICE=smtp, or RESEND_API_KEY on your hosting provider.'
+    );
+    return {
+      sendMail: async () => {
+        throw new Error(
+          'Email service is not configured for production. Set EMAIL_SERVICE and credentials on Render.'
+        );
+      },
+    };
+  }
+
   return {
     sendMail: async (mailOptions) => {
-      console.log('\n📧 Email would be sent:');
+      console.log('\n📧 Email would be sent (dev mode):');
       console.log('To:', mailOptions.to);
       console.log('Subject:', mailOptions.subject);
       console.log('Body:', mailOptions.html || mailOptions.text);
       console.log('-------------------\n');
       return { messageId: 'dev-mode-' + Date.now() };
-    }
+    },
   };
 };
 
 const transporter = createTransporter();
 
-// Verify SMTP connection on startup
-if (process.env.EMAIL_SERVICE === 'smtp' || process.env.EMAIL_SERVICE === 'gmail') {
+if (emailServiceType === 'smtp' || emailServiceType === 'gmail') {
   transporter.verify((err) => {
     if (err) {
       console.error('❌ Email service FAILED to connect:', err.message);
-      console.error('   Fix: Check EMAIL credentials in .env (Gmail App Password may be expired)');
+      console.error('   Fix: Check EMAIL credentials (Gmail App Password may be expired)');
     } else {
-      console.log('✅ Email service connected and ready');
+      console.log(`✅ Email service connected (${emailServiceType})`);
     }
   });
+} else if (emailServiceType === 'resend') {
+  console.log('✅ Email service configured (resend)');
+} else if (isProduction) {
+  console.error('❌ Production email service is NOT configured — OTP emails will fail until env vars are set');
+} else {
+  console.log('📧 Email service in dev console mode (emails logged, not sent)');
 }
+
+const sendMail = async (mailOptions) => transporter.sendMail(mailOptions);
 
 // Send application status email to student
 const sendApplicationStatusEmail = async (application, status, rejectionReason = null) => {
@@ -67,14 +137,14 @@ const sendApplicationStatusEmail = async (application, status, rejectionReason =
 
   if (status === 'approved') {
     statusText = 'Approved';
-    statusColor = '#10b981'; // green
+    statusColor = '#10b981';
     messageContent = `
       <p>Congratulations! Your application to <strong>${school_name}</strong> has been approved.</p>
       <p>The school will contact you soon with the next steps for enrollment.</p>
     `;
   } else if (status === 'rejected') {
     statusText = 'Not Approved';
-    statusColor = '#ef4444'; // red
+    statusColor = '#ef4444';
     messageContent = `
       <p>We regret to inform you that your application to <strong>${school_name}</strong> was not approved at this time.</p>
       ${rejectionReason ? `<p><strong>Reason:</strong> ${rejectionReason}</p>` : ''}
@@ -124,30 +194,27 @@ const sendApplicationStatusEmail = async (application, status, rejectionReason =
     from: process.env.EMAIL_FROM || 'Rwanda School Bridge System <noreply@rsbs.rw>',
     to: email,
     subject: `Application ${statusText} - ${school_name}`,
-    html: htmlContent
+    html: htmlContent,
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await sendMail(mailOptions);
     console.log(`✅ Email sent to student: ${email}`);
 
-    // Also send to parent if parent email exists
     if (parent_email && parent_email !== email) {
       const parentMailOptions = {
         ...mailOptions,
         to: parent_email,
-        subject: `Student Application ${statusText} - ${first_name} ${last_name} - ${school_name}`
+        subject: `Student Application ${statusText} - ${first_name} ${last_name} - ${school_name}`,
       };
-      await transporter.sendMail(parentMailOptions);
+      await sendMail(parentMailOptions);
       console.log(`✅ Email sent to parent: ${parent_email}`);
     }
   } catch (error) {
     console.error('❌ Error sending email:', error.message);
-    // Don't throw error - we don't want email failures to break the application flow
   }
 };
 
-// Send new application notification to school leader
 const sendNewApplicationNotification = async (leaderEmail, studentName, schoolName) => {
   const htmlContent = `
     <!DOCTYPE html>
@@ -183,18 +250,17 @@ const sendNewApplicationNotification = async (leaderEmail, studentName, schoolNa
     from: process.env.EMAIL_FROM || 'Rwanda School Bridge System <noreply@rsbs.rw>',
     to: leaderEmail,
     subject: `New Application - ${studentName}`,
-    html: htmlContent
+    html: htmlContent,
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await sendMail(mailOptions);
     console.log(`✅ New application notification sent to leader: ${leaderEmail}`);
   } catch (error) {
     console.error('❌ Error sending notification email:', error.message);
   }
 };
 
-// Send verification code email for login
 const sendVerificationCode = async (email, code) => {
   const htmlContent = `
     <!DOCTYPE html>
@@ -241,19 +307,18 @@ const sendVerificationCode = async (email, code) => {
     from: process.env.EMAIL_FROM || 'Rwanda School Bridge System <noreply@rsbs.rw>',
     to: email,
     subject: 'Your Login Verification Code',
-    html: htmlContent
+    html: htmlContent,
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await sendMail(mailOptions);
     console.log(`✅ Verification code email sent to: ${email}`);
   } catch (error) {
     console.error('❌ Error sending verification code email:', error.message);
-    throw error; // Re-throw so the caller knows it failed
+    throw error;
   }
 };
 
-// Send general notification email
 const sendNotificationEmail = async (userEmail, userName, title, message, link = null) => {
   const htmlContent = `
     <!DOCTYPE html>
@@ -293,11 +358,11 @@ const sendNotificationEmail = async (userEmail, userName, title, message, link =
     from: process.env.EMAIL_FROM || 'Rwanda School Bridge System <noreply@rsbs.rw>',
     to: userEmail,
     subject: title,
-    html: htmlContent
+    html: htmlContent,
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await sendMail(mailOptions);
     console.log(`✅ Notification email sent to: ${userEmail}`);
   } catch (error) {
     console.error('❌ Error sending notification email:', error.message);
@@ -308,5 +373,5 @@ module.exports = {
   sendApplicationStatusEmail,
   sendNotificationEmail,
   sendNewApplicationNotification,
-  sendVerificationCode
+  sendVerificationCode,
 };

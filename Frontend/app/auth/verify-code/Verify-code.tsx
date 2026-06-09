@@ -157,7 +157,7 @@ export default function VerifyCodePage() {
   return (
     <AuthBackground>
       {/* Header Logo */}
-      <header className="relative z-20 px-6 sm:px-12 py-6">
+      <header className="relative z-20 px-4 sm:px-12 py-4 sm:py-6">
         <Link href="/" className="flex items-center gap-2 group">
           <img src="/logo.png" alt="RSBS Logo" className="w-10 h-10 object-contain" />
           <h1 className="text-2xl font-black text-white tracking-tight group-hover:text-purple-400 transition-colors">
@@ -167,8 +167,8 @@ export default function VerifyCodePage() {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-20 flex flex-1 flex-col justify-center items-center px-4 pb-20">
-        <div className="w-full max-w-[450px] bg-black/80 backdrop-blur-md rounded-2xl p-10 md:p-16 border border-white/10 shadow-2xl">
+      <main className="relative z-20 flex flex-1 flex-col justify-center items-center px-3 sm:px-4 pb-12 sm:pb-20">
+        <div className="w-full max-w-[450px] bg-black/80 backdrop-blur-md rounded-xl sm:rounded-2xl p-6 sm:p-10 md:p-16 border border-white/10 shadow-2xl">
           <div className="mb-7">
             {requiresLeaderQuestions ? (
               <>

@@ -96,6 +96,11 @@ export default function Navigation() {
 
   useEffect(() => {
     setMounted(true)
+    const mq = window.matchMedia("(min-width: 1024px)")
+    const syncSidebar = () => setIsSidebarOpen(mq.matches)
+    syncSidebar()
+    mq.addEventListener("change", syncSidebar)
+    return () => mq.removeEventListener("change", syncSidebar)
   }, [])
 
   useEffect(() => {
@@ -107,7 +112,9 @@ export default function Navigation() {
   }, [])
 
   useEffect(() => {
-    setIsSidebarOpen(false)
+    if (window.innerWidth < 1024) {
+      setIsSidebarOpen(false)
+    }
     setShowNotifications(false)
   }, [pathname])
 
@@ -445,10 +452,9 @@ export default function Navigation() {
   return (
     <>
       <nav
-        className={`sticky top-0 z-50 border-b border-slate-200/70 bg-white/80 shadow-sm backdrop-blur-xl transition-all duration-300 dark:border-slate-800/80 dark:bg-slate-950/80 ${sidebarVisible ? "lg:ml-72 lg:w-[calc(100%-18rem)]" : "ml-0 w-full"
-          }`}
+        className="sticky top-0 z-50 ml-0 w-full border-b border-slate-200/70 bg-white/80 shadow-sm backdrop-blur-xl transition-all duration-300 dark:border-slate-800/80 dark:bg-slate-950/80 lg:ml-72 lg:w-[calc(100%-18rem)]"
       >
-        <div className="flex min-h-20 items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <div className="flex min-h-16 sm:min-h-20 items-center justify-between gap-2 sm:gap-3 px-3 py-2 sm:px-6 sm:py-3">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
@@ -536,7 +542,7 @@ export default function Navigation() {
                     )}
                   </button>
                   {showNotifications && (
-                    <div className="absolute right-0 mt-3 w-[22rem] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-950">
+                    <div className="absolute right-0 mt-3 w-[min(calc(100vw-1.5rem),22rem)] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-950">
                       <div className="border-b border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
                         <p className="text-sm font-semibold text-slate-900 dark:text-white">
                           Notifications
@@ -688,7 +694,7 @@ export default function Navigation() {
 
       <aside
         id="rsbs-sidebar"
-        className={`fixed bottom-0 left-0 top-0 z-40 w-72 border-r border-slate-200 bg-white px-4 py-5 shadow-2xl shadow-slate-900/10 transition-transform duration-300 dark:border-slate-800 dark:bg-slate-950 ${sidebarVisible ? "translate-x-0" : "-translate-x-full"
+        className={`fixed bottom-0 left-0 top-0 z-40 w-[min(18rem,calc(100vw-3rem))] border-r border-slate-200 bg-white px-4 py-5 shadow-2xl shadow-slate-900/10 transition-transform duration-300 dark:border-slate-800 dark:bg-slate-950 lg:w-72 ${sidebarVisible ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           }`}
       >
         <div className="flex h-full flex-col gap-5 overflow-y-auto">

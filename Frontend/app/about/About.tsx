@@ -42,15 +42,15 @@ export default function About() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">About Us</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-4">About Us</h1>
+          <p className="text-base sm:text-xl text-gray-600 max-w-3xl mx-auto px-2">
             Empowering education in Rwanda through innovative school management solutions
           </p>
         </div>
 
         {/* Mission Section */}
         <section className="mb-16">
-          <div className="bg-gradient-to-r from-blue-900 to-green-700 text-white rounded-2xl p-8 md:p-12">
+          <div className="bg-gradient-to-r from-blue-900 to-green-700 text-white rounded-2xl p-5 sm:p-8 md:p-12">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
               <div>
                 <h2 className="text-3xl font-bold mb-4">Our Mission</h2>

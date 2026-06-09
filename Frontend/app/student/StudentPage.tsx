@@ -149,7 +149,7 @@ export default function StudentAccess() {
         </div>
 
         {/* Cinematic Tabs - Smaller & Tighter */}
-        <div className="flex flex-wrap justify-center gap-1.5 mb-8 sticky top-[80px] z-30 p-1.5 bg-white/80 dark:bg-black/60 backdrop-blur-xl border border-slate-200 dark:border-white/5 rounded-full shadow-2xl overflow-x-auto no-scrollbar max-w-fit mx-auto">
+        <div className="flex flex-wrap justify-center gap-1.5 mb-8 sticky top-[64px] sm:top-[80px] z-30 p-1.5 bg-white/80 dark:bg-black/60 backdrop-blur-xl border border-slate-200 dark:border-white/5 rounded-full shadow-2xl overflow-x-auto no-scrollbar max-w-full sm:max-w-fit mx-auto">
           {tabs.map((tab) => {
             const Icon = tab.icon
             const active = activeTab === tab.id

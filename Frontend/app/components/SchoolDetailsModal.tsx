@@ -108,8 +108,8 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
   const heroImage = allImages[0] || '';
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto duration-300">
-      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] max-w-4xl w-full max-h-[90vh] overflow-hidden my-4 shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col transition-colors duration-300">
+    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto duration-300">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-[2.5rem] max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden my-2 sm:my-4 shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col transition-colors duration-300">
         
         {/* Cinematic Hero Header */}
         <div className="relative h-64 w-full shrink-0 group">
