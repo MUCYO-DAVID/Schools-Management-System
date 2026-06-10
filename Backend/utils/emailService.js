@@ -127,6 +127,11 @@ const createTransporter = () => {
         user: getMailUser(),
         pass: getMailPass(),
       },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 20000,
+      pool: true,
+      maxConnections: 2,
       tls: {
         rejectUnauthorized: false,
       },

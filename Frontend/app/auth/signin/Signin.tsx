@@ -12,6 +12,7 @@ export default function SignInPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingHint, setLoadingHint] = useState('Signing in…');
   const router = useRouter();
   const { login } = useAuth();
 
@@ -19,7 +20,11 @@ export default function SignInPage() {
     e.preventDefault();
     if (isLoading) return;
     setError('');
+    setLoadingHint('Checking credentials…');
     setIsLoading(true);
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 45000);
 
     try {
       const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
@@ -28,6 +33,7 @@ export default function SignInPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -58,7 +64,8 @@ export default function SignInPage() {
         }
         router.push('/auth/verify-code');
       } else {
-        // Regular user (student) - requires 2FA verification
+        // Regular user (student) — redirect quickly; OTP email sends in background
+        setLoadingHint('Redirecting to verification…');
         localStorage.setItem('userEmailForVerification', email);
         localStorage.setItem('requiresLeaderQuestions', 'false');
         // Save redirect for after verification (don't remove redirectAfterLogin yet)
@@ -68,9 +75,15 @@ export default function SignInPage() {
         router.push('/auth/verify-code');
       }
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred');
+      if (err?.name === 'AbortError') {
+        setError('Sign in timed out. The server may be waking up — please try again in a few seconds.');
+      } else {
+        setError(err.message || 'An unexpected error occurred');
+      }
     } finally {
+      window.clearTimeout(timeoutId);
       setIsLoading(false);
+      setLoadingHint('Signing in…');
     }
   };
 
@@ -141,7 +154,7 @@ export default function SignInPage() {
             isLoading ? 'cursor-not-allowed opacity-70' : ''
           }`}
         >
-          {isLoading ? 'Signing in…' : 'Sign in'}
+          {isLoading ? loadingHint : 'Sign in'}
         </button>
       </form>
     </AuthShell>

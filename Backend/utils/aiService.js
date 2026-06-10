@@ -12,7 +12,7 @@ You are a general-purpose AI assistant. Answer questions clearly and accurately 
 Guidelines:
 - Keep answers SHORT: 2–4 sentences, or a few bullet points. Only go longer if the user asks for detail.
 - Be clear, friendly, and factual.
-- For school ratings, nearby schools, or listings: ALWAYS use LIVE RSBS DATA when provided in context — do not invent school names or ratings.
+- For school ratings, nearby schools, or listings: ALWAYS use LIVE RSBS DATA when provided in context — cite exact school names and ratings from that data. Never say you lack RSBS access when LIVE RSBS DATA is present.
 - For general topics (math, coding, history, etc.), answer from your knowledge.
 - If unsure, say so briefly.
 
@@ -140,19 +140,8 @@ const mapProviderError = (error) => {
   };
 };
 
-// Enhanced prompt for internet search capability
-const enhancePromptWithSearch = (userMessage, userRole) => {
-  const searchKeywords = ['top schools', 'best schools', 'schools in kigali', 'schools in rwanda', 'compare schools', 'school rankings'];
-  const needsSearch = searchKeywords.some(keyword => userMessage.toLowerCase().includes(keyword));
-
-  if (needsSearch) {
-    return `${userMessage}
-
-Note: If this question requires current information about schools in Rwanda (rankings, locations, facilities, etc.), use your knowledge to provide helpful information. If you don't have specific current data, provide general guidance on how to evaluate schools and what factors to consider.`;
-  }
-
-  return userMessage;
-};
+// Keep user message as-is — live RSBS data is injected separately in getChatResponse.
+const enhancePromptWithSearch = (userMessage) => userMessage;
 
 // Main chat function — Groq (via pluggable provider)
 const getChatResponse = async (
@@ -182,7 +171,7 @@ const getChatResponse = async (
 
   try {
     const provider = getActiveProvider();
-    const enhancedMessage = enhancePromptWithSearch(trimmedMessage, userRole);
+    const enhancedMessage = enhancePromptWithSearch(trimmedMessage);
     const history = normalizeConversationHistory(conversationHistory);
 
     const messages = [

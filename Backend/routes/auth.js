@@ -77,24 +77,26 @@ router.post('/auth/login', async (req, res) => {
       [email, code, expiresAt]
     );
 
-    try {
-      await sendVerificationCode(email, code);
-      console.log(`✅ Verification code sent to ${email}`);
-    } catch (emailError) {
-      console.error(' Failed to send verification email:', emailError.message);
-      await pool.query('DELETE FROM verification_codes WHERE email = $1', [email]);
-      return res.status(500).json({
-        message: 'Failed to send verification code. Please try again.',
-      });
-    }
+    await pool.query(
+      'INSERT INTO verification_codes (email, code, expires_at) VALUES ($1, $2, $3)',
+      [email, code, expiresAt]
+    );
 
-    // Do NOT return a token here — user must verify the code first
-    return res.json({
+    // Respond immediately — SMTP on Render can take 30s+ and blocks the UI
+    res.json({
       requiresVerification: true,
       verificationType: 'code',
       email,
-      message: 'A verification code has been sent to your email.',
+      message: 'A verification code is being sent to your email. It may take up to a minute.',
     });
+
+    sendVerificationCode(email, code)
+      .then(() => console.log(`✅ Verification code sent to ${email}`))
+      .catch(async (emailError) => {
+        console.error(' Failed to send verification email:', emailError.message);
+      });
+
+    return;
 
   } catch (err) {
     console.error('Login Error:', err.message);
