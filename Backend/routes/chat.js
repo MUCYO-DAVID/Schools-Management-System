@@ -86,9 +86,9 @@ router.post('/chat', async (req, res) => {
     // Fallback pattern-matching when AI is unavailable (rate limit / config)
     if (
       !aiResponse.success &&
-      (aiResponse.error === 'rate_limit' ||
-        aiResponse.error === 'quota_exceeded' ||
-        aiResponse.error === 'config_error')
+      !['validation_error', 'invalid_request', 'message_too_long', 'empty_message', 'config_error'].includes(
+        aiResponse.error
+      )
     ) {
       const fallbackMessage = getFallbackResponse(message, userRole);
       return res.json({
@@ -100,7 +100,7 @@ router.post('/chat', async (req, res) => {
         notice:
           aiResponse.error === 'config_error'
             ? 'Running in offline help mode — AI is not configured'
-            : 'Running in offline help mode — AI rate limit reached',
+            : 'Running in offline help mode — AI provider is temporarily unavailable',
         provider: getAiStatus().provider,
       });
     }

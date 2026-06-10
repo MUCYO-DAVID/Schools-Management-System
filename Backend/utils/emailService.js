@@ -20,6 +20,30 @@ const resolveEmailService = () => {
 
 const emailServiceType = resolveEmailService();
 
+const extractEmailAddress = (value) => {
+  const match = String(value || '').match(/<([^>]+)>/);
+  return (match ? match[1] : value || '').trim();
+};
+
+const getFromAddress = () => {
+  const user = process.env.EMAIL_USER?.trim();
+  const configured = process.env.EMAIL_FROM?.trim();
+  const displayName = 'Rwanda School Bridge System';
+
+  if (emailServiceType === 'gmail' || emailServiceType === 'smtp') {
+    if (user) {
+      if (configured && extractEmailAddress(configured).toLowerCase() === user.toLowerCase()) {
+        return configured;
+      }
+      return `${displayName} <${user}>`;
+    }
+  }
+
+  if (configured) return configured;
+  if (user) return `${displayName} <${user}>`;
+  return `${displayName} <noreply@rsbs.rw>`;
+};
+
 const sendViaResend = async (mailOptions) => {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -33,7 +57,7 @@ const sendViaResend = async (mailOptions) => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: process.env.EMAIL_FROM || 'Rwanda School Bridge System <onboarding@resend.dev>',
+      from: getFromAddress(),
       to: [mailOptions.to],
       subject: mailOptions.subject,
       html: mailOptions.html,
@@ -54,8 +78,8 @@ const createTransporter = () => {
     return nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
+        user: process.env.EMAIL_USER?.trim(),
+        pass: process.env.EMAIL_PASSWORD?.trim(),
       },
     });
   }
@@ -118,14 +142,49 @@ if (emailServiceType === 'smtp' || emailServiceType === 'gmail') {
     }
   });
 } else if (emailServiceType === 'resend') {
-  console.log('✅ Email service configured (resend)');
+  console.log(`✅ Email service configured (resend) — from: ${getFromAddress()}`);
 } else if (isProduction) {
   console.error('❌ Production email service is NOT configured — OTP emails will fail until env vars are set');
 } else {
   console.log('📧 Email service in dev console mode (emails logged, not sent)');
 }
 
-const sendMail = async (mailOptions) => transporter.sendMail(mailOptions);
+const buildMailOptions = ({ to, subject, html, text }) => {
+  const from = getFromAddress();
+  const sender = process.env.EMAIL_USER?.trim() || extractEmailAddress(from);
+  const plainText =
+    text ||
+    html
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  const options = {
+    from,
+    to,
+    subject,
+    html,
+    text: plainText,
+    replyTo: process.env.EMAIL_REPLY_TO?.trim() || sender || undefined,
+    headers: {
+      'X-Priority': '1',
+      Importance: 'high',
+    },
+  };
+
+  if ((emailServiceType === 'gmail' || emailServiceType === 'smtp') && sender) {
+    options.envelope = { from: sender, to };
+  }
+
+  return options;
+};
+
+const sendMail = async (mailOptions) => {
+  const result = await transporter.sendMail(mailOptions);
+  console.log(`📬 Email accepted for delivery to ${mailOptions.to} (id: ${result.messageId || 'n/a'})`);
+  return result;
+};
 
 // Send application status email to student
 const sendApplicationStatusEmail = async (application, status, rejectionReason = null) => {
@@ -190,12 +249,11 @@ const sendApplicationStatusEmail = async (application, status, rejectionReason =
     </html>
   `;
 
-  const mailOptions = {
-    from: process.env.EMAIL_FROM || 'Rwanda School Bridge System <noreply@rsbs.rw>',
+  const mailOptions = buildMailOptions({
     to: email,
     subject: `Application ${statusText} - ${school_name}`,
     html: htmlContent,
-  };
+  });
 
   try {
     await sendMail(mailOptions);
@@ -246,12 +304,11 @@ const sendNewApplicationNotification = async (leaderEmail, studentName, schoolNa
     </html>
   `;
 
-  const mailOptions = {
-    from: process.env.EMAIL_FROM || 'Rwanda School Bridge System <noreply@rsbs.rw>',
+  const mailOptions = buildMailOptions({
     to: leaderEmail,
     subject: `New Application - ${studentName}`,
     html: htmlContent,
-  };
+  });
 
   try {
     await sendMail(mailOptions);
@@ -303,16 +360,16 @@ const sendVerificationCode = async (email, code) => {
     </html>
   `;
 
-  const mailOptions = {
-    from: process.env.EMAIL_FROM || 'Rwanda School Bridge System <noreply@rsbs.rw>',
+  const mailOptions = buildMailOptions({
     to: email,
-    subject: 'Your Login Verification Code',
+    subject: 'Your RSBS Login Verification Code',
     html: htmlContent,
-  };
+    text: `Your Rwanda School Bridge System login code is: ${code}\n\nThis code expires in 10 minutes.\n\nIf you did not request this, ignore this email.`,
+  });
 
   try {
     await sendMail(mailOptions);
-    console.log(`✅ Verification code email sent to: ${email}`);
+    console.log(`✅ Verification code email sent to: ${email} via ${emailServiceType || 'dev'} from ${getFromAddress()}`);
   } catch (error) {
     console.error('❌ Error sending verification code email:', error.message);
     throw error;
@@ -354,12 +411,11 @@ const sendNotificationEmail = async (userEmail, userName, title, message, link =
     </html>
   `;
 
-  const mailOptions = {
-    from: process.env.EMAIL_FROM || 'Rwanda School Bridge System <noreply@rsbs.rw>',
+  const mailOptions = buildMailOptions({
     to: userEmail,
     subject: title,
     html: htmlContent,
-  };
+  });
 
   try {
     await sendMail(mailOptions);

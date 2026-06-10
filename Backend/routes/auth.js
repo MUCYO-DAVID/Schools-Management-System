@@ -18,9 +18,12 @@ const generateVerificationCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
+const normalizeEmail = (email = '') => email.trim().toLowerCase();
+
 
 router.post('/auth/login', async (req, res) => {
-  const { email, password } = req.body;
+  const email = normalizeEmail(req.body.email);
+  const { password } = req.body;
 
   try {
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
@@ -106,7 +109,16 @@ router.post('/auth/login', async (req, res) => {
 // POST /auth/signup
 // ─────────────────────────────────────────────
 router.post('/auth/signup', async (req, res) => {
-  const { first_name, last_name, email, password, role, school_name, subject, school_id } = req.body;
+  const {
+    first_name,
+    last_name,
+    password,
+    role,
+    school_name,
+    subject,
+    school_id,
+  } = req.body;
+  const email = normalizeEmail(req.body.email);
 
   try {
     const validRoles = ['student', 'leader', 'teacher'];
@@ -155,7 +167,8 @@ router.post('/auth/signup', async (req, res) => {
 // Token is issued HERE — only after code is confirmed.
 // ─────────────────────────────────────────────
 router.post('/auth/verify-code', async (req, res) => {
-  const { email, code, leaderAnswers } = req.body;
+  const email = normalizeEmail(req.body.email);
+  const { code, leaderAnswers } = req.body;
 
   try {
     if (!email) return res.status(400).json({ message: 'Email is required' });
@@ -244,7 +257,7 @@ router.post('/auth/verify-code', async (req, res) => {
 // POST /auth/resend-code
 // ─────────────────────────────────────────────
 router.post('/auth/resend-code', async (req, res) => {
-  const { email } = req.body;
+  const email = normalizeEmail(req.body.email);
 
   try {
     if (!email) return res.status(400).json({ message: 'Email is required' });
@@ -268,6 +281,7 @@ router.post('/auth/resend-code', async (req, res) => {
       console.log(`✅ Resent verification code to ${email}`);
     } catch (emailError) {
       console.error('❌ Failed to resend verification email:', emailError.message);
+      await pool.query('DELETE FROM verification_codes WHERE email = $1', [email]);
       return res.status(500).json({ message: 'Failed to send verification code. Please try again.' });
     }
 

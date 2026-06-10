@@ -29,14 +29,52 @@ const adsRouter = require('./routes/ads');
 const app = express();
 const port = process.env.PORT || 5000;
 
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
+const normalizeOrigin = (origin) => origin.replace(/\/$/, '');
+const splitOrigins = (value) =>
+  (value || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+    .map(normalizeOrigin);
+
+const allowedOrigins = new Set([
+  ...splitOrigins(process.env.FRONTEND_URL),
+  ...splitOrigins(process.env.FRONTEND_URLS),
   'http://localhost:3000',
-].filter(Boolean);
+  'http://127.0.0.1:3000',
+  ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+]);
+
+const isAllowedOrigin = (origin) => {
+  const normalizedOrigin = normalizeOrigin(origin);
+  if (allowedOrigins.has(normalizedOrigin)) {
+    return true;
+  }
+  try {
+    const { hostname } = new URL(normalizedOrigin);
+    if (hostname.endsWith('.vercel.app') || hostname.endsWith('.onrender.com')) {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+  return false;
+};
 
 app.use(
   cors({
-    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+    origin: (origin, callback) => {
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (isAllowedOrigin(origin)) {
+        return callback(null, true);
+      }
+
+      console.warn(`CORS blocked origin: ${origin}`);
+      return callback(new Error(`Origin not allowed by CORS: ${origin}`));
+    },
     credentials: true,
   })
 );
@@ -75,6 +113,22 @@ app.use('/api', adsRouter);
     await initializeDb();
     app.listen(port, () => {
       console.log(`🚀 Server running on port ${port}`);
+      const aiConfigured = Boolean((process.env.GROQ_API_KEY || '').trim());
+      const emailConfigured = Boolean(
+        process.env.RESEND_API_KEY ||
+          (process.env.EMAIL_SERVICE && process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) ||
+          (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD) ||
+          (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production')
+      );
+      console.log(aiConfigured ? '✅ Groq AI configured' : '❌ GROQ_API_KEY missing — AI chat will not work on deployment');
+      console.log(
+        emailConfigured
+          ? '✅ Email service configured'
+          : '❌ Email not configured — OTP emails will not be delivered'
+      );
+      if (allowedOrigins.size > 0) {
+        console.log(`🌐 CORS allowed origins: ${[...allowedOrigins].join(', ')} (+ *.vercel.app)`);
+      }
     });
     // Keep Node alive (Windows safety)
     setInterval(() => { }, 1000);

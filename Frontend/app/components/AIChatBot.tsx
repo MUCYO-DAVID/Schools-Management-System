@@ -116,11 +116,15 @@ export default function AIChatBot() {
         throw new Error('Failed to get response');
       }
 
+      if (!data.success) {
+        throw new Error(data.message || 'AI request failed');
+      }
+
       const assistantMessage: Message = {
         role: 'assistant',
-        content: data.success
-          ? data.message
-          : data.message || 'I could not process that request. Please try again.',
+        content: data.fallbackMode
+          ? `${data.message}\n\n_(Limited offline help mode — Groq AI is not available on the server.)_`
+          : data.message,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, assistantMessage]);
@@ -128,7 +132,11 @@ export default function AIChatBot() {
       console.error('Chat error:', error);
       const errorMessage: Message = {
         role: 'assistant',
-        content: 'I apologize, but I encountered an error. Please try again or rephrase your question.',
+        content:
+          error?.message?.includes('fetch') || error?.message?.includes('Failed to fetch')
+            ? 'Could not reach the AI server. Check that NEXT_PUBLIC_BACKEND_URL points to your Render backend and try again.'
+            : error?.message ||
+              'I apologize, but I encountered an error. Please try again or rephrase your question.',
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);

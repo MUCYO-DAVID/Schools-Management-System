@@ -128,6 +128,18 @@ export default function Navigation() {
   }, [isSidebarOpen])
 
   useEffect(() => {
+    const isMobile = window.innerWidth < 1024
+    if (isMobile && isSidebarOpen) {
+      document.body.style.overflow = "hidden"
+    } else {
+      document.body.style.overflow = ""
+    }
+    return () => {
+      document.body.style.overflow = ""
+    }
+  }, [isSidebarOpen])
+
+  useEffect(() => {
     if (!isAuthenticated) {
       setUnreadCount(0)
       setNotificationCount(0)
@@ -452,25 +464,25 @@ export default function Navigation() {
   return (
     <>
       <nav
-        className="sticky top-0 z-50 ml-0 w-full border-b border-slate-200/70 bg-white/80 shadow-sm backdrop-blur-xl transition-all duration-300 dark:border-slate-800/80 dark:bg-slate-950/80 lg:ml-72 lg:w-[calc(100%-18rem)]"
+        className="app-top-nav sticky top-0 z-50 ml-0 w-full max-w-[100vw] border-b border-slate-200/70 bg-white/80 shadow-sm backdrop-blur-xl transition-all duration-300 dark:border-slate-800/80 dark:bg-slate-950/80 lg:ml-72 lg:w-[calc(100%-18rem)]"
       >
-        <div className="flex min-h-16 sm:min-h-20 items-center justify-between gap-2 sm:gap-3 px-3 py-2 sm:px-6 sm:py-3">
-          <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-h-14 sm:min-h-20 items-center justify-between gap-1.5 sm:gap-3 px-2 py-2 sm:px-6 sm:py-3 overflow-hidden">
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => setIsSidebarOpen((prev) => !prev)}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-800"
+              className="inline-flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-800"
               aria-label="Toggle navigation sidebar"
             >
               {sidebarVisible ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
-            <Link href={currentRole?.homePath || "/home"} className="flex min-w-0 items-center gap-3 group">
-              <img src="/logo.png" alt="RSBS" className="h-10 w-10 object-contain transition-transform group-hover:scale-110" />
+            <Link href={currentRole?.homePath || "/home"} className="flex min-w-0 items-center gap-2 sm:gap-3 group">
+              <img src="/logo.png" alt="RSBS" className="h-8 w-8 sm:h-10 sm:w-10 shrink-0 object-contain transition-transform group-hover:scale-110" />
               <div className="min-w-0">
-                <p className="truncate text-base font-black tracking-tight text-slate-950 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                <p className="truncate text-sm sm:text-base font-black tracking-tight text-slate-950 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
                   RSBS
                 </p>
-                <div className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-slate-500 dark:text-slate-400">
+                <div className="hidden sm:flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-slate-500 dark:text-slate-400">
                   <span>{currentSectionLabel}</span>
                   {currentRole ? (
                     <span className="rounded-full bg-purple-100 px-2 py-0.5 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
@@ -486,7 +498,7 @@ export default function Navigation() {
             </Link>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2 md:gap-3">
             <div className="hidden lg:flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <Sparkles className="h-4 w-4 text-purple-500" />
               <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
@@ -497,16 +509,16 @@ export default function Navigation() {
             <button
               type="button"
               onClick={() => setLanguage(language === "en" ? "rw" : "en")}
-              className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-800"
+              className="hidden md:inline-flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-800"
+              title="Switch language"
             >
               <Globe className="h-4 w-4" />
-              <span className="hidden sm:inline">{language === "en" ? "RW" : "EN"}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setTheme(isDarkMode ? "light" : "dark")}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-800"
+              className="hidden md:inline-flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-800"
               aria-label="Toggle color theme"
             >
               {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -516,7 +528,7 @@ export default function Navigation() {
               <>
                 <Link
                   href="/inbox"
-                  className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-900"
+                  className="relative hidden md:inline-flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-900"
                   title="Messenger"
                 >
                   <MessageCircle className="h-4 w-4" />
@@ -531,7 +543,7 @@ export default function Navigation() {
                   <button
                     type="button"
                     onClick={() => setShowNotifications((prev) => !prev)}
-                    className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-900"
+                    className="relative inline-flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-900"
                     title="Notifications"
                   >
                     <Bell className="h-4 w-4" />
@@ -650,9 +662,9 @@ export default function Navigation() {
 
                 <Link
                   href="/profile"
-                  className="hidden items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-left shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700 dark:hover:bg-slate-800 sm:flex"
+                  className="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-2 py-1.5 sm:px-3 sm:py-2 text-left shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700 dark:hover:bg-slate-800"
                 >
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br ${currentRole?.accent || "from-blue-500 to-cyan-500"} text-sm font-semibold text-white`}>
+                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-gradient-to-br ${currentRole?.accent || "from-blue-500 to-cyan-500"} text-xs sm:text-sm font-semibold text-white`}>
                     {getInitials(user.first_name, user.last_name)}
                   </div>
                   <div className="hidden lg:block">
@@ -668,7 +680,7 @@ export default function Navigation() {
                 <button
                   type="button"
                   onClick={logout}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-600 shadow-sm transition hover:border-rose-300 hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200 dark:hover:border-rose-500/40 dark:hover:bg-rose-500/20"
+                  className="hidden md:inline-flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-600 shadow-sm transition hover:border-rose-300 hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200 dark:hover:border-rose-500/40 dark:hover:bg-rose-500/20"
                   title="Logout"
                 >
                   <LogOut className="h-4 w-4" />
@@ -677,7 +689,7 @@ export default function Navigation() {
             ) : (
               <Link
                 href="/auth/signin"
-                className="inline-flex h-11 items-center rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 px-6 text-sm font-bold text-white shadow-lg shadow-purple-600/20 transition hover:scale-105 active:scale-95"
+                className="inline-flex h-10 sm:h-11 items-center rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 px-4 sm:px-6 text-xs sm:text-sm font-bold text-white shadow-lg shadow-purple-600/20 transition hover:scale-105 active:scale-95 whitespace-nowrap"
               >
                 Sign In
               </Link>
@@ -749,6 +761,43 @@ export default function Navigation() {
             {quickLinks.map((item) => (
               <SidebarLink key={item.path} item={item} onClick={() => setIsSidebarOpen(false)} />
             ))}
+          </div>
+
+          <div className="space-y-2 lg:hidden">
+            <p className="px-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
+              Preferences
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setLanguage(language === "en" ? "rw" : "en")}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+              >
+                <Globe className="h-4 w-4" />
+                {language === "en" ? "Kinyarwanda" : "English"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme(isDarkMode ? "light" : "dark")}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+              >
+                {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                {isDarkMode ? "Light" : "Dark"}
+              </button>
+            </div>
+            {isAuthenticated && user ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSidebarOpen(false)
+                  logout()
+                }}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-3 text-sm font-semibold text-rose-600 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200"
+              >
+                <LogOut className="h-4 w-4" />
+                Log out
+              </button>
+            ) : null}
           </div>
 
           <div className="mt-auto rounded-[1.75rem] border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-4 text-sm text-slate-900 dark:border-emerald-500/20 dark:bg-gradient-to-br dark:from-emerald-500/10 dark:via-slate-950 dark:to-amber-500/10 dark:text-slate-100">

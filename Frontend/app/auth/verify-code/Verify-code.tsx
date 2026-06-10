@@ -182,6 +182,7 @@ export default function VerifyCodePage() {
                 <h2 className="text-white text-2xl font-bold mb-2">Verify Email</h2>
                 <p className="text-[#b3b3b3] text-sm">
                   A verification code was sent to <span className="text-purple-400 font-medium">{emailForVerification}</span>.
+                  Check your spam or promotions folder if you do not see it within a minute.
                 </p>
               </>
             )}

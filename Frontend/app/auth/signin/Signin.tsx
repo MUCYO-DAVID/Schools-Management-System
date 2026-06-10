@@ -5,10 +5,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../providers/AuthProvider';
 import AuthShell from '../components/AuthShell';
+import { BACKEND_URL } from '@/lib/backend';
 
 export default function SignInPage() {
-  const backendUrl =
-    process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -23,7 +22,7 @@ export default function SignInPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${backendUrl}/api/auth/login`, {
+      const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

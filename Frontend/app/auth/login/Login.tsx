@@ -56,11 +56,11 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4">
-      <div className="relative flex w-full max-w-4xl bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+      <div className="relative flex flex-col md:flex-row w-full max-w-4xl bg-gray-800 rounded-lg shadow-lg overflow-hidden">
         {/* Left Section - Rwanda Flag Inspired */}
-        <div className="w-1/2 bg-gradient-to-br from-blue-500 via-yellow-400 to-green-500 flex flex-col items-center justify-center p-8 text-white">
-          <div className="text-4xl font-bold mb-4">AMU</div>
-          <h2 className="text-2xl font-semibold text-center mb-6">Capturing Moments, Creating Memories</h2>
+        <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-blue-500 via-yellow-400 to-green-500 flex-col items-center justify-center p-8 text-white">
+          <div className="text-4xl font-bold mb-4">RSBS</div>
+          <h2 className="text-2xl font-semibold text-center mb-6">Rwanda School Bridge System</h2>
           <p className="text-center text-sm">Log in to continue your journey with us.</p>
           <div className="absolute bottom-4 flex space-x-2">
             <span className="block w-2 h-2 bg-gray-400 rounded-full"></span>
@@ -70,8 +70,8 @@ const LoginPage = () => {
         </div>
 
         {/* Right Section - Login Form */}
-        <div className="w-1/2 p-8">
-          <h2 className="text-3xl font-bold text-white mb-2">Log in to your account</h2>
+        <div className="w-full md:w-1/2 p-5 sm:p-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Log in to your account</h2>
           <p className="text-gray-400 mb-6">
             Don't have an account?{' '}
             <Link href="/auth/signup" className="text-purple-400 hover:underline">

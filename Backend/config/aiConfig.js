@@ -15,7 +15,7 @@ module.exports = {
   provider: (process.env.AI_PROVIDER || 'groq').toLowerCase(),
 
   groq: {
-    apiKey: process.env.GROQ_API_KEY || '',
+    apiKey: (process.env.GROQ_API_KEY || '').trim(),
     /** Fast default; override with GROQ_MODEL e.g. llama-3.3-70b-versatile for higher quality */
     model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
     maxTokens: parseIntSafe(process.env.GROQ_MAX_TOKENS, 280),
