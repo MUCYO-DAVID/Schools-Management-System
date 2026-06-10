@@ -20,14 +20,44 @@ const resolveEmailService = () => {
 
 const emailServiceType = resolveEmailService();
 
+const stripQuotes = (value) => {
+  if (!value) return '';
+  const trimmed = String(value).trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+};
+
+const getMailUser = () =>
+  stripQuotes(process.env.EMAIL_USER) || stripQuotes(process.env.SMTP_USER);
+
+const getMailPass = () =>
+  stripQuotes(process.env.EMAIL_PASSWORD) || stripQuotes(process.env.SMTP_PASSWORD);
+
+const getSmtpHost = () => {
+  const configured = stripQuotes(process.env.SMTP_HOST);
+  if (configured) return configured;
+
+  const user = getMailUser().toLowerCase();
+  if (user.endsWith('@gmail.com') || user.endsWith('@googlemail.com')) {
+    return 'smtp.gmail.com';
+  }
+
+  return null;
+};
+
 const extractEmailAddress = (value) => {
   const match = String(value || '').match(/<([^>]+)>/);
   return (match ? match[1] : value || '').trim();
 };
 
 const getFromAddress = () => {
-  const user = process.env.EMAIL_USER?.trim();
-  const configured = process.env.EMAIL_FROM?.trim();
+  const user = getMailUser();
+  const configured = stripQuotes(process.env.EMAIL_FROM);
   const displayName = 'Rwanda School Bridge System';
 
   if (emailServiceType === 'gmail' || emailServiceType === 'smtp') {
@@ -78,20 +108,24 @@ const createTransporter = () => {
     return nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.EMAIL_USER?.trim(),
-        pass: process.env.EMAIL_PASSWORD?.trim(),
+        user: getMailUser(),
+        pass: getMailPass(),
       },
     });
   }
 
   if (emailServiceType === 'smtp') {
+    const host = getSmtpHost();
+    if (!host) {
+      console.error('❌ SMTP_HOST is missing and could not be inferred from email address');
+    }
     return nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
+      host: host || 'smtp.gmail.com',
       port: parseInt(process.env.SMTP_PORT, 10) || 587,
       secure: process.env.SMTP_SECURE === 'true',
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD,
+        user: getMailUser(),
+        pass: getMailPass(),
       },
       tls: {
         rejectUnauthorized: false,
@@ -136,9 +170,11 @@ if (emailServiceType === 'smtp' || emailServiceType === 'gmail') {
   transporter.verify((err) => {
     if (err) {
       console.error('❌ Email service FAILED to connect:', err.message);
-      console.error('   Fix: Check EMAIL credentials (Gmail App Password may be expired)');
+      console.error('   Fix: Check SMTP_USER/SMTP_PASSWORD (Gmail App Password) on Render');
     } else {
-      console.log(`✅ Email service connected (${emailServiceType})`);
+      console.log(
+        `✅ Email service connected (${emailServiceType}) — host: ${getSmtpHost() || 'gmail'} — from: ${getFromAddress()}`
+      );
     }
   });
 } else if (emailServiceType === 'resend') {
@@ -151,7 +187,7 @@ if (emailServiceType === 'smtp' || emailServiceType === 'gmail') {
 
 const buildMailOptions = ({ to, subject, html, text }) => {
   const from = getFromAddress();
-  const sender = process.env.EMAIL_USER?.trim() || extractEmailAddress(from);
+  const sender = getMailUser() || extractEmailAddress(from);
   const plainText =
     text ||
     html

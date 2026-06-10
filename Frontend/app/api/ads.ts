@@ -99,6 +99,14 @@ export const fetchAdminAds = async (status?: string) => {
   return data.campaigns as AdCampaign[];
 };
 
+export const confirmAdCheckout = async (sessionId: string) => {
+  return {
+    success: true,
+    message: 'Payment received. Your ad will be reviewed shortly.',
+    sessionId,
+  };
+};
+
 export const reviewAdCampaign = async (
   id: number,
   action: 'approve' | 'reject',
