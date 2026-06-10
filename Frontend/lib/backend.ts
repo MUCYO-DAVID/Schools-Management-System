@@ -1,5 +1,5 @@
-/** Render production API — override with NEXT_PUBLIC_BACKEND_URL in Vercel if your URL differs */
-const RENDER_BACKEND = "https://rwandaschoolsbridgesystem.onrender.com"
+/** Render production API — must match your live Render service URL */
+const RENDER_BACKEND = "https://rwandaschoolbridgesystem.onrender.com"
 
 function resolveBackendUrl(): string {
   const configured = process.env.NEXT_PUBLIC_BACKEND_URL?.trim()

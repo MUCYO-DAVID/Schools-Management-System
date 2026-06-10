@@ -142,13 +142,16 @@ export default function AIChatBot() {
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error: any) {
       console.error('Chat error:', error);
+      const isNetworkError =
+        error?.message?.includes('fetch') ||
+        error?.message?.includes('Failed to fetch') ||
+        error?.name === 'TypeError';
       const errorMessage: Message = {
         role: 'assistant',
-        content:
-          error?.message?.includes('fetch') || error?.message?.includes('Failed to fetch')
-            ? 'Could not reach the API server. Ensure NEXT_PUBLIC_BACKEND_URL points to your Render backend.'
-            : error?.message ||
-              'I apologize, but I encountered an error. Please try again or rephrase your question.',
+        content: isNetworkError
+          ? `Could not reach the API server at ${BACKEND_URL}. On Vercel, set NEXT_PUBLIC_BACKEND_URL=https://rwandaschoolbridgesystem.onrender.com and redeploy.`
+          : error?.message ||
+            'I apologize, but I encountered an error. Please try again or rephrase your question.',
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);

@@ -2,7 +2,7 @@
 # Dashboard: connect this repo, set Root Directory to Backend if not using Blueprint.
 services:
   - type: web
-    name: rwandaschoolsbridgesystem
+    name: rwandaschoolbridgesystem
     runtime: node
     rootDir: Backend
     buildCommand: npm install
