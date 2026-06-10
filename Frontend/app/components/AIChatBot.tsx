@@ -134,7 +134,7 @@ export default function AIChatBot() {
         role: 'assistant',
         content:
           error?.message?.includes('fetch') || error?.message?.includes('Failed to fetch')
-            ? 'Could not reach the AI server. Check that NEXT_PUBLIC_BACKEND_URL points to your Render backend and try again.'
+            ? 'Could not reach the API server. If deployed on Vercel, ensure env vars (GROQ_API_KEY, DATABASE_URL) are set in the project settings.'
             : error?.message ||
               'I apologize, but I encountered an error. Please try again or rephrase your question.',
         timestamp: new Date()

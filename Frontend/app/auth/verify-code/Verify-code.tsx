@@ -6,10 +6,10 @@ import { useAuth } from '../../providers/AuthProvider';
 import Link from 'next/link';
 import { Shield, AlertCircle } from 'lucide-react';
 import AuthBackground from '../../components/AuthBackground';
+import { BACKEND_URL } from '@/lib/backend';
 
 export default function VerifyCodePage() {
-  const backendUrl =
-    process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+  const backendUrl = BACKEND_URL;
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [emailForVerification, setEmailForVerification] = useState<string | null>(null);
