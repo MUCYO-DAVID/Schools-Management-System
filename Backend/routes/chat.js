@@ -3,7 +3,6 @@ const router = express.Router();
 const {
   getChatResponse,
   getQuickSuggestions,
-  getFallbackResponse,
   isAiConfigured,
   getAiStatus,
 } = require('../utils/aiService');
@@ -83,33 +82,21 @@ router.post('/chat', async (req, res) => {
     const aiResponse = await getChatResponse(message, history, userRole, userContext, geoContext);
     const responseTime = Date.now() - startTime;
 
-    // Fallback pattern-matching when AI is unavailable (rate limit / config)
-    if (
-      !aiResponse.success &&
-      !['validation_error', 'invalid_request', 'message_too_long', 'empty_message', 'config_error'].includes(
-        aiResponse.error
-      )
-    ) {
-      const fallbackMessage = getFallbackResponse(message, userRole);
-      return res.json({
-        success: true,
-        message: fallbackMessage,
-        responseTime,
-        userRole,
-        fallbackMode: true,
-        notice:
-          aiResponse.error === 'config_error'
-            ? 'Running in offline help mode — AI is not configured'
-            : 'Running in offline help mode — AI provider is temporarily unavailable',
-        provider: getAiStatus().provider,
-      });
-    }
-
     if (!aiResponse.success) {
-      return res.status(aiResponse.error === 'invalid_request' ? 400 : 503).json({
+      const statusCode =
+        aiResponse.error === 'validation_error' || aiResponse.error === 'invalid_request'
+          ? 400
+          : aiResponse.error === 'config_error'
+            ? 503
+            : aiResponse.error === 'rate_limit'
+              ? 429
+              : 502;
+
+      return res.status(statusCode).json({
         ...aiResponse,
         responseTime,
         userRole,
+        fallbackMode: false,
       });
     }
 

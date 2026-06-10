@@ -117,14 +117,17 @@ export default function AIChatBot() {
       }
 
       if (!data.success) {
-        throw new Error(data.message || 'AI request failed');
+        throw new Error(
+          data.message ||
+            (data.error === 'config_error'
+              ? 'Groq AI is not configured on the server. Add GROQ_API_KEY on Render.'
+              : 'AI request failed')
+        );
       }
 
       const assistantMessage: Message = {
         role: 'assistant',
-        content: data.fallbackMode
-          ? `${data.message}\n\n_(Limited offline help mode — Groq AI is not available on the server.)_`
-          : data.message,
+        content: data.message,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, assistantMessage]);

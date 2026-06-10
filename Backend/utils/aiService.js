@@ -135,9 +135,8 @@ const mapProviderError = (error) => {
 
   return {
     success: false,
-    message:
-      "I'm having trouble right now. Please try again in a moment, or browse /student and /contact for help.",
-    error: error?.message || 'unknown_error',
+    message: error?.message || "I'm having trouble reaching Groq AI right now. Please try again.",
+    error: code || 'groq_error',
   };
 };
 
