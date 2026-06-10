@@ -1,5 +1,6 @@
 require('dotenv').config();
 const { createApp, ensureDb } = require('./createApp');
+const { getEmailStatus } = require('./utils/emailService');
 
 const port = process.env.PORT || 5000;
 
@@ -11,21 +12,16 @@ const port = process.env.PORT || 5000;
     app.listen(port, () => {
       console.log(`🚀 Server running on port ${port}`);
       const aiConfigured = Boolean((process.env.GROQ_API_KEY || '').replace(/["']/g, '').trim());
-      const emailConfigured = Boolean(
-        process.env.RESEND_API_KEY ||
-          (process.env.EMAIL_SERVICE && process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) ||
-          (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD) ||
-          (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production')
-      );
+      const emailStatus = getEmailStatus();
       console.log(
         aiConfigured
           ? `✅ Groq AI configured (model: ${process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'})`
-          : '❌ GROQ_API_KEY missing on Render — add it under Environment variables'
+          : '❌ GROQ_API_KEY missing on Render'
       );
       console.log(
-        emailConfigured
-          ? '✅ Email service configured'
-          : '❌ Email not configured — OTP emails will not be delivered'
+        emailStatus.configured
+          ? `✅ Email service configured (${emailStatus.service}) — ${emailStatus.host || 'gmail'}`
+          : '❌ Email not configured on Render — add EMAIL_SERVICE, SMTP_USER, SMTP_PASSWORD, SMTP_HOST'
       );
     });
 

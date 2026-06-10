@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 // ✅ REQUIRED: import sendVerificationCode from your emailService
-const { sendVerificationCode } = require('../utils/emailService');
+const { sendVerificationCode, getEmailStatus } = require('../utils/emailService');
 // ⚠️  Adjust path if needed: '../services/emailService' or '../helpers/emailService'
 
 if (!process.env.JWT_SECRET) {
@@ -283,8 +283,14 @@ router.post('/auth/resend-code', async (req, res) => {
       console.log(`✅ Resent verification code to ${email}`);
     } catch (emailError) {
       console.error('❌ Failed to resend verification email:', emailError.message);
-      await pool.query('DELETE FROM verification_codes WHERE email = $1', [email]);
-      return res.status(500).json({ message: 'Failed to send verification code. Please try again.' });
+      const status = getEmailStatus();
+      return res.status(503).json({
+        message: status.configured
+          ? 'Could not send email. Check Render logs — Gmail App Password may be wrong or expired.'
+          : 'Email is not configured on the server. Add SMTP_USER and SMTP_PASSWORD on Render.',
+        error: 'email_send_failed',
+        hint: 'Open https://rwandaschoolbridgesystem.onrender.com/api/health/email to verify email setup.',
+      });
     }
 
     res.json({ message: 'Verification code sent to your email' });

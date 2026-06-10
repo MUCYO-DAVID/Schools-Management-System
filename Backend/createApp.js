@@ -24,6 +24,7 @@ const parentChildRouter = require('./routes/parentChild');
 const surveyTemplatesRouter = require('./routes/surveyTemplates');
 const connectionsRouter = require('./routes/connections');
 const adsRouter = require('./routes/ads');
+const { getEmailStatus, verifyEmailConnection } = require('./utils/emailService');
 
 const normalizeOrigin = (origin) => origin.replace(/\/$/, '');
 const splitOrigins = (value) =>
@@ -118,6 +119,24 @@ const createApp = () => {
       aiEngine: 'groq-only',
       gitCommit: process.env.RENDER_GIT_COMMIT || null,
       gitBranch: process.env.RENDER_GIT_BRANCH || null,
+    });
+  });
+
+  app.get('/api/health/email', async (req, res) => {
+    const status = getEmailStatus();
+    const verify = status.configured ? await verifyEmailConnection() : { ok: false, message: 'Not configured' };
+    return res.json({
+      success: true,
+      emailConfigured: status.configured,
+      smtpReady: verify.ok,
+      service: status.service,
+      host: status.host,
+      from: status.from,
+      hasUser: status.hasUser,
+      hasPassword: status.hasPassword,
+      message: verify.ok
+        ? 'Email service ready'
+        : verify.message || 'Add SMTP_USER and SMTP_PASSWORD on Render',
     });
   });
 

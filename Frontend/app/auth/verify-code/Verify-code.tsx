@@ -144,7 +144,8 @@ export default function VerifyCodePage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to resend code');
+        const hint = errorData.hint ? ` ${errorData.hint}` : '';
+        throw new Error((errorData.message || 'Failed to resend code') + hint);
       }
       alert('Verification code sent to your email!');
     } catch (err: any) {
