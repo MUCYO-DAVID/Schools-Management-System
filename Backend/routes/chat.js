@@ -150,6 +150,9 @@ router.get('/chat/health', (req, res) => {
     available: status.configured,
     provider: status.provider,
     model: status.model,
+    aiEngine: 'groq-only',
+    fallbackMode: false,
+    gitCommit: process.env.RENDER_GIT_COMMIT || null,
     message: status.configured
       ? `AI service ready (${status.provider} / ${status.model})`
       : 'AI service not configured — set GROQ_API_KEY',

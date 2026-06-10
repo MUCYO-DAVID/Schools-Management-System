@@ -1,0 +1,15 @@
+# Render Blueprint — backend API (Groq AI, email, uploads)
+# Dashboard: connect this repo, set Root Directory to Backend if not using Blueprint.
+services:
+  - type: web
+    name: rwandaschoolsbridgesystem
+    runtime: node
+    rootDir: Backend
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile

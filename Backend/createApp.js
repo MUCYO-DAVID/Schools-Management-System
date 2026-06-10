@@ -112,7 +112,13 @@ const createApp = () => {
   app.use('/api', adsRouter);
 
   app.get('/api/health', (req, res) => {
-    res.json({ ok: true, platform: process.env.VERCEL ? 'vercel' : 'node' });
+    res.json({
+      ok: true,
+      platform: process.env.VERCEL ? 'vercel' : 'node',
+      aiEngine: 'groq-only',
+      gitCommit: process.env.RENDER_GIT_COMMIT || null,
+      gitBranch: process.env.RENDER_GIT_BRANCH || null,
+    });
   });
 
   return app;

@@ -116,6 +116,15 @@ export default function AIChatBot() {
         throw new Error('Failed to get response');
       }
 
+      if (
+        data.fallbackMode === true ||
+        (typeof data.message === 'string' && data.message.includes('fallback mode'))
+      ) {
+        throw new Error(
+          'The API server is still running old code. Open Render → your backend service → Manual Deploy → Deploy latest commit, then try again.'
+        );
+      }
+
       if (!data.success) {
         throw new Error(
           data.message ||

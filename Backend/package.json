@@ -4,6 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
+    "build": "node -e \"console.log('Backend ready')\"",
     "start": "node server.js",
     "dev": "nodemon server.js",
     "migrate:ads": "node scripts/migrate-ads-table.js"
