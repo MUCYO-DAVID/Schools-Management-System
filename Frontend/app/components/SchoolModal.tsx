@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from "react"
 import { X, MapPin } from "lucide-react"
 import { School } from "../types";
 import { useLanguage } from "../providers/LanguageProvider"
+import { getImageUrl } from "@/lib/image-utils"
 
 interface SchoolModalProps {
   school: School | null
@@ -318,7 +319,7 @@ export default function SchoolModal({ school, onSave, onClose }: SchoolModalProp
                 <div className="mt-4 grid grid-cols-4 gap-2">
                   {formData.image_urls.map((imageUrl, index) => (
                     <div key={index} className="relative aspect-square rounded-xl overflow-hidden group border border-slate-200 dark:border-slate-700">
-                      <img src={imageUrl} alt="School" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                      <img src={getImageUrl(imageUrl)} alt="School" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
                       <button
                         type="button"
                         onClick={() => handleRemoveExistingImage(imageUrl)}

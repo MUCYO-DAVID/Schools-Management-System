@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs');
 const initializeDb = require('./db/schema');
 const schoolsRouter = require('./routes/schools');
 const contactsRouter = require('./routes/contacts');
@@ -87,15 +86,7 @@ const createApp = () => {
   );
   app.use(express.json());
 
-  const uploadsDir = process.env.VERCEL
-    ? path.join('/tmp', 'rsbs-uploads')
-    : path.join(__dirname, 'uploads');
-
-  if (process.env.VERCEL && !fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-  }
-
-  app.use('/uploads', express.static(uploadsDir));
+  app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
   app.use('/api', schoolsRouter);
   app.use('/api', contactsRouter);
