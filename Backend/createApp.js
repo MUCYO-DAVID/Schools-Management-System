@@ -147,15 +147,18 @@ const createApp = () => {
     });
   });
 
-  // Diagnostic: actually send a test email and return the provider's real result.
-  // Usage: /api/health/email/test?to=you@example.com
+  // Diagnostic: send a test email and return the provider's real result.
+  // Locked to the system sender address only, so it cannot be abused to spam others.
+  // Usage: /api/health/email/test
   app.get('/api/health/email/test', async (req, res) => {
-    const to = (req.query.to || '').toString().trim();
+    const status = getEmailStatus();
+    const senderMatch = String(status.from || '').match(/<([^>]+)>/);
+    const to = (senderMatch ? senderMatch[1] : status.from || '').trim();
     if (!to || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
-      return res.status(400).json({ success: false, message: 'Provide a valid ?to=email address' });
+      return res.status(400).json({ success: false, message: 'No valid sender address configured (EMAIL_FROM).' });
     }
     const result = await sendTestEmail(to);
-    return res.status(result.ok ? 200 : 502).json({ success: result.ok, ...result });
+    return res.status(result.ok ? 200 : 502).json({ success: result.ok, sentTo: to, ...result });
   });
 
   return app;
