@@ -134,11 +134,13 @@ const createApp = () => {
       host: status.host,
       from: status.from,
       hasBrevoApiKey: status.hasBrevoApiKey,
+      brevoKeyValid: status.brevoKeyValid,
+      brevoKeyIssue: status.brevoKeyIssue,
       hasUser: status.hasUser,
       hasPassword: status.hasPassword,
       message: verify.ok
         ? 'Email service ready'
-        : verify.message || 'Configure BREVO_API_KEY on Render (SMTP is blocked on cloud)',
+        : status.brevoKeyIssue || verify.message || 'Configure BREVO_API_KEY on Render (SMTP is blocked on cloud)',
     });
   });
 

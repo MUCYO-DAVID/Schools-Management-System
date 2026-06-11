@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 // ✅ REQUIRED: import sendVerificationCode from your emailService
-const { sendVerificationCode } = require('../utils/emailService');
+const { sendVerificationCode, usesHttpEmail } = require('../utils/emailService');
 // ⚠️  Adjust path if needed: '../services/emailService' or '../helpers/emailService'
 
 if (!process.env.JWT_SECRET) {
@@ -77,7 +77,25 @@ router.post('/auth/login', async (req, res) => {
       [email, code, expiresAt]
     );
 
-    // Respond immediately — email sends in background (SMTP can be slow on Render)
+    if (usesHttpEmail()) {
+      try {
+        await sendVerificationCode(email, code);
+        console.log(`✅ Verification code sent to ${email}`);
+      } catch (emailError) {
+        console.error(' Failed to send verification email:', emailError.message);
+        await pool.query('DELETE FROM verification_codes WHERE email = $1', [email]);
+        return res.status(503).json({
+          message: emailError.message || 'Failed to send verification email. Check Brevo API key on Render.',
+        });
+      }
+      return res.json({
+        requiresVerification: true,
+        verificationType: 'code',
+        email,
+        message: 'A verification code has been sent to your email.',
+      });
+    }
+
     res.json({
       requiresVerification: true,
       verificationType: 'code',
@@ -87,7 +105,7 @@ router.post('/auth/login', async (req, res) => {
 
     sendVerificationCode(email, code)
       .then(() => console.log(`✅ Verification code sent to ${email}`))
-      .catch(async (emailError) => {
+      .catch((emailError) => {
         console.error(' Failed to send verification email:', emailError.message);
       });
 
@@ -272,6 +290,23 @@ router.post('/auth/resend-code', async (req, res) => {
       'INSERT INTO verification_codes (email, code, expires_at) VALUES ($1, $2, $3)',
       [email, code, expiresAt]
     );
+
+    if (usesHttpEmail()) {
+      try {
+        await sendVerificationCode(email, code);
+        console.log(`✅ Resent verification code to ${email}`);
+        return res.json({
+          success: true,
+          message: 'Verification code sent to your email. Check inbox and spam.',
+        });
+      } catch (emailError) {
+        console.error('❌ Failed to resend verification email:', emailError.message);
+        return res.status(503).json({
+          success: false,
+          message: emailError.message || 'Failed to send email. Fix BREVO_API_KEY on Render (must start with xkeysib-).',
+        });
+      }
+    }
 
     res.json({
       success: true,
