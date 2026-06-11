@@ -148,6 +148,17 @@ const parseSender = () => {
   return { name, email };
 };
 
+const formatBrevoError = (message = '') => {
+  const text = String(message);
+  if (/unrecognised ip|unrecognized ip|authorised_ips|authorized_ips/i.test(text)) {
+    return (
+      'Brevo blocked Render’s server IP. In Brevo go to Security → Authorized IPs and turn OFF IP restriction (recommended for cloud hosting). ' +
+      'Or add your Render IP at https://app.brevo.com/security/authorised_ips'
+    );
+  }
+  return text || 'Brevo could not send the email.';
+};
+
 const sendViaBrevoApi = async (mailOptions) => {
   const keyIssue = getBrevoKeyIssue();
   if (keyIssue) {
@@ -179,7 +190,7 @@ const sendViaBrevoApi = async (mailOptions) => {
 
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new Error(data.message || data.code || `Brevo API error (${response.status})`);
+      throw new Error(formatBrevoError(data.message || data.code || `Brevo API error (${response.status})`));
     }
 
     return { messageId: data.messageId || `brevo-${Date.now()}` };
@@ -379,7 +390,7 @@ const verifyEmailConnection = async () => {
         const data = await response.json().catch(() => ({}));
         return {
           ok: false,
-          message: data.message || `Brevo rejected API key (${response.status})`,
+          message: formatBrevoError(data.message || `Brevo rejected API key (${response.status})`),
           status,
         };
       }
