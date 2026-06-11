@@ -380,6 +380,28 @@ const sendMail = async (mailOptions) => {
   return result;
 };
 
+// Diagnostic: performs a REAL send and returns the provider's actual result/error.
+// Used by /api/health/email/test to surface failures that the background send swallows.
+const sendTestEmail = async (to) => {
+  const status = getEmailStatus();
+  if (!status.configured) {
+    return { ok: false, message: 'Email not configured', status };
+  }
+  try {
+    const result = await sendMail(
+      buildMailOptions({
+        to,
+        subject: 'RSBS email test',
+        html: '<p>This is a test email from Rwanda School Bridge System. If you received this, email delivery works.</p>',
+        text: 'This is a test email from Rwanda School Bridge System. If you received this, email delivery works.',
+      })
+    );
+    return { ok: true, messageId: result.messageId || null, service: status.service, from: status.from };
+  } catch (error) {
+    return { ok: false, message: error.message, service: status.service, from: status.from };
+  }
+};
+
 const verifyEmailConnection = async () => {
   const status = getEmailStatus();
   if (!status.configured) {
@@ -605,5 +627,6 @@ module.exports = {
   sendVerificationCode,
   getEmailStatus,
   verifyEmailConnection,
+  sendTestEmail,
   usesHttpEmail,
 };

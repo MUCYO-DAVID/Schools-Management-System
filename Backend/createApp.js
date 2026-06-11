@@ -24,7 +24,7 @@ const parentChildRouter = require('./routes/parentChild');
 const surveyTemplatesRouter = require('./routes/surveyTemplates');
 const connectionsRouter = require('./routes/connections');
 const adsRouter = require('./routes/ads');
-const { getEmailStatus, verifyEmailConnection } = require('./utils/emailService');
+const { getEmailStatus, verifyEmailConnection, sendTestEmail } = require('./utils/emailService');
 
 const normalizeOrigin = (origin) => origin.replace(/\/$/, '');
 const splitOrigins = (value) =>
@@ -145,6 +145,17 @@ const createApp = () => {
           verify.message ||
           'Local dev: set SMTP_USER + SMTP_PASSWORD. Render: set BREVO_API_KEY (xkeysib-...).',
     });
+  });
+
+  // Diagnostic: actually send a test email and return the provider's real result.
+  // Usage: /api/health/email/test?to=you@example.com
+  app.get('/api/health/email/test', async (req, res) => {
+    const to = (req.query.to || '').toString().trim();
+    if (!to || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
+      return res.status(400).json({ success: false, message: 'Provide a valid ?to=email address' });
+    }
+    const result = await sendTestEmail(to);
+    return res.status(result.ok ? 200 : 502).json({ success: result.ok, ...result });
   });
 
   return app;
