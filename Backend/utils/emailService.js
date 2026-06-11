@@ -126,7 +126,7 @@ const sendViaResend = async (mailOptions) => {
   return { messageId: data.id || `resend-${Date.now()}` };
 };
 
-const createSmtpTransport = ({ port, secure, name }) => {
+const createSmtpTransport = ({ port, secure }) => {
   const host = getSmtpHost() || 'smtp.gmail.com';
   const user = getMailUser();
   const pass = getMailPass();
@@ -135,125 +135,63 @@ const createSmtpTransport = ({ port, secure, name }) => {
     throw new Error('SMTP_USER and SMTP_PASSWORD are required');
   }
 
-  return {
-    name,
-    transport: nodemailer.createTransport({
-      host,
-      port,
-      secure,
-      auth: { user, pass },
-      connectionTimeout: 15000,
-      greetingTimeout: 15000,
-      socketTimeout: 25000,
-      tls: { rejectUnauthorized: true },
-    }),
-  };
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: { user, pass },
+    pool: true,
+    maxConnections: 3,
+    maxMessages: 50,
+    connectionTimeout: 8000,
+    greetingTimeout: 8000,
+    socketTimeout: 12000,
+    tls: { rejectUnauthorized: true },
+  });
 };
 
-const getSendStrategies = () => {
+let cachedTransport = null;
+let cachedTransportLabel = null;
+
+const getMailTransport = () => {
+  if (cachedTransport) return { transport: cachedTransport, label: cachedTransportLabel };
+
   const service = resolveEmailService();
+  const user = getMailUser();
+  const pass = getMailPass();
+
   if (service === 'resend') {
-    return [{ name: 'resend', send: sendViaResend }];
+    return { transport: null, label: 'resend' };
+  }
+
+  if (!user || !pass) {
+    return { transport: null, label: 'unconfigured' };
   }
 
   if (service === 'gmail') {
-    const user = getMailUser();
-    const pass = getMailPass();
-    return [
-      {
-        name: 'gmail-service',
-        send: async (mailOptions) => {
-          const transport = nodemailer.createTransport({
-            service: 'gmail',
-            auth: { user, pass },
-            connectionTimeout: 15000,
-            greetingTimeout: 15000,
-            socketTimeout: 25000,
-          });
-          return transport.sendMail(mailOptions);
-        },
-      },
-    ];
+    cachedTransport = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user, pass },
+      pool: true,
+      maxConnections: 3,
+      maxMessages: 50,
+      connectionTimeout: 8000,
+      greetingTimeout: 8000,
+      socketTimeout: 12000,
+    });
+    cachedTransportLabel = 'gmail-service';
+    return { transport: cachedTransport, label: cachedTransportLabel };
   }
 
   if (service === 'smtp') {
-    const configuredPort = parseInt(process.env.SMTP_PORT, 10);
-    const configuredSecure = process.env.SMTP_SECURE === 'true';
-    const strategies = [];
-
-    if (configuredPort) {
-      strategies.push({
-        name: `smtp-${configuredPort}`,
-        send: async (mailOptions) => {
-          const { transport } = createSmtpTransport({
-            port: configuredPort,
-            secure: configuredSecure,
-            name: `smtp-${configuredPort}`,
-          });
-          return transport.sendMail(mailOptions);
-        },
-      });
-    }
-
-    strategies.push(
-      {
-        name: 'smtp-587-starttls',
-        send: async (mailOptions) => {
-          const { transport } = createSmtpTransport({ port: 587, secure: false, name: 'smtp-587' });
-          return transport.sendMail(mailOptions);
-        },
-      },
-      {
-        name: 'smtp-465-ssl',
-        send: async (mailOptions) => {
-          const { transport } = createSmtpTransport({ port: 465, secure: true, name: 'smtp-465' });
-          return transport.sendMail(mailOptions);
-        },
-      },
-      {
-        name: 'gmail-service-fallback',
-        send: async (mailOptions) => {
-          const transport = nodemailer.createTransport({
-            service: 'gmail',
-            auth: { user: getMailUser(), pass: getMailPass() },
-            connectionTimeout: 15000,
-            greetingTimeout: 15000,
-            socketTimeout: 25000,
-          });
-          return transport.sendMail(mailOptions);
-        },
-      }
-    );
-
-    return strategies;
+    const port = parseInt(process.env.SMTP_PORT, 10) || 587;
+    const secure = process.env.SMTP_SECURE === 'true' || port === 465;
+    cachedTransport = createSmtpTransport({ port, secure });
+    cachedTransportLabel = `smtp-${port}`;
+    return { transport: cachedTransport, label: cachedTransportLabel };
   }
 
-  if (isProduction) {
-    return [
-      {
-        name: 'unconfigured',
-        send: async () => {
-          throw new Error(
-            'Email not configured on server. Set EMAIL_SERVICE=smtp, SMTP_USER, SMTP_PASSWORD, SMTP_HOST on Render.'
-          );
-        },
-      },
-    ];
-  }
-
-  return [
-    {
-      name: 'dev-console',
-      send: async (mailOptions) => {
-        console.log('\n📧 Email would be sent (dev mode):');
-        console.log('To:', mailOptions.to);
-        console.log('Subject:', mailOptions.subject);
-        console.log('Body:', mailOptions.text || mailOptions.html);
-        console.log('-------------------\n');
-        return { messageId: 'dev-mode-' + Date.now() };
-      },
-    },
-  ];
+  return { transport: null, label: 'unconfigured' };
 };
 
 const buildMailOptions = ({ to, subject, html, text }) => {
@@ -290,29 +228,35 @@ const buildMailOptions = ({ to, subject, html, text }) => {
 
 const sendMail = async (mailOptions) => {
   const status = getEmailStatus();
+
   if (!status.configured) {
+    if (!isProduction) {
+      console.log('\n📧 Email would be sent (dev mode):');
+      console.log('To:', mailOptions.to);
+      console.log('Subject:', mailOptions.subject);
+      console.log('Body:', mailOptions.text || mailOptions.html);
+      return { messageId: 'dev-mode-' + Date.now() };
+    }
     throw new Error(
-      'Email service is not configured. On Render add: EMAIL_SERVICE=smtp, SMTP_HOST=smtp.gmail.com, SMTP_USER, SMTP_PASSWORD (Gmail App Password).'
+      'Email service is not configured. On Render add: EMAIL_SERVICE=smtp, SMTP_HOST=smtp.gmail.com, SMTP_USER, SMTP_PASSWORD.'
     );
   }
 
-  const strategies = getSendStrategies();
-  let lastError = null;
-
-  for (const strategy of strategies) {
-    try {
-      const result = await strategy.send(mailOptions);
-      console.log(
-        `📬 Email sent via ${strategy.name} to ${mailOptions.to} (id: ${result.messageId || 'n/a'})`
-      );
-      return result;
-    } catch (error) {
-      lastError = error;
-      console.error(`❌ Email failed (${strategy.name}):`, error.message);
-    }
+  const service = resolveEmailService();
+  if (service === 'resend') {
+    const result = await sendViaResend(mailOptions);
+    console.log(`📬 Email sent via resend to ${mailOptions.to}`);
+    return result;
   }
 
-  throw lastError || new Error('Failed to send email');
+  const { transport, label } = getMailTransport();
+  if (!transport) {
+    throw new Error('Email transport not available. Check SMTP_USER and SMTP_PASSWORD on Render.');
+  }
+
+  const result = await transport.sendMail(mailOptions);
+  console.log(`📬 Email sent via ${label} to ${mailOptions.to} (id: ${result.messageId || 'n/a'})`);
+  return result;
 };
 
 const verifyEmailConnection = async () => {
@@ -325,26 +269,24 @@ const verifyEmailConnection = async () => {
     return { ok: true, message: 'Resend API configured', status };
   }
 
-  const strategies = getSendStrategies().filter((s) => s.name.startsWith('smtp') || s.name === 'gmail-service');
-  for (const strategy of strategies.slice(0, 2)) {
-    try {
-      if (strategy.name.startsWith('smtp')) {
-        const port = strategy.name.includes('465') ? 465 : 587;
-        const secure = port === 465;
-        const { transport } = createSmtpTransport({ port, secure, name: strategy.name });
-        await transport.verify();
-        return { ok: true, message: `SMTP verified (${strategy.name})`, status };
-      }
-    } catch (error) {
-      return { ok: false, message: error.message, status };
-    }
+  const { transport, label } = getMailTransport();
+  if (!transport) {
+    return { ok: false, message: 'Transport not configured', status };
   }
 
-  return { ok: false, message: 'Could not verify SMTP', status };
+  try {
+    await transport.verify();
+    return { ok: true, message: `SMTP verified (${label})`, status };
+  } catch (error) {
+    return { ok: false, message: error.message, status };
+  }
 };
 
 // Log status at startup
 const startupStatus = getEmailStatus();
+if (startupStatus.configured && startupStatus.service !== 'resend') {
+  getMailTransport();
+}
 if (startupStatus.configured) {
   console.log(
     `✅ Email service configured (${startupStatus.service}) — host: ${startupStatus.host || 'gmail'} — from: ${startupStatus.from}`

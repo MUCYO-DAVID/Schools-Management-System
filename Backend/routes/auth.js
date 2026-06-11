@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 // ✅ REQUIRED: import sendVerificationCode from your emailService
-const { sendVerificationCode, getEmailStatus } = require('../utils/emailService');
+const { sendVerificationCode } = require('../utils/emailService');
 // ⚠️  Adjust path if needed: '../services/emailService' or '../helpers/emailService'
 
 if (!process.env.JWT_SECRET) {
@@ -77,12 +77,7 @@ router.post('/auth/login', async (req, res) => {
       [email, code, expiresAt]
     );
 
-    await pool.query(
-      'INSERT INTO verification_codes (email, code, expires_at) VALUES ($1, $2, $3)',
-      [email, code, expiresAt]
-    );
-
-    // Respond immediately — SMTP on Render can take 30s+ and blocks the UI
+    // Respond immediately — email sends in background (SMTP can be slow on Render)
     res.json({
       requiresVerification: true,
       verificationType: 'code',
@@ -278,22 +273,18 @@ router.post('/auth/resend-code', async (req, res) => {
       [email, code, expiresAt]
     );
 
-    try {
-      await sendVerificationCode(email, code);
-      console.log(`✅ Resent verification code to ${email}`);
-    } catch (emailError) {
-      console.error('❌ Failed to resend verification email:', emailError.message);
-      const status = getEmailStatus();
-      return res.status(503).json({
-        message: status.configured
-          ? 'Could not send email. Check Render logs — Gmail App Password may be wrong or expired.'
-          : 'Email is not configured on the server. Add SMTP_USER and SMTP_PASSWORD on Render.',
-        error: 'email_send_failed',
-        hint: 'Open https://rwandaschoolbridgesystem.onrender.com/api/health/email to verify email setup.',
-      });
-    }
+    res.json({
+      success: true,
+      message: 'A new verification code is being sent. Check your inbox within a minute.',
+    });
 
-    res.json({ message: 'Verification code sent to your email' });
+    sendVerificationCode(email, code)
+      .then(() => console.log(`✅ Resent verification code to ${email}`))
+      .catch((emailError) => {
+        console.error('❌ Failed to resend verification email:', emailError.message);
+      });
+
+    return;
 
   } catch (err) {
     console.error('Resend Code Error:', err.message);

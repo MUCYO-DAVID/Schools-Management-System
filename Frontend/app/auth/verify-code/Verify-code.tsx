@@ -18,6 +18,7 @@ export default function VerifyCodePage() {
   const [leaderAnswer2, setLeaderAnswer2] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState('');
   const router = useRouter();
   const { login } = useAuth();
 
@@ -119,37 +120,50 @@ export default function VerifyCodePage() {
 
   const handleResendCode = async () => {
     if (isResending) return;
-    setError('');
-    setIsResending(true);
-    if (!emailForVerification) {
-      setError('Email not found to resend code.');
-      return;
-    }
 
-    // Leaders don't need to resend code, they answer questions
-    if (requiresLeaderQuestions) {
-      setError('Please answer the verification questions above.');
-      return;
-    }
+    setError('');
+    setResendSuccess('');
+    setIsResending(true);
 
     try {
-      // Placeholder for your backend API call to resend the code
+      if (!emailForVerification) {
+        setError('Email not found to resend code.');
+        return;
+      }
+
+      if (requiresLeaderQuestions) {
+        setError('Please answer the verification questions above.');
+        return;
+      }
+
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 20000);
+
       const response = await fetch(`${backendUrl}/api/auth/resend-code`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: emailForVerification }),
+        signal: controller.signal,
       });
 
+      window.clearTimeout(timeoutId);
+
+      const data = await response.json().catch(() => ({}));
+
       if (!response.ok) {
-        const errorData = await response.json();
-        const hint = errorData.hint ? ` ${errorData.hint}` : '';
-        throw new Error((errorData.message || 'Failed to resend code') + hint);
+        throw new Error(data.message || 'Failed to resend code');
       }
-      alert('Verification code sent to your email!');
+
+      setResendSuccess(
+        data.message ||
+          'New code queued! Check your inbox within a minute (and spam folder).'
+      );
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred while resending code');
+      if (err?.name === 'AbortError') {
+        setError('Request timed out. The server may be waking up — try again in a few seconds.');
+      } else {
+        setError(err.message || 'An unexpected error occurred while resending code');
+      }
     } finally {
       setIsResending(false);
     }
@@ -188,6 +202,12 @@ export default function VerifyCodePage() {
               </>
             )}
           </div>
+
+          {resendSuccess && (
+            <div className="bg-green-500/20 border border-green-500 text-green-200 rounded-lg p-3 mb-6 text-sm">
+              {resendSuccess}
+            </div>
+          )}
 
           {error && (
             <div className="bg-red-500/20 border border-red-500 text-red-200 rounded-lg p-3 mb-6 text-sm flex gap-2 items-start animate-in fade-in zoom-in duration-200">
