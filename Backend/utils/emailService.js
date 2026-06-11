@@ -24,46 +24,13 @@ const getMailPass = () => {
   return raw.replace(/\s+/g, '');
 };
 
-const getBrevoApiKeyRaw = () => stripQuotes(process.env.BREVO_API_KEY);
-
-const getBrevoKeyIssue = (key = getBrevoApiKeyRaw()) => {
-  if (!key) return 'BREVO_API_KEY is missing on Render.';
-  if (key.startsWith('xsmtpsib-')) {
-    return 'Wrong key type: you pasted the SMTP key (xsmtpsib-). In Brevo go to Settings → SMTP & API → API Keys and create a key that starts with xkeysib-.';
-  }
-  if (!key.startsWith('xkeysib-')) {
-    return 'BREVO_API_KEY must start with xkeysib- (Brevo API key, not SMTP password).';
-  }
-  return null;
-};
-
-const getBrevoApiKey = () => {
-  const key = getBrevoApiKeyRaw();
-  return getBrevoKeyIssue(key) ? '' : key;
-};
-
-const usesHttpEmail = () => {
-  const service = resolveEmailService();
-  return service === 'brevo' || service === 'resend';
-};
-
 const resolveEmailService = () => {
-  const explicit = stripQuotes(process.env.EMAIL_SERVICE)?.toLowerCase();
-
-  if (explicit === 'resend' || stripQuotes(process.env.RESEND_API_KEY)) {
-    if (stripQuotes(process.env.RESEND_API_KEY)) return 'resend';
+  if (process.env.EMAIL_SERVICE) {
+    return process.env.EMAIL_SERVICE.toLowerCase();
   }
-
-  // Render blocks outbound SMTP (ports 587/465). Brevo HTTP API uses HTTPS and works on cloud.
-  if (explicit === 'brevo' || getBrevoApiKeyRaw()) {
-    if (!explicit || explicit === 'brevo' || explicit === 'smtp' || isProduction) {
-      return 'brevo';
-    }
+  if (process.env.RESEND_API_KEY) {
+    return 'resend';
   }
-
-  if (explicit) return explicit;
-
-  if (stripQuotes(process.env.RESEND_API_KEY)) return 'resend';
   if (getMailUser() && getMailPass()) {
     if (process.env.SMTP_HOST) return 'smtp';
     return 'gmail';
@@ -113,90 +80,21 @@ const getEmailStatus = () => {
   const user = getMailUser();
   const pass = getMailPass();
   const host = getSmtpHost();
-  const brevoKeyRaw = getBrevoApiKeyRaw();
-  const brevoKeyIssue = getBrevoKeyIssue(brevoKeyRaw);
-  const brevoKey = getBrevoApiKey();
-  const resendKey = stripQuotes(process.env.RESEND_API_KEY);
 
   return {
     configured: Boolean(
       service === 'resend'
-        ? resendKey
-        : service === 'brevo'
-          ? brevoKey
-          : service && user && pass && (service !== 'smtp' || host)
+        ? process.env.RESEND_API_KEY
+        : service && user && pass && (service !== 'smtp' || host)
     ),
     service: service || 'none',
-    host: service === 'brevo' ? 'api.brevo.com' : host || null,
+    host: host || null,
     from: getFromAddress(),
     hasUser: Boolean(user),
     hasPassword: Boolean(pass),
     hasSmtpHost: Boolean(host),
-    hasBrevoApiKey: Boolean(brevoKeyRaw),
-    brevoKeyValid: Boolean(brevoKey),
-    brevoKeyIssue,
-    hasResendApiKey: Boolean(resendKey),
     isProduction,
   };
-};
-
-const parseSender = () => {
-  const from = getFromAddress();
-  const email = extractEmailAddress(from) || getMailUser();
-  const nameMatch = from.match(/^(.+?)\s*</);
-  const name = nameMatch ? nameMatch[1].trim().replace(/^"|"$/g, '') : 'Rwanda School Bridge System';
-  return { name, email };
-};
-
-const formatBrevoError = (message = '') => {
-  const text = String(message);
-  if (/unrecognised ip|unrecognized ip|authorised_ips|authorized_ips/i.test(text)) {
-    return (
-      'Brevo blocked Render’s server IP. In Brevo go to Security → Authorized IPs and turn OFF IP restriction (recommended for cloud hosting). ' +
-      'Or add your Render IP at https://app.brevo.com/security/authorised_ips'
-    );
-  }
-  return text || 'Brevo could not send the email.';
-};
-
-const sendViaBrevoApi = async (mailOptions) => {
-  const keyIssue = getBrevoKeyIssue();
-  if (keyIssue) {
-    throw new Error(keyIssue);
-  }
-  const apiKey = getBrevoApiKey();
-
-  const sender = parseSender();
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20000);
-
-  try {
-    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'api-key': apiKey,
-        'Content-Type': 'application/json',
-        accept: 'application/json',
-      },
-      body: JSON.stringify({
-        sender: { name: sender.name, email: sender.email },
-        to: [{ email: mailOptions.to }],
-        subject: mailOptions.subject,
-        htmlContent: mailOptions.html,
-        textContent: mailOptions.text,
-      }),
-      signal: controller.signal,
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(formatBrevoError(data.message || data.code || `Brevo API error (${response.status})`));
-    }
-
-    return { messageId: data.messageId || `brevo-${Date.now()}` };
-  } finally {
-    clearTimeout(timeout);
-  }
 };
 
 const sendViaResend = async (mailOptions) => {
@@ -340,7 +238,7 @@ const sendMail = async (mailOptions) => {
       return { messageId: 'dev-mode-' + Date.now() };
     }
     throw new Error(
-      'Email not configured on Render. Add BREVO_API_KEY (from Brevo → API Keys, starts with xkeysib-). SMTP does not work on Render.'
+      'Email service is not configured. On Render add: EMAIL_SERVICE=smtp, SMTP_HOST=smtp.gmail.com, SMTP_USER, SMTP_PASSWORD.'
     );
   }
 
@@ -348,12 +246,6 @@ const sendMail = async (mailOptions) => {
   if (service === 'resend') {
     const result = await sendViaResend(mailOptions);
     console.log(`📬 Email sent via resend to ${mailOptions.to}`);
-    return result;
-  }
-
-  if (service === 'brevo') {
-    const result = await sendViaBrevoApi(mailOptions);
-    console.log(`📬 Email sent via brevo-api to ${mailOptions.to} (id: ${result.messageId})`);
     return result;
   }
 
@@ -377,38 +269,6 @@ const verifyEmailConnection = async () => {
     return { ok: true, message: 'Resend API configured', status };
   }
 
-  if (status.service === 'brevo') {
-    if (status.brevoKeyIssue) {
-      return { ok: false, message: status.brevoKeyIssue, status };
-    }
-    try {
-      const response = await fetch('https://api.brevo.com/v3/account', {
-        headers: { 'api-key': getBrevoApiKey(), accept: 'application/json' },
-        signal: AbortSignal.timeout(15000),
-      });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        return {
-          ok: false,
-          message: formatBrevoError(data.message || `Brevo rejected API key (${response.status})`),
-          status,
-        };
-      }
-      return { ok: true, message: 'Brevo API verified', status };
-    } catch (error) {
-      return { ok: false, message: error.message || 'Could not reach Brevo API', status };
-    }
-  }
-
-  if (isProduction) {
-    return {
-      ok: false,
-      message:
-        'SMTP is blocked on Render. Set BREVO_API_KEY (xkeysib-...) and redeploy — get it from Brevo → SMTP & API → API Keys.',
-      status,
-    };
-  }
-
   const { transport, label } = getMailTransport();
   if (!transport) {
     return { ok: false, message: 'Transport not configured', status };
@@ -424,11 +284,7 @@ const verifyEmailConnection = async () => {
 
 // Log status at startup
 const startupStatus = getEmailStatus();
-if (startupStatus.configured && startupStatus.service === 'smtp' && isProduction && !startupStatus.hasBrevoApiKey) {
-  console.error('❌ SMTP email will NOT work on Render (outbound ports blocked).');
-  console.error('   Add BREVO_API_KEY from Brevo → API Keys (starts with xkeysib-)');
-}
-if (startupStatus.configured && startupStatus.service !== 'resend' && startupStatus.service !== 'brevo') {
+if (startupStatus.configured && startupStatus.service !== 'resend') {
   getMailTransport();
 }
 if (startupStatus.configured) {
@@ -592,5 +448,4 @@ module.exports = {
   sendVerificationCode,
   getEmailStatus,
   verifyEmailConnection,
-  usesHttpEmail,
 };

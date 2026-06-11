@@ -40,7 +40,6 @@ export default function VerifyCodePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isVerifying) return;
-
     setError('');
     setIsVerifying(true);
 
@@ -49,10 +48,10 @@ export default function VerifyCodePage() {
         setError('Email not found for verification. Please sign in again.');
         return;
       }
-
       let requestBody: any = { email: emailForVerification };
 
       if (requiresLeaderQuestions) {
+        // For leaders, send answers to verification questions
         if (!leaderAnswer1.trim() || !leaderAnswer2.trim()) {
           setError('Please answer both verification questions.');
           return;
@@ -62,6 +61,7 @@ export default function VerifyCodePage() {
           answer2: leaderAnswer2,
         };
       } else {
+        // For regular users, send verification code
         if (!code.trim()) {
           setError('Please enter the verification code.');
           return;
@@ -69,27 +69,13 @@ export default function VerifyCodePage() {
         requestBody.code = code;
       }
 
-      const controller = new AbortController();
-      const timeoutId = window.setTimeout(() => controller.abort(), 60000);
-
-      let response: Response;
-      try {
-        response = await fetch(`${backendUrl}/api/auth/verify-code`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody),
-          signal: controller.signal,
-        });
-      } catch (fetchErr: any) {
-        if (fetchErr?.name === 'AbortError') {
-          throw new Error('Request timed out. The server may be waking up — wait 30 seconds and try again.');
-        }
-        throw new Error(
-          `Cannot reach the API (${backendUrl}). The Render backend may be starting — refresh and try again.`
-        );
-      } finally {
-        window.clearTimeout(timeoutId);
-      }
+      const response = await fetch(`${backendUrl}/api/auth/verify-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
