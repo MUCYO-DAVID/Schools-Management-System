@@ -128,15 +128,22 @@ const createApp = () => {
     return res.json({
       success: true,
       emailConfigured: status.configured,
+      emailReady: verify.ok,
       smtpReady: verify.ok,
       service: status.service,
+      transport: status.transport,
       host: status.host,
       from: status.from,
       hasUser: status.hasUser,
       hasPassword: status.hasPassword,
+      hasBrevoApiKey: status.hasBrevoApiKey,
+      brevoKeyValid: status.brevoKeyValid,
+      brevoKeyIssue: status.brevoKeyIssue,
       message: verify.ok
         ? 'Email service ready'
-        : verify.message || 'Add SMTP_USER and SMTP_PASSWORD on Render',
+        : status.brevoKeyIssue ||
+          verify.message ||
+          'Local dev: set SMTP_USER + SMTP_PASSWORD. Render: set BREVO_API_KEY (xkeysib-...).',
     });
   });
 
