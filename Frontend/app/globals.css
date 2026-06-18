@@ -223,26 +223,31 @@ body {
   }
 }
 
-/* Sidebar Layout Transitions */
+/* Sidebar Layout Transitions
+   Offsets are driven by the `sidebar-open` body class so that the layout collapses to
+   full width when the sidebar is closed, and the footer stays centered on pages that
+   have no sidebar (e.g. the public landing page). */
 @media (min-width: 1024px) {
   .page-shell {
     transition: padding-left 300ms cubic-bezier(0.4, 0, 0.2, 1);
-    padding-left: 18rem;
+    padding-left: 0;
   }
 
   body.sidebar-open .page-shell {
     padding-left: 18rem;
   }
 
-  body.sidebar-open .page-shell nav {
+  /* The top nav lives inside .page-shell, so the shell padding already offsets it.
+     Keep it full-width within the shell to avoid a double offset. */
+  .page-shell nav {
     margin-left: 0 !important;
     width: 100% !important;
   }
 
   footer {
     transition: margin-left 300ms cubic-bezier(0.4, 0, 0.2, 1), width 300ms cubic-bezier(0.4, 0, 0.2, 1);
-    margin-left: 18rem;
-    width: calc(100% - 18rem);
+    margin-left: 0;
+    width: 100%;
   }
 
   body.sidebar-open footer {

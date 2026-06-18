@@ -706,7 +706,7 @@ export default function Navigation() {
 
       <aside
         id="rsbs-sidebar"
-        className={`fixed bottom-0 left-0 top-0 z-40 w-[min(18rem,calc(100vw-3rem))] border-r border-slate-200 bg-white px-4 py-5 shadow-2xl shadow-slate-900/10 transition-transform duration-300 dark:border-slate-800 dark:bg-slate-950 lg:w-72 ${sidebarVisible ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        className={`fixed bottom-0 left-0 top-0 z-40 w-[min(18rem,calc(100vw-3rem))] border-r border-slate-200 bg-white px-4 py-5 shadow-2xl shadow-slate-900/10 transition-transform duration-300 dark:border-slate-800 dark:bg-slate-950 lg:w-72 ${sidebarVisible ? "translate-x-0" : "-translate-x-full"
           }`}
       >
         <div className="flex h-full flex-col gap-5 overflow-y-auto">

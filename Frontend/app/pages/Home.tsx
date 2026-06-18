@@ -575,16 +575,25 @@ export default function Home() {
                             </div>
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                                 <div className="rounded-[1.5rem] border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/10 p-5 backdrop-blur-md">
-                                    <div className="text-3xl font-bold text-blue-600 dark:text-blue-200 mb-1">500+</div>
-                                    <div className="text-sm text-slate-600 dark:text-white/80">Registered Schools</div>
+                                    <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-200">
+                                        <ShieldCheck className="h-5 w-5" />
+                                    </div>
+                                    <div className="text-base font-semibold text-slate-900 dark:text-white mb-1">Verified Schools</div>
+                                    <div className="text-sm text-slate-600 dark:text-white/80">Browse trusted institutions with real profiles, contacts, and admissions info.</div>
                                 </div>
                                 <div className="rounded-[1.5rem] border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/10 p-5 backdrop-blur-md">
-                                    <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-200 mb-1">50,000+</div>
-                                    <div className="text-sm text-slate-600 dark:text-white/80">Students</div>
+                                    <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:bg-amber-400/10 dark:text-amber-200">
+                                        <Star className="h-5 w-5" />
+                                    </div>
+                                    <div className="text-base font-semibold text-slate-900 dark:text-white mb-1">Top Rated</div>
+                                    <div className="text-sm text-slate-600 dark:text-white/80">Discover highly rated schools through honest student and parent reviews.</div>
                                 </div>
                                 <div className="rounded-[1.5rem] border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/10 p-5 backdrop-blur-md">
-                                    <div className="text-3xl font-bold text-amber-600 dark:text-amber-200 mb-1">30</div>
-                                    <div className="text-sm text-slate-600 dark:text-white/80">Districts Covered</div>
+                                    <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/10 dark:text-emerald-200">
+                                        <MapPin className="h-5 w-5" />
+                                    </div>
+                                    <div className="text-base font-semibold text-slate-900 dark:text-white mb-1">Across Rwanda</div>
+                                    <div className="text-sm text-slate-600 dark:text-white/80">Explore schools from every corner of the country on the live interactive map.</div>
                                 </div>
                             </div>
                         </div>
