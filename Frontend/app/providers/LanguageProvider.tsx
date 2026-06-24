@@ -1,9 +1,9 @@
 "use client"
 
 import { createContext, useContext, useState, type ReactNode } from "react"
-import en from "@/locales/en.json"
-import fr from "@/locales/fr.json"
-import rw from "@/locales/rw.json"
+import en from "../../locales/en.json"
+import fr from "../../locales/fr.json"
+import rw from "../../locales/rw.json"
 
 type Language = "en" | "fr" | "rw"
 
