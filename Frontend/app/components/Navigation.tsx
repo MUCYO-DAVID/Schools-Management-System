@@ -39,27 +39,27 @@ type NavItem = {
 
 const roleConfig = {
   admin: {
-    label: "Administrator",
+    labelKey: "nav.roleAdministrator",
     homePath: "/admin",
     accent: "from-violet-500 to-indigo-500",
   },
   leader: {
-    label: "School Leader",
+    labelKey: "nav.roleSchoolLeader",
     homePath: "/leader",
     accent: "from-blue-500 to-cyan-500",
   },
   teacher: {
-    label: "Teacher",
+    labelKey: "nav.roleTeacher",
     homePath: "/teacher",
     accent: "from-emerald-500 to-teal-500",
   },
   parent: {
-    label: "Parent",
+    labelKey: "nav.roleParent",
     homePath: "/parent",
     accent: "from-amber-500 to-orange-500",
   },
   student: {
-    label: "Student",
+    labelKey: "nav.roleStudent",
     homePath: "/home",
     accent: "from-pink-500 to-rose-500",
   },
@@ -211,31 +211,31 @@ export default function Navigation() {
       {
         path: "/home",
         label: t("home"),
-        description: "Overview of the platform",
+        description: t("nav.homeDescription"),
         icon: LayoutDashboard,
       },
       {
         path: "/about",
         label: t("about"),
-        description: "Learn about the system",
+        description: t("nav.aboutDescription"),
         icon: BookOpen,
       },
       {
         path: "/contact",
         label: t("contact"),
-        description: "Reach support and administration",
+        description: t("nav.contactDescription"),
         icon: Users,
       },
       {
         path: "/survey",
-        label: "Survey",
-        description: "Feedback and community input",
+        label: t("nav.survey"),
+        description: t("nav.surveyDescription"),
         icon: Sparkles,
       },
       {
         path: "/community",
-        label: "Community",
-        description: "School reviews and recommendations",
+        label: t("nav.community"),
+        description: t("nav.communityDescription"),
         icon: Users,
       },
     ]
@@ -244,7 +244,7 @@ export default function Navigation() {
       items.splice(1, 0, {
         path: "/schools",
         label: t("schools"),
-        description: "Manage school records",
+        description: t("nav.schoolsDescription"),
         icon: School,
       })
     }
@@ -259,7 +259,7 @@ export default function Navigation() {
       items.push({
         path: "/student",
         label: t("student"),
-        description: "Student workspace and progress",
+        description: t("nav.studentDescription"),
         icon: BookOpen,
       })
     }
@@ -267,8 +267,8 @@ export default function Navigation() {
     if (user?.role === "parent") {
       items.push({
         path: "/parent",
-        label: "Parent Portal",
-        description: "Track children, invoices, and updates",
+        label: t("nav.parentPortal"),
+        description: t("nav.parentPortalDescription"),
         icon: Users,
       })
     }
@@ -276,8 +276,8 @@ export default function Navigation() {
     if (user?.role === "teacher") {
       items.push({
         path: "/teacher",
-        label: "Teacher Portal",
-        description: "Classes, messages, and reports",
+        label: t("nav.teacherPortal"),
+        description: t("nav.teacherPortalDescription"),
         icon: LayoutDashboard,
       })
     }
@@ -286,14 +286,14 @@ export default function Navigation() {
       items.push(
         {
           path: "/leader",
-          label: "Leader Portal",
-          description: "Applications, surveys, and oversight",
+          label: t("nav.leaderPortal"),
+          description: t("nav.leaderPortalDescription"),
           icon: LayoutDashboard,
         },
         {
           path: "/teacher",
-          label: "Staff Portal",
-          description: "Operational tools for staff workflows",
+          label: t("nav.staffPortal"),
+          description: t("nav.staffPortalDescription"),
           icon: Users,
         }
       )
@@ -304,19 +304,19 @@ export default function Navigation() {
         {
           path: "/admin",
           label: t("admin"),
-          description: "Platform administration and analytics",
+          description: t("nav.adminDescription"),
           icon: LayoutDashboard,
         },
         {
           path: "/teacher",
-          label: "Staff Portal",
-          description: "Internal operational workspace",
+          label: t("nav.staffPortal"),
+          description: t("nav.staffPortalInternalDescription"),
           icon: Users,
         },
         {
           path: "/leader",
-          label: "Applications",
-          description: "Review school application workflows",
+          label: t("nav.applications"),
+          description: t("nav.applicationsDescription"),
           icon: School,
         }
       )
@@ -330,8 +330,8 @@ export default function Navigation() {
       return [
         {
           path: "/auth/signin",
-          label: "Sign In",
-          description: "Access personalized tools",
+          label: t("nav.signIn"),
+          description: t("nav.signInDescription"),
           icon: User,
         },
       ]
@@ -340,14 +340,14 @@ export default function Navigation() {
     return [
       {
         path: "/profile",
-        label: "Profile",
-        description: "Update account and preferences",
+        label: t("nav.profile"),
+        description: t("nav.profileDescription"),
         icon: Settings,
       },
       {
         path: "/inbox",
-        label: "Messenger",
-        description: "Direct messages and social network",
+        label: t("nav.messenger"),
+        description: t("nav.messengerDescription"),
         icon: MessageCircle,
       },
     ]
@@ -486,11 +486,11 @@ export default function Navigation() {
                   <span>{currentSectionLabel}</span>
                   {currentRole ? (
                     <span className="rounded-full bg-purple-100 px-2 py-0.5 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
-                      {currentRole.label}
+                      {t(currentRole.labelKey)}
                     </span>
                   ) : (
                     <span className="rounded-full bg-gradient-to-r from-purple-500/10 to-indigo-500/10 px-2 py-0.5 text-purple-600 dark:text-purple-400">
-                      Guest
+                      {t("nav.guest")}
                     </span>
                   )}
                 </div>
@@ -502,17 +502,24 @@ export default function Navigation() {
             <div className="hidden lg:flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <Sparkles className="h-4 w-4 text-purple-500" />
               <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
-                {isAuthenticated ? "Workspace active" : "Explore RSBS"}
+                {isAuthenticated ? t("nav.workspaceActive") : t("nav.exploreRsbs")}
               </span>
             </div>
 
             <button
               type="button"
-              onClick={() => setLanguage(language === "en" ? "rw" : "en")}
-              className="hidden md:inline-flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-800"
-              title="Switch language"
+              onClick={() => {
+                const langs = ["en", "fr", "rw"] as const
+                const idx = langs.indexOf(language as "en" | "fr" | "rw")
+                setLanguage(langs[(idx + 1) % langs.length])
+              }}
+              className="hidden md:inline-flex h-10 sm:h-11 items-center justify-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-800"
+              title={t("nav.switchLanguage")}
             >
               <Globe className="h-4 w-4" />
+              <span className="text-xs font-bold uppercase tracking-widest">
+                {language === "en" ? "EN" : language === "fr" ? "FR" : "RW"}
+              </span>
             </button>
 
             <button
@@ -557,17 +564,17 @@ export default function Navigation() {
                     <div className="absolute right-0 mt-3 w-[min(calc(100vw-1.5rem),22rem)] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-950">
                       <div className="border-b border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
                         <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                          Notifications
+                          {t("nav.notifications")}
                         </p>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {unreadTotal} unread update{unreadTotal === 1 ? "" : "s"}
+                          {t(unreadTotal === 1 ? "nav.unreadUpdates" : "nav.unreadUpdates_plural", { count: unreadTotal })}
                         </p>
                       </div>
                       <div className="max-h-[26rem] overflow-y-auto">
                         {notifications.length > 0 && (
                           <div className="border-b border-slate-200 dark:border-slate-800">
                             <div className="px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-                              System
+                              {t("nav.system")}
                             </div>
                             {notifications.map((notif) => (
                               <div
@@ -614,7 +621,7 @@ export default function Navigation() {
                         {inboxPreview.length > 0 && (
                           <div>
                             <div className="px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-                              Messages
+                              {t("nav.messages")}
                             </div>
                             {inboxPreview.map((msg) => (
                               <button
@@ -639,7 +646,7 @@ export default function Navigation() {
                         )}
                         {inboxPreview.length === 0 && notifications.length === 0 && (
                           <div className="px-4 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
-                            No notifications yet.
+                            {t("nav.noNotificationsYet")}
                           </div>
                         )}
                       </div>
@@ -654,7 +661,7 @@ export default function Navigation() {
                         className="block border-t border-slate-200 px-4 py-3 text-sm font-medium text-purple-600 transition hover:bg-slate-50 dark:border-slate-800 dark:text-purple-300 dark:hover:bg-slate-900"
                         onClick={() => setShowNotifications(false)}
                       >
-                        View all messages
+                        {t("nav.viewAllMessages")}
                       </Link>
                     </div>
                   )}
@@ -672,7 +679,7 @@ export default function Navigation() {
                       {user.first_name} {user.last_name}
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {currentRole?.label || user.role}
+                      {currentRole ? t(currentRole.labelKey) : user.role}
                     </p>
                   </div>
                 </Link>
@@ -681,7 +688,7 @@ export default function Navigation() {
                   type="button"
                   onClick={logout}
                   className="hidden md:inline-flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-600 shadow-sm transition hover:border-rose-300 hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200 dark:hover:border-rose-500/40 dark:hover:bg-rose-500/20"
-                  title="Logout"
+                  title={t("nav.logout")}
                 >
                   <LogOut className="h-4 w-4" />
                 </button>
@@ -691,7 +698,7 @@ export default function Navigation() {
                 href="/auth/signin"
                 className="inline-flex h-10 sm:h-11 items-center rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 px-4 sm:px-6 text-xs sm:text-sm font-bold text-white shadow-lg shadow-purple-600/20 transition hover:scale-105 active:scale-95 whitespace-nowrap"
               >
-                Sign In
+                {t("nav.signIn")}
               </Link>
             )}
           </div>
@@ -717,17 +724,17 @@ export default function Navigation() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-base font-semibold text-slate-950 dark:text-white">
-                  {user ? `${user.first_name} ${user.last_name}` : "Welcome"}
+                  {user ? `${user.first_name} ${user.last_name}` : t("nav.welcome")}
                 </p>
                 <p className="truncate text-sm text-slate-500 dark:text-slate-400">
-                  {user ? currentRole?.label || user.role : "School community portal"}
+                  {user ? (currentRole ? t(currentRole.labelKey) : user.role) : t("nav.schoolCommunityPortal")}
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
-                    {user ? currentRole?.label || user.role : "Community portal"}
+                    {user ? (currentRole ? t(currentRole.labelKey) : user.role) : t("nav.communityPortal")}
                   </span>
                   <span className="rounded-full bg-blue-500/10 px-2.5 py-1 text-[11px] font-semibold text-blue-600 dark:text-blue-300">
-                    {activeTheme === "dark" ? "Dark mode" : "Light mode"}
+                    {activeTheme === "dark" ? t("nav.darkMode") : t("nav.lightMode")}
                   </span>
                 </div>
               </div>
@@ -736,7 +743,7 @@ export default function Navigation() {
 
           <div className="space-y-2">
             <p className="px-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
-              Navigation
+              {t("nav.navigation")}
             </p>
             {mainNavItems.map((item) => (
               <SidebarLink key={item.path} item={item} onClick={() => setIsSidebarOpen(false)} />
@@ -746,7 +753,7 @@ export default function Navigation() {
           {workspaceItems.length > 0 && (
             <div className="space-y-2">
               <p className="px-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
-                Workspace
+                {t("nav.workspace")}
               </p>
               {workspaceItems.map((item) => (
                 <SidebarLink key={item.path} item={item} onClick={() => setIsSidebarOpen(false)} />
@@ -756,7 +763,7 @@ export default function Navigation() {
 
           <div className="space-y-2">
             <p className="px-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
-              Quick Access
+              {t("nav.quickAccess")}
             </p>
             {quickLinks.map((item) => (
               <SidebarLink key={item.path} item={item} onClick={() => setIsSidebarOpen(false)} />
@@ -765,16 +772,20 @@ export default function Navigation() {
 
           <div className="space-y-2 lg:hidden">
             <p className="px-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
-              Preferences
+              {t("nav.preferences")}
             </p>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setLanguage(language === "en" ? "rw" : "en")}
+                onClick={() => {
+                  const langs = ["en", "fr", "rw"] as const
+                  const idx = langs.indexOf(language as "en" | "fr" | "rw")
+                  setLanguage(langs[(idx + 1) % langs.length])
+                }}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
               >
                 <Globe className="h-4 w-4" />
-                {language === "en" ? "Kinyarwanda" : "English"}
+                {language === "en" ? t("nav.french") : language === "fr" ? t("nav.kinyarwanda") : t("nav.english")}
               </button>
               <button
                 type="button"
@@ -782,7 +793,7 @@ export default function Navigation() {
                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
               >
                 {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                {isDarkMode ? "Light" : "Dark"}
+                {isDarkMode ? t("nav.light") : t("nav.dark")}
               </button>
             </div>
             {isAuthenticated && user ? (
@@ -795,15 +806,15 @@ export default function Navigation() {
                 className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-3 text-sm font-semibold text-rose-600 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200"
               >
                 <LogOut className="h-4 w-4" />
-                Log out
+                {t("nav.logout")}
               </button>
             ) : null}
           </div>
 
           <div className="mt-auto rounded-[1.75rem] border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-4 text-sm text-slate-900 dark:border-emerald-500/20 dark:bg-gradient-to-br dark:from-emerald-500/10 dark:via-slate-950 dark:to-amber-500/10 dark:text-slate-100">
-            <p className="font-semibold">Rwanda education network</p>
+            <p className="font-semibold">{t("nav.rwandaEducationNetwork")}</p>
             <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">
-              Move quickly between schools, profiles, messages, and role-specific workspaces in one cleaner and more focused experience.
+              {t("nav.sidebarTagline")}
             </p>
           </div>
         </div>

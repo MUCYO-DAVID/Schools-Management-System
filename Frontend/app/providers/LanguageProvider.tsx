@@ -1,107 +1,116 @@
 "use client"
 
 import { createContext, useContext, useState, type ReactNode } from "react"
+import en from "@/locales/en.json"
+import fr from "@/locales/fr.json"
+import rw from "@/locales/rw.json"
 
-const translations = {
-  en: {
-    home: "Home",
-    schools: "Schools",
-    contact: "Contact",
-    about: "About",
-    admin: "Admin Dashboard",
-    student: "Student Access",
-    welcome: "Welcome to Rwanda School Bridge System",
-    addSchool: "Add New School",
-    editSchool: "Edit School",
-    deleteSchool: "Delete School",
-    schoolName: "School Name",
-    location: "Location",
-    type: "Type",
-    level: "Level",
-    students: "Students",
-    established: "Established",
-    actions: "Actions",
-    edit: "Edit",
-    delete: "Delete",
-    save: "Save",
-    cancel: "Cancel",
-    confirm: "Confirm",
-    search: "Search schools...",
-    filter: "Filter",
-    all: "All",
-    public: "Public",
-    private: "Private",
-    primary: "Primary",
-    secondary: "Secondary",
-    schoolManagement: "School Management",
-    studentAccess: "Student Access",
-    educationalResources: "Educational Resources",
-    qualityAssurance: "Quality Assurance",
-    empoweringEducation: "Empowering Education in Rwanda",
-    ourServices: "Our Services",
-    comprehensiveSolutions: "Comprehensive solutions for educational management",
-    registeredSchools: "Registered Schools",
-    districtsCovered: "Districts Covered",
-  },
-  rw: {
-    home: "Ahabanza",
-    schools: "Amashuri",
-    contact: "Twandikire",
-    about: "Ibibazo",
-    admin: "Ubuyobozi",
-    student: "Abanyeshuri",
-    welcome: "Murakaza neza kuri Sisitemu y'Ubuyobozi bw'Amashuri y'u Rwanda",
-    addSchool: "Ongeraho Ishuri",
-    dashboard: "Dashibodi",
-    editSchool: "Hindura Ishuri",
-    deleteSchool: "Siba Ishuri",
-    schoolName: "Izina ry'Ishuri",
-    location: "Ahantu",
-    type: "Ubwoko",
-    level: "Urwego",
-    students: "Abanyeshuri",
-    established: "Rwashingwa",
-    actions: "Ibikorwa",
-    edit: "Hindura",
-    delete: "Siba",
-    save: "Bika",
-    cancel: "Hagarika",
-    confirm: "Emeza",
-    search: "Shakisha amashuri...",
-    filter: "Shungura",
-    all: "Byose",
-    public: "Leta",
-    private: "Bwite",
-    primary: "Abanza",
-    secondary: "Ayisumbuye",
-    schoolManagement: "Ubuyobozi bw'Ishuri",
-    studentAccess: "Kwinjira kw'Abanyeshuri",
-    educationalResources: "Ibikoresho by'Uburezi",
-    qualityAssurance: "Ubwiza bw'Uburezi",
-    empoweringEducation: "Gutera Imbaraga Uburezi mu Rwanda",
-    ourServices: "Serivisi Zacu",
-    comprehensiveSolutions: "Igisubizo cyuzuye cyo gucunga uburezi",
-    registeredSchools: "Amashuri Yanditswe",
-    districtsCovered: "Uturere Twakozweho",
-    FindinformationaboutschoolsacrossRwanda: "Shaka amakuru y' ishuri Mu gihugu cyose",
+type Language = "en" | "fr" | "rw"
 
-  },
+const locales: Record<Language, Record<string, unknown>> = { en, fr, rw }
+
+// Flat-key aliases for backward compatibility with existing t("home") calls
+const flatAliases: Record<string, string> = {
+  home: "nav.home",
+  about: "nav.about",
+  contact: "nav.contact",
+  schools: "nav.schools",
+  admin: "nav.admin",
+  student: "nav.student",
+  survey: "nav.survey",
+  community: "nav.community",
+  students: "schools.students",
+  established: "schools.established",
+  search: "schools.search",
+  all: "schools.all",
+  public: "schools.public",
+  private: "schools.private",
+  primary: "schools.primary",
+  secondary: "schools.secondary",
+  tvet: "schools.tvet",
+  addSchool: "schools.addSchool",
+  editSchool: "schools.editSchool",
+  deleteSchool: "schools.deleteSchool",
+  schoolName: "schools.schoolName",
+  location: "schools.location",
+  type: "schools.type",
+  level: "schools.level",
+  save: "common.save",
+  cancel: "common.cancel",
+  confirm: "common.confirm",
+  edit: "common.edit",
+  delete: "common.delete",
+  close: "common.close",
+  submit: "common.submit",
+  upload: "common.upload",
+  download: "common.download",
+  filter: "common.filter",
+  loading: "common.loading",
+  dashboard: "nav.dashboard",
+  welcome: "home.welcome",
+  addNewSchool: "admin.addNewSchool",
+  schoolManagement: "home.schoolManagement",
+  studentAccess: "home.studentAccess",
+  educationalResources: "home.educationalResources",
+  qualityAssurance: "home.qualityAssurance",
+  empoweringEducation: "home.empoweringEducation",
+  ourServices: "home.ourServices",
+  comprehensiveSolutions: "home.comprehensiveSolutions",
+}
+
+function getNestedValue(obj: Record<string, unknown>, path: string): string | undefined {
+  const keys = path.split(".")
+  let current: unknown = obj
+  for (const key of keys) {
+    if (current == null || typeof current !== "object") return undefined
+    current = (current as Record<string, unknown>)[key]
+  }
+  return typeof current === "string" ? current : undefined
+}
+
+function interpolate(template: string, vars?: Record<string, string | number>): string {
+  if (!vars) return template
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => String(vars[key] ?? `{{${key}}}`))
 }
 
 interface LanguageContextType {
-  language: "en" | "rw"
-  setLanguage: (lang: "en" | "rw") => void
-  t: (key: string) => string
+  language: Language
+  setLanguage: (lang: Language) => void
+  t: (key: string, vars?: Record<string, string | number>) => string
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<"en" | "rw">("en")
+  const [language, setLanguage] = useState<Language>("en")
 
-  const t = (key: string) => translations[language][key as keyof typeof translations.en] || key
+  const t = (key: string, vars?: Record<string, string | number>): string => {
+    const locale = locales[language]
 
-  return <LanguageContext.Provider value={{ language, setLanguage, t }}>{children}</LanguageContext.Provider>
+    // Try dot-notation first (e.g. "nav.home", "auth.login.title")
+    let value = getNestedValue(locale, key)
+
+    // Fall back to flat alias map (e.g. "home" → "nav.home")
+    if (value === undefined && flatAliases[key]) {
+      value = getNestedValue(locale, flatAliases[key])
+    }
+
+    // Fall back to English if translation missing
+    if (value === undefined && language !== "en") {
+      value = getNestedValue(locales.en, key)
+      if (value === undefined && flatAliases[key]) {
+        value = getNestedValue(locales.en, flatAliases[key])
+      }
+    }
+
+    return interpolate(value ?? key, vars)
+  }
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  )
 }
 
 export const useLanguage = () => {
