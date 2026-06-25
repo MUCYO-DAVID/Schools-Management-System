@@ -4,7 +4,6 @@
     "languageName": "French",
     "description": "Traductions françaises pour RSBS. Structure de clés identique à en.json. Utilisez {{variable}} pour les valeurs dynamiques."
   },
-
   "nav": {
     "signIn": "Se connecter",
     "signOut": "Se déconnecter",
@@ -81,7 +80,6 @@
     "profileDescription": "Mettre à jour le compte et les préférences",
     "messengerDescription": "Messages directs et réseau social"
   },
-
   "auth": {
     "landing": {
       "logoAlt": "Logo RSBS",
@@ -186,7 +184,6 @@
       "resendUnexpectedError": "Une erreur inattendue s'est produite lors du renvoi du code"
     }
   },
-
   "home": {
     "heroTitle": "Un apprentissage illimité. Découvrez partout.",
     "heroSubtitle": "Une interface premium et cinématique pour les étudiants, les familles, les écoles et les administrateurs, alignée sur l'identité nationale de l'éducation rwandaise.",
@@ -241,7 +238,6 @@
     "welcome": "Bienvenue dans le Système Rwanda School Bridge",
     "empoweringEducation": "Renforcer l'éducation au Rwanda"
   },
-
   "about": {
     "title": "À propos de nous",
     "subtitle": "Renforcer l'éducation au Rwanda grâce à des solutions innovantes de gestion scolaire",
@@ -280,7 +276,6 @@
     "nesaPartnerTitle": "NESA",
     "nesaPartnerDesc": "Collaboration sur la gestion des examens et les processus d'inspection scolaire"
   },
-
   "contact": {
     "title": "Contact",
     "getInTouch": "Contactez-nous pour toute question ou assistance",
@@ -323,7 +318,6 @@
     "couldNotSendMessage": "Impossible d'envoyer votre message. Veuillez réessayer.",
     "pilotSchoolsTarget": "Ciblant les écoles pilotes dans plusieurs districts"
   },
-
   "schools": {
     "registryTitle": "Registre",
     "registrySubtitle": "Supervision et gestion complètes des établissements d'enseignement du Rwanda.",
@@ -398,9 +392,9 @@
     "operatingHours": "Heures d'ouverture",
     "physicalLocation": "Emplacement physique",
     "applyTo": "Postuler à {{name}}",
-    "returnHome": "Retour à l'accueil"
+    "returnHome": "Retour à l'accueil",
+    "schoolNotFound": "École introuvable"
   },
-
   "admin": {
     "title": "Tableau de bord Admin",
     "subtitle": "Gérez les écoles, surveillez les performances et examinez l'activité depuis un centre de contrôle soigné.",
@@ -480,7 +474,6 @@
     "statPrivateInstitutions": "Institutions privées dans le réseau",
     "adminWorkspace": "Espace de travail administrateur"
   },
-
   "student": {
     "hub": "Hub",
     "academicWorkspace": "Espace de travail académique",
@@ -540,7 +533,6 @@
     "submissionFailed": "Échec de la soumission",
     "noApplicationsYet": "Aucune candidature pour l'instant"
   },
-
   "teacher": {
     "teacherPortal": "Portail Enseignant",
     "staffPortal": "Portail du Personnel",
@@ -598,7 +590,6 @@
     "failedUploadDocument": "Échec du téléchargement du document",
     "failedCreateFeeSchedule": "Échec de la création du calendrier de frais"
   },
-
   "parent": {
     "title": "Portail Parent",
     "subtitle": "Annonces, messages, documents et paiements",
@@ -658,7 +649,6 @@
     "paymentConfirmationFailed": "Échec de la confirmation du paiement",
     "failedLoadReceipt": "Échec du chargement du reçu"
   },
-
   "leader": {
     "leaderUsageTitle": "Utilisation directeur",
     "leaderUsageDesc": "Utilisez le Portail du Personnel pour les annonces, documents et calendriers de frais.",
@@ -696,7 +686,6 @@
     "accessDeniedDesc": "Cette page est uniquement accessible aux directeurs d'école.",
     "goToStudentPortal": "Aller au Portail Étudiant"
   },
-
   "survey": {
     "schoolExperienceSurvey": "Sondage sur l'expérience scolaire",
     "howWasExperience": "Comment s'est passée votre expérience ?",
@@ -719,7 +708,6 @@
     "thankYou": "Merci !",
     "feedbackRecorded": "Votre retour a été enregistré. Redirection vers l'accueil..."
   },
-
   "community": {
     "rwandaSchools": "Écoles du Rwanda",
     "communityFeedback": "Retours de la communauté",
@@ -757,7 +745,6 @@
     "viewAllCommunityFeedback": "Voir tous les avis de la communauté",
     "noCommentsBe": "Aucun commentaire pour l'instant. Soyez le premier à partager !"
   },
-
   "profile": {
     "loading": "Chargement...",
     "profileNotFound": "Profil introuvable",
@@ -801,7 +788,6 @@
     "preferencesSavedSuccess": "Préférences enregistrées avec succès !",
     "failedSavePreferences": "Échec de l'enregistrement des préférences"
   },
-
   "inbox": {
     "tabChats": "Discussions",
     "tabPeople": "Personnes",
@@ -849,7 +835,6 @@
     "failedUnfollow": "Échec du désabonnement",
     "failedStartChat": "Échec du démarrage de la discussion"
   },
-
   "common": {
     "save": "Enregistrer",
     "cancel": "Annuler",
@@ -900,9 +885,9 @@
     "failedLoadReceipt": "Échec du chargement du reçu",
     "footerCopyright": "© 2026 RSBS propulsé par MD",
     "appTitle": "Système Rwanda School Bridge (RSBS)",
-    "appDescription": "Système complet de gestion scolaire pour le Rwanda - Connecter les étudiants, les écoles et l'éducation"
+    "appDescription": "Système complet de gestion scolaire pour le Rwanda - Connecter les étudiants, les écoles et l'éducation",
+    "back": "Retour"
   },
-
   "errors": {
     "loginFailed": "Échec de la connexion",
     "unexpectedError": "Une erreur inattendue s'est produite",

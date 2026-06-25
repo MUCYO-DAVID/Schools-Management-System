@@ -4,7 +4,6 @@
     "languageName": "Kinyarwanda",
     "description": "Amagambo y'ikinyarwanda ya RSBS. Imiterere y'indangakurupita ifanana na en.json. Koresha {{variable}} ku magambo ahindurika."
   },
-
   "nav": {
     "signIn": "Injira",
     "signOut": "Sohoka",
@@ -81,7 +80,6 @@
     "profileDescription": "Hindura konti n'ibyo ukunda",
     "messengerDescription": "Ubutumwa buziguye n'inzira y'imibonano mpuzamahanga"
   },
-
   "auth": {
     "landing": {
       "logoAlt": "Ikimenyetso cya RSBS",
@@ -186,7 +184,6 @@
       "resendUnexpectedError": "Habaye ikosa ridateganijwe mu gihe cyo kohereza kode"
     }
   },
-
   "home": {
     "heroTitle": "Kwiga bidahinguka. Shakisha aho uriho hose.",
     "heroSubtitle": "Urubuga rwa mbonera kandi rushimishije ku banyeshuri, imiryango, amashuri, n'abamunyamabanga bihuje n'uburambe bw'uburezi bw'igihugu cya Rwanda.",
@@ -241,7 +238,6 @@
     "welcome": "Murakaza neza kuri Sisitemu ya Rwanda School Bridge",
     "empoweringEducation": "Gukomeza Uburezi mu Rwanda"
   },
-
   "about": {
     "title": "Ibyerekeye",
     "subtitle": "Gukomeza uburezi mu Rwanda binyuze mu bisubizo bishya byo gucunga amashuri",
@@ -280,7 +276,6 @@
     "nesaPartnerTitle": "NESA",
     "nesaPartnerDesc": "Gukorana ku micungire y'ibizamini no kugenzura amashuri"
   },
-
   "contact": {
     "title": "Twandikire",
     "getInTouch": "Twandikire ku bibazo cyangwa inkunga",
@@ -323,7 +318,6 @@
     "couldNotSendMessage": "Ntashoboye kohereza ubutumwa bwawe. Nyamuneka ongera ugerageze.",
     "pilotSchoolsTarget": "Ugezwa ku mashuri y'ibizamini mu turere dutandukanye"
   },
-
   "schools": {
     "registryTitle": "Rejisitiri",
     "registrySubtitle": "Kugenzura no gucunga byuzuye ibyigwa n'amashuri y'u Rwanda.",
@@ -398,9 +392,9 @@
     "operatingHours": "Amasaha yo Gukorera",
     "physicalLocation": "Aho Biherereye",
     "applyTo": "Saba kuri {{name}}",
-    "returnHome": "Garuka Ahabanza"
+    "returnHome": "Garuka Ahabanza",
+    "schoolNotFound": "Ishuri ntiryabonetse"
   },
-
   "admin": {
     "title": "Imbaho ya Munyamabanga",
     "subtitle": "Cunga amashuri, genzura imikoro, kandi urebe ibikorwa biva mu kibaho kimwe cy'ugenzura ginonosorwa.",
@@ -480,7 +474,6 @@
     "statPrivateInstitutions": "Imitunganyirize yigenga mu murimo",
     "adminWorkspace": "Ahantu h'Akazi k'Umuyobozi"
   },
-
   "student": {
     "hub": "Ikibuga",
     "academicWorkspace": "Ahantu h'Akazi h'Uburezi",
@@ -540,7 +533,6 @@
     "submissionFailed": "Kohereza ntibyakunze",
     "noApplicationsYet": "Nta Bisabe Ubu"
   },
-
   "teacher": {
     "teacherPortal": "Irembo ry'Umwarimu",
     "staffPortal": "Irembo ry'Abakozi",
@@ -598,7 +590,6 @@
     "failedUploadDocument": "Kohereza inyandiko ntibyakunze",
     "failedCreateFeeSchedule": "Gushyiraho gahunda y'amafaranga ntibyakunze"
   },
-
   "parent": {
     "title": "Irembo ry'Umubyeyi",
     "subtitle": "Amatangazo, ubutumwa, inyandiko, n'kwishyura",
@@ -658,7 +649,6 @@
     "paymentConfirmationFailed": "Kwemeza kwishyura ntibyakunze",
     "failedLoadReceipt": "Gukingura icyemezo cy'ubwishyu ntibyakunze"
   },
-
   "leader": {
     "leaderUsageTitle": "Gukoresha kw'Umuyobozi",
     "leaderUsageDesc": "Koresha Irembo ry'Abakozi ku matangazo, inyandiko, na gahunda y'amafaranga.",
@@ -696,7 +686,6 @@
     "accessDeniedDesc": "Iyi paji irebwa gusa n'abayobozi b'amashuri.",
     "goToStudentPortal": "Jya ku Irembo ry'Umunyeshuri"
   },
-
   "survey": {
     "schoolExperienceSurvey": "Ubushakashatsi bw'Uburambe bw'Ishuri",
     "howWasExperience": "Uburambe bwawe bwagenze gute?",
@@ -719,7 +708,6 @@
     "thankYou": "Murakoze!",
     "feedbackRecorded": "Ibisubizo byawe byanditswe. Ugarurwa ahabanza..."
   },
-
   "community": {
     "rwandaSchools": "Amashuri y'u Rwanda",
     "communityFeedback": "Ibisubizo by'Umuryango",
@@ -757,7 +745,6 @@
     "viewAllCommunityFeedback": "Reba ibitekerezo byose by'umuryango",
     "noCommentsBe": "Nta bitekerezo ubu. Banza usangire!"
   },
-
   "profile": {
     "loading": "Birakingurwa...",
     "profileNotFound": "Umwirondoro ntuboneka",
@@ -801,7 +788,6 @@
     "preferencesSavedSuccess": "Ibyo ukunda byabitswe neza!",
     "failedSavePreferences": "Kubika ibyo ukunda ntibyakunze"
   },
-
   "inbox": {
     "tabChats": "Ikiganiro",
     "tabPeople": "Abantu",
@@ -849,7 +835,6 @@
     "failedUnfollow": "Kuhagarika gukurikira ntibyakunze",
     "failedStartChat": "Gutangira ikiganiro ntibyakunze"
   },
-
   "common": {
     "save": "Bika",
     "cancel": "Hagarika",
@@ -900,9 +885,9 @@
     "failedLoadReceipt": "Gukingura icyemezo cy'ubwishyu ntibyakunze",
     "footerCopyright": "© 2026 RSBS ishyigikiwe na MD",
     "appTitle": "Sisitemu ya Rwanda School Bridge (RSBS)",
-    "appDescription": "Sisitemu yuzuye yo gucunga amashuri mu Rwanda - Guhuza abanyeshuri, amashuri, n'uburezi"
+    "appDescription": "Sisitemu yuzuye yo gucunga amashuri mu Rwanda - Guhuza abanyeshuri, amashuri, n'uburezi",
+    "back": "Subira"
   },
-
   "errors": {
     "loginFailed": "Kwinjira ntibyakunze",
     "unexpectedError": "Habaye ikosa ridateganijwe",
