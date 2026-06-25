@@ -854,7 +854,7 @@ export default function AdminDashboard() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:min-w-[390px]">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               <div className="rounded-2xl border border-white/10 bg-white/10 p-3 backdrop-blur">
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{t("admin.activeView")}</p>
                 <p className="mt-1.5 text-base font-semibold text-white">{activeTabMeta.label}</p>
@@ -875,7 +875,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <div className="mb-5 grid grid-cols-1 sm:grid-cols-2 gap-3 xl:grid-cols-4">
           {stats.map((stat, index) => (
             <div
               key={index}

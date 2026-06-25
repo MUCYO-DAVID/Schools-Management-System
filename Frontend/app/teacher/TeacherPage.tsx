@@ -362,7 +362,7 @@ export default function TeacherPortal() {
           </p>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200">
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="mobile-tabs border-b border-gray-200">
             {([
               { id: 'announcements', label: t('teacher.tabAnnouncements') },
@@ -387,17 +387,17 @@ export default function TeacherPortal() {
             <div className="p-6 space-y-6">
               <div className="border border-gray-200 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Create announcement</h3>
-                <div className="grid gap-3 md:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto_auto]">
                   <input
                     value={announcementTitle}
                     onChange={(e) => setAnnouncementTitle(e.target.value)}
                     placeholder="Title"
-                    className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                   />
                   <select
                     value={announcementAudience}
                     onChange={(e) => setAnnouncementAudience(e.target.value)}
-                    className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                    className="w-full sm:w-auto border border-gray-300 rounded-md px-3 py-2 text-sm"
                   >
                     <option value="all">All</option>
                     <option value="parent">Parents</option>
@@ -407,9 +407,9 @@ export default function TeacherPortal() {
                   <button
                     disabled={isSubmitting || !announcementTitle.trim() || !announcementBody.trim()}
                     onClick={handleCreateAnnouncement}
-                    className="bg-blue-600 text-white text-sm px-4 py-2 rounded-md disabled:opacity-50"
+                    className="w-full sm:w-auto bg-blue-600 text-white text-sm px-6 py-2 rounded-md disabled:opacity-50"
                   >
-                    Publish
+                    {t('teacher.publish')}
                   </button>
                 </div>
                 <textarea

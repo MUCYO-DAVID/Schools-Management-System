@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../providers/AuthProvider';
 import { useLanguage } from '../../providers/LanguageProvider';
@@ -12,7 +12,9 @@ import { BACKEND_URL } from '@/lib/backend';
 export default function VerifyCodePage() {
   const backendUrl = BACKEND_URL;
   const { t } = useLanguage();
-  const [code, setCode] = useState('');
+  const OTP_LENGTH = 6;
+  const [otpDigits, setOtpDigits] = useState<string[]>(Array(OTP_LENGTH).fill(''));
+  const otpRefs = useRef<Array<HTMLInputElement | null>>(Array(OTP_LENGTH).fill(null));
   const [error, setError] = useState('');
   const [emailForVerification, setEmailForVerification] = useState<string | null>(null);
   const [requiresLeaderQuestions, setRequiresLeaderQuestions] = useState(false);
@@ -64,7 +66,8 @@ export default function VerifyCodePage() {
         };
       } else {
         // For regular users, send verification code
-        if (!code.trim()) {
+        const code = otpDigits.join('');
+        if (!code.trim() || code.length < OTP_LENGTH) {
           setError(t("auth.verifyCode.enterCode"));
           return;
         }
@@ -170,6 +173,42 @@ export default function VerifyCodePage() {
     }
   };
 
+  const handleOtpChange = (index: number, value: string) => {
+    const digit = value.replace(/[^0-9]/g, '').slice(-1);
+    const newDigits = [...otpDigits];
+    newDigits[index] = digit;
+    setOtpDigits(newDigits);
+    if (digit && index < OTP_LENGTH - 1) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace') {
+      if (otpDigits[index]) {
+        const newDigits = [...otpDigits];
+        newDigits[index] = '';
+        setOtpDigits(newDigits);
+      } else if (index > 0) {
+        otpRefs.current[index - 1]?.focus();
+      }
+    } else if (e.key === 'ArrowLeft' && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    } else if (e.key === 'ArrowRight' && index < OTP_LENGTH - 1) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, OTP_LENGTH);
+    const newDigits = Array(OTP_LENGTH).fill('');
+    pasted.split('').forEach((char, i) => { newDigits[i] = char; });
+    setOtpDigits(newDigits);
+    const focusIndex = Math.min(pasted.length, OTP_LENGTH - 1);
+    otpRefs.current[focusIndex]?.focus();
+  };
+
   return (
     <AuthBackground>
       {/* Header Logo */}
@@ -256,22 +295,31 @@ export default function VerifyCodePage() {
                 </div>
               </>
             ) : (
-              <div className="relative">
-                <input
-                  id="code"
-                  type="text"
-                  className="w-full bg-[#333] hover:bg-[#444] transition-all rounded-lg px-5 pt-6 pb-2 text-white border-none focus:outline-none focus:ring-2 focus:ring-purple-500 peer h-14"
-                  placeholder=" "
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  required
-                />
-                <label
-                  htmlFor="code"
-                  className="absolute left-5 top-4 text-[#8c8c8c] text-sm transition-all peer-focus:text-[11px] peer-focus:top-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#8c8c8c] peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:top-2 pointer-events-none"
-                >
+              <div>
+                <p className="text-[#8c8c8c] text-xs mb-3 text-center tracking-widest uppercase">
                   {t("auth.verifyCode.verificationCodeLabel")}
-                </label>
+                </p>
+                <div className="flex gap-2 sm:gap-3 justify-center">
+                  {otpDigits.map((digit, index) => (
+                    <input
+                      key={index}
+                      ref={(el) => { otpRefs.current[index] = el; }}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handleOtpChange(index, e.target.value)}
+                      onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                      onPaste={handleOtpPaste}
+                      className={`w-10 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold rounded-xl text-white transition-all focus:outline-none select-none ${
+                        digit
+                          ? 'bg-purple-600/30 border-2 border-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.4)]'
+                          : 'bg-[#333] border-2 border-[#555] hover:border-[#777] focus:border-purple-500 focus:bg-[#3a3a3a]'
+                      }`}
+                    />
+                  ))}
+                </div>
               </div>
             )}
 

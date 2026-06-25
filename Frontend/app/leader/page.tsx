@@ -471,7 +471,7 @@ export default function LeaderDashboard() {
         {activeTab === 'applications' && (
           <>
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -568,10 +568,10 @@ export default function LeaderDashboard() {
             {Object.entries(applicationsBySchool).map(([schoolName, schoolApps]) => (
               <div key={schoolName} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <div className="bg-blue-50 border-b border-blue-100 px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <School className="w-5 h-5 text-blue-600" />
-                    <h2 className="text-xl font-semibold text-gray-900">{schoolName}</h2>
-                    <span className="ml-auto bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                  <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                    <School className="w-5 h-5 text-blue-600 shrink-0" />
+                    <h2 className="text-base sm:text-xl font-semibold text-gray-900 truncate min-w-0">{schoolName}</h2>
+                    <span className="ml-auto shrink-0 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap">
                       {schoolApps.length} {schoolApps.length === 1 ? 'application' : 'applications'}
                     </span>
                   </div>
@@ -655,7 +655,7 @@ export default function LeaderDashboard() {
                           )}
                         </div>
 
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           <button
                             onClick={() => setSelectedApplication(app)}
                             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap"
