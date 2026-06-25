@@ -838,7 +838,7 @@ export default function AdminDashboard() {
     <div className="page-shell">
       <Navigation />
 
-      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+      <div className="w-full mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8 overflow-x-hidden">
         {/* Header */}
         <div className="relative mb-5 overflow-hidden rounded-[24px] border border-white/70 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 px-5 py-5 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.85)] dark:border-white/10 sm:px-6">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(167,139,250,0.2),transparent_30%)]" />

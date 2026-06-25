@@ -352,7 +352,7 @@ export default function TeacherPortal() {
   return (
     <div className="page-shell">
       <Navigation />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
         <div className="mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
             {user?.role === 'teacher' ? t('teacher.teacherPortal') : t('teacher.staffPortal')}
@@ -440,7 +440,7 @@ export default function TeacherPortal() {
           )}
 
           {activeTab === 'messages' && (
-            <div className="p-12 space-y-6 flex flex-col items-center justify-center text-center bg-white rounded-lg border border-gray-200 min-h-[400px]">
+            <div className="p-6 sm:p-12 space-y-6 flex flex-col items-center justify-center text-center bg-white rounded-lg border border-gray-200 min-h-[300px] sm:min-h-[400px]">
               <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-2">
                 <MessageCircle className="w-10 h-10 text-blue-600" />
               </div>
@@ -462,17 +462,17 @@ export default function TeacherPortal() {
             <div className="p-6 space-y-6">
               <div className="border border-gray-200 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Upload document</h3>
-                <div className="grid gap-3 md:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
                   <input
                     value={documentTitle}
                     onChange={(e) => setDocumentTitle(e.target.value)}
                     placeholder="Document title"
-                    className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                   />
                   <select
                     value={documentAudience}
                     onChange={(e) => setDocumentAudience(e.target.value)}
-                    className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                    className="w-full sm:w-auto border border-gray-300 rounded-md px-3 py-2 text-sm"
                   >
                     <option value="all">All</option>
                     <option value="parent">Parents</option>
@@ -482,7 +482,7 @@ export default function TeacherPortal() {
                   <button
                     disabled={isSubmitting || !documentTitle.trim() || !documentFile}
                     onClick={handleUploadDocument}
-                    className="bg-blue-600 text-white text-sm px-4 py-2 rounded-md disabled:opacity-50"
+                    className="w-full sm:w-auto bg-blue-600 text-white text-sm px-4 py-2 rounded-md disabled:opacity-50"
                   >
                     Upload
                   </button>
@@ -499,16 +499,16 @@ export default function TeacherPortal() {
                   <p className="text-sm text-gray-500">No documents uploaded yet.</p>
                 ) : (
                   documents.map((doc: any) => (
-                    <div key={doc.id} className="border border-gray-200 rounded-lg p-4 flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">{doc.title}</p>
+                    <div key={doc.id} className="border border-gray-200 rounded-lg p-4 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">{doc.title}</p>
                         <p className="text-xs text-gray-400">
                           {new Date(doc.created_at).toLocaleString()}
                         </p>
                       </div>
                       <a
                         href={`${BASE_URL}${doc.file_url}`}
-                        className="text-blue-600 text-sm font-medium"
+                        className="text-blue-600 text-sm font-medium shrink-0"
                         target="_blank"
                         rel="noreferrer"
                       >
@@ -525,24 +525,24 @@ export default function TeacherPortal() {
             <div className="p-6 space-y-6">
               <div className="border border-gray-200 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Create fee schedule</h3>
-                <div className="grid gap-3 md:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-3">
                   <input
                     value={feeTitle}
                     onChange={(e) => setFeeTitle(e.target.value)}
                     placeholder="Fee title"
-                    className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                   />
                   <input
                     value={feeAmount}
                     onChange={(e) => setFeeAmount(e.target.value)}
                     placeholder="Amount"
                     type="number"
-                    className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                   />
                   <select
                     value={feeCurrency}
                     onChange={(e) => setFeeCurrency(e.target.value)}
-                    className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                   >
                     <option value="RWF">RWF</option>
                     <option value="USD">USD</option>
@@ -593,7 +593,7 @@ export default function TeacherPortal() {
                     <span className={isDocumentUpload ? 'text-blue-600' : 'text-gray-500'}>Document</span>
                   </div>
                 </h3>
-                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   <div className="relative">
                     <input
                       value={selectedStudentLabel || gradeStudentQuery}

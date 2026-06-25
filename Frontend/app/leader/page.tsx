@@ -371,7 +371,7 @@ export default function LeaderDashboard() {
     return (
       <div className="page-shell">
         <Navigation />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-900">
             <p className="font-semibold mb-1">{t('leader.leaderUsageTitle')}</p>
             <p>{t('leader.leaderUsageDesc')}</p>
@@ -404,7 +404,7 @@ export default function LeaderDashboard() {
     return (
       <div className="page-shell">
         <Navigation />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">{t('leader.loadingApplications')}</p>
@@ -418,12 +418,12 @@ export default function LeaderDashboard() {
     <div className="page-shell">
       <Navigation />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <School className="w-8 h-8 text-blue-600" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('leader.dashboardTitle')}</h1>
+          <div className="flex items-center gap-3 mb-4 min-w-0">
+            <School className="w-7 h-7 sm:w-8 sm:h-8 text-blue-600 shrink-0" />
+            <h1 className="text-xl sm:text-3xl font-bold text-gray-900 truncate min-w-0">{t('leader.dashboardTitle')}</h1>
           </div>
           <p className="text-gray-600">{t('leader.dashboardSubtitle')}</p>
         </div>
@@ -472,53 +472,53 @@ export default function LeaderDashboard() {
           <>
             {/* Stats Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">{t('leader.totalApplications')}</p>
-                <p className="text-2xl font-bold text-gray-900">{applications.length}</p>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-600 mb-1 leading-tight">{t('leader.totalApplications')}</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">{applications.length}</p>
               </div>
-              <FileText className="w-8 h-8 text-blue-600" />
+              <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 shrink-0" />
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">{t('leader.pending')}</p>
-                <p className="text-2xl font-bold text-yellow-600">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-600 mb-1 leading-tight">{t('leader.pending')}</p>
+                <p className="text-xl sm:text-2xl font-bold text-yellow-600">
                   {applications.filter(a => a.status === 'pending').length}
                 </p>
               </div>
-              <Clock className="w-8 h-8 text-yellow-600" />
+              <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-600 shrink-0" />
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">{t('leader.approved')}</p>
-                <p className="text-2xl font-bold text-green-600">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-600 mb-1 leading-tight">{t('leader.approved')}</p>
+                <p className="text-xl sm:text-2xl font-bold text-green-600">
                   {applications.filter(a => a.status === 'approved').length}
                 </p>
               </div>
-              <CheckCircle className="w-8 h-8 text-green-600" />
+              <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 shrink-0" />
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">{t('leader.rejected')}</p>
-                <p className="text-2xl font-bold text-red-600">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-600 mb-1 leading-tight">{t('leader.rejected')}</p>
+                <p className="text-xl sm:text-2xl font-bold text-red-600">
                   {applications.filter(a => a.status === 'rejected').length}
                 </p>
               </div>
-              <XCircle className="w-8 h-8 text-red-600" />
+              <XCircle className="w-6 h-6 sm:w-8 sm:h-8 text-red-600 shrink-0" />
             </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
               <input
                 type="text"
@@ -554,7 +554,7 @@ export default function LeaderDashboard() {
 
         {/* Applications by School */}
         {Object.keys(applicationsBySchool).length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 sm:p-12 text-center">
             <FileText className="w-16 h-16 mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">{t('leader.noApplicationsFound')}</h3>
             <p className="text-gray-600">
@@ -578,7 +578,7 @@ export default function LeaderDashboard() {
                 </div>
                 <div className="divide-y divide-gray-200">
                   {schoolApps.map((app) => (
-                    <div key={app.id} className="p-6 hover:bg-gray-50 transition-colors">
+                    <div key={app.id} className="p-4 sm:p-6 hover:bg-gray-50 transition-colors">
                       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                         <div className="flex-1 space-y-3">
                           <div className="flex items-start justify-between">
@@ -598,10 +598,10 @@ export default function LeaderDashboard() {
                             </div>
                           </div>
                           
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-600">
-                            <div className="flex items-center gap-2">
-                              <Mail className="w-4 h-4 text-gray-400" />
-                              <span>{app.email}</span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Mail className="w-4 h-4 text-gray-400 shrink-0" />
+                              <span className="truncate min-w-0">{app.email}</span>
                             </div>
                             {app.phone && (
                               <div className="flex items-center gap-2">
