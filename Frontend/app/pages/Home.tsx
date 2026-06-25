@@ -35,7 +35,7 @@ const InteractiveSchoolMap = dynamic(
         ssr: false,
         loading: () => (
             <div className="flex items-center justify-center h-96 bg-gray-100 rounded-lg">
-                <p className="text-gray-600">Loading map...</p>
+                <p className="text-gray-600">{/* loading handled below via t() */}</p>
             </div>
         ),
     }
@@ -170,31 +170,23 @@ export default function Home() {
     const features = [
         {
             icon: SchoolIcon,
-            title: "School Management",
-            titleRw: "Ubuyobozi bw'Amashuri",
-            description: "Comprehensive school administration system",
-            descriptionRw: "Sisitemu y'ubuyobozi bw'amashuri yuzuye",
+            titleKey: "home.schoolManagement",
+            descKey: "home.schoolManagementDesc",
         },
         {
             icon: Users,
-            title: "Student Access",
-            titleRw: "Abanyeshuri ",
-            description: "Easy access to school information for students",
-            descriptionRw: "Kubona amakuru y'ishuri byoroshye ku banyeshuri",
+            titleKey: "home.studentAccess",
+            descKey: "home.studentAccessDesc",
         },
         {
             icon: BookOpen,
-            title: "Educational Resources",
-            titleRw: "Ibikoresho by'Uburezi",
-            description: "Access to learning materials and resources",
-            descriptionRw: "Kubona ibikoresho by'kwiga n'ubundi buryo",
+            titleKey: "home.educationalResources",
+            descKey: "home.educationalResourcesDesc",
         },
         {
             icon: Award,
-            title: "Quality Assurance",
-            titleRw: "Ubwiza bw'Uburezi",
-            description: "Ensuring high standards in education",
-            descriptionRw: "Kwemeza ko uburezi buri ku rwego rwo hejuru",
+            titleKey: "home.qualityAssurance",
+            descKey: "home.qualityAssuranceDesc",
         },
     ]
 
@@ -241,16 +233,16 @@ export default function Home() {
                         >
                             {/* Educational/Library placeholder video */}
                             <source src="https://videos.pexels.com/video-files/3129957/3129957-uhd_2560_1440_25fps.mp4" type="video/mp4" />
-                            Your browser does not support the video tag.
+                            {t("home.browserNoVideoSupport")}
                         </video>
                         <div className="absolute inset-0 bg-black/50 z-10" />
 
                         <div className="relative z-20 w-full px-6 py-12 text-center text-white flex flex-col items-center justify-center max-w-[1200px]">
                             <h1 className="text-3xl font-extrabold sm:text-4xl lg:text-5xl mb-4">
-                                Unlimited education. Discover anywhere.
+                                {t("home.heroTitle")}
                             </h1>
                             <h2 className="text-lg sm:text-xl font-medium mb-8">
-                                A premium, cinematic interface for students, families, schools, and administrators aligned with Rwanda&apos;s national education identity.
+                                {t("home.heroSubtitle")}
                             </h2>
 
                             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-[500px]">
@@ -268,7 +260,7 @@ export default function Home() {
                                         href="/student"
                                         className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white font-bold px-8 py-3.5 rounded-2xl transition-all flex items-center justify-center shadow-lg shadow-purple-600/20"
                                     >
-                                        Student Portal
+                                        {t("home.studentPortal")}
                                         <ArrowRight className="h-5 w-5 ml-2 font-bold" />
                                     </Link>
                                 )}
@@ -284,7 +276,7 @@ export default function Home() {
                                           href="/auth/signin"
                                           className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white font-bold px-8 py-3.5 rounded-2xl transition-all flex items-center justify-center shadow-lg shadow-purple-600/20"
                                         >
-                                          Sign In
+                                          {t("nav.signIn")}
                                           <ArrowRight className="h-5 w-5 ml-2 font-bold" />
                                         </Link>
                                     </>
@@ -304,7 +296,7 @@ export default function Home() {
                             onClick={() => setShowAdvertise(true)}
                             className="w-full max-w-[280px] mx-auto lg:mx-0 block text-center text-[10px] font-semibold text-amber-700 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300"
                         >
-                            Advertise on RSBS
+                            {t("common.advertiseOnRsbs")}
                         </button>
                         <HomeCommunityPanel />
                     </div>
@@ -318,15 +310,15 @@ export default function Home() {
                                     <div>
                                         <div className="inline-flex items-center gap-2 rounded-full bg-blue-600/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-blue-700 dark:text-blue-300">
                                             <MapPin className="h-3.5 w-3.5" />
-                                            Explore
+                                            {t("home.explore")}
                                         </div>
                                         <h2 className="mt-3 text-2xl md:text-3xl font-semibold text-gray-900">
-                                            Explore Schools on Interactive Map
+                                            {t("home.exploreSchoolsMapTitle")}
                                         </h2>
                                         <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
                                             {nearbySchools.length > 0
-                                                ? `Showing ${nearbySchools.length} nearest schools`
-                                                : "View all schools on the map"}
+                                                ? t("home.showingNearestSchools", { count: nearbySchools.length })
+                                                : t("home.viewAllSchoolsOnMap")}
                                         </p>
                                     </div>
                                     {user?.role === "student" && (
@@ -334,7 +326,7 @@ export default function Home() {
                                             href="/student"
                                             className="hidden sm:inline-flex items-center gap-2 rounded-2xl bg-purple-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-purple-600/20 transition hover:bg-purple-700"
                                         >
-                                            Explore & Apply
+                                            {t("home.exploreAndApply")}
                                             <ArrowRight className="h-3.5 w-3.5" />
                                         </Link>
                                     )}
@@ -342,9 +334,9 @@ export default function Home() {
 
                                 {!loadingMap && allSchools.length === 0 ? (
                                     <div className="rounded-[1.5rem] border border-yellow-200 bg-yellow-50 p-6 text-center">
-                                        <p className="mb-2 text-lg font-medium text-yellow-800">No Schools Found</p>
+                                        <p className="mb-2 text-lg font-medium text-yellow-800">{t("home.noSchoolsFoundTitle")}</p>
                                         <p className="text-sm text-yellow-700">
-                                            No schools with location data were found. Please contact your administrator to add schools with coordinates.
+                                            {t("home.noSchoolsFoundMessage")}
                                         </p>
                                     </div>
                                 ) : (
@@ -365,7 +357,7 @@ export default function Home() {
                         <section className="mb-6 rounded-[2rem] border border-slate-200 bg-white/85 px-4 py-10 text-center shadow-[0_30px_90px_-60px_rgba(15,23,42,0.7)] backdrop-blur-xl sm:px-6 dark:border-slate-800 dark:bg-slate-950/85">
                             <div>
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                                <p className="text-gray-600">Loading schools and map...</p>
+                                <p className="text-gray-600">{t("home.loadingSchoolsAndMap")}</p>
                             </div>
                         </section>
                     )}
@@ -376,29 +368,29 @@ export default function Home() {
                                 <div>
                                     <div className="inline-flex items-center gap-2 rounded-full bg-amber-400/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-amber-700 dark:text-amber-300">
                                         <Award className="h-3.5 w-3.5" />
-                                        Spotlight
+                                        {t("home.spotlight")}
                                     </div>
                                     <h2 className="mt-3 text-2xl md:text-3xl font-semibold text-gray-900">
-                                        Most Recommended Schools
+                                        {t("home.mostRecommendedSchools")}
                                     </h2>
                                     <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
-                                        Discover highly rated schools based on community feedback.
+                                        {t("home.mostRecommendedSubtitle")}
                                     </p>
                                 </div>
                                 <Link
                                     href="/schools"
                                     className="hidden sm:inline-flex items-center gap-2 text-xs font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-300"
                                 >
-                                    View all schools
+                                    {t("home.viewAllSchools")}
                                     <ArrowRight className="h-3.5 w-3.5" />
                                 </Link>
                             </div>
 
                             {loadingTop ? (
-                                <p className="text-gray-500 text-xs">Loading top schools...</p>
+                                <p className="text-gray-500 text-xs">{t("home.loadingTopSchools")}</p>
                             ) : topSchools.length === 0 ? (
                                 <p className="text-gray-500 text-xs">
-                                    No schools have been rated yet. Be the first to add and rate a school!
+                                    {t("home.noRatedSchoolsYet")}
                                 </p>
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -442,7 +434,7 @@ export default function Home() {
                                                             }}
                                                         />
                                                         <div className="absolute left-4 top-4 z-20 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
-                                                            #{index + 1} ranked
+                                                            {t("home.ranked", { rank: index + 1 })}
                                                         </div>
                                                         <div className="absolute bottom-4 left-4 right-4 z-20">
                                                             <p className="text-lg font-semibold text-white line-clamp-2">
@@ -458,7 +450,7 @@ export default function Home() {
                                                     <div className="flex h-40 w-full shrink-0 items-end bg-[linear-gradient(135deg,#0f172a_0%,#0c4a6e_50%,#059669_100%)] p-4">
                                                         <div className="w-full">
                                                             <div className="inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
-                                                                #{index + 1} ranked
+                                                                {t("home.ranked", { rank: index + 1 })}
                                                             </div>
                                                             <p className="mt-2 text-base font-semibold text-white leading-snug" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                                                                 {school.name}
@@ -472,7 +464,7 @@ export default function Home() {
                                                             {school.type}
                                                         </span>
                                                         <span className="text-[11px] font-medium text-slate-700 dark:text-slate-400">
-                                                            {average > 0 ? `${average.toFixed(1)} / 5` : "New"}
+                                                            {average > 0 ? `${average.toFixed(1)} / 5` : t("home.new")}
                                                         </span>
                                                     </div>
                                                     <div className="flex items-center mb-3">
@@ -484,7 +476,7 @@ export default function Home() {
                                                                     type="button"
                                                                     onClick={() => handleRate(school.id, star)}
                                                                     className="mr-0.5"
-                                                                    aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
+                                                                    aria-label={t(star > 1 ? "home.rateStars" : "home.rateStar", { count: star })}
                                                                 >
                                                                     <Star
                                                                         className={`w-3 h-3 ${star <= rounded
@@ -504,23 +496,23 @@ export default function Home() {
                                                             )
                                                         })}
                                                         <span className="ml-1.5 text-xs text-slate-700 dark:text-slate-400">
-                                                            {school.rating_count ?? 0} review{(school.rating_count ?? 0) === 1 ? "" : "s"}
+                                                            {t((school.rating_count ?? 0) === 1 ? "home.review" : "home.reviews", { count: school.rating_count ?? 0 })}
                                                         </span>
                                                     </div>
                                                     <div className="rounded-[1.15rem] bg-slate-50/90 p-3 text-xs text-slate-800 dark:bg-slate-900/80 dark:text-slate-300 line-clamp-3">
-                                                        {school.description || 'Rate this school and help the community discover great educational institutions.'}
+                                                        {school.description || t("home.rateSchoolPrompt")}
                                                     </div>
                                                     <div className="mt-auto flex items-center justify-between pt-3">
                                                         <button
                                                             onClick={() => setSelectedSchool(school)}
                                                             className="inline-flex items-center gap-1 text-[11px] font-bold text-purple-600 hover:text-purple-800 dark:text-purple-400"
                                                         >
-                                                            View details
+                                                            {t("home.viewDetails")}
                                                             <ArrowRight className="h-3 w-3" />
                                                         </button>
                                                         {ratingSchoolId === school.id && (
                                                             <span className="text-[11px] font-medium text-amber-600 dark:text-amber-300">
-                                                                Opening survey...
+                                                                {t("home.openingSurvey")}
                                                             </span>
                                                         )}
                                                     </div>
@@ -538,10 +530,10 @@ export default function Home() {
                             <div className="text-center mb-6">
                                 <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-300">
                                     <BookOpen className="h-3.5 w-3.5" />
-                                    Services
+                                    {t("home.services")}
                                 </div>
-                                <h2 className="mt-3 text-2xl md:text-3xl font-semibold text-gray-900 dark:text-white">Our Services</h2>
-                                <p className="mt-2 text-sm text-gray-600 dark:text-slate-400">Comprehensive solutions for educational management</p>
+                                <h2 className="mt-3 text-2xl md:text-3xl font-semibold text-gray-900 dark:text-white">{t("home.ourServices")}</h2>
+                                <p className="mt-2 text-sm text-gray-600 dark:text-slate-400">{t("home.comprehensiveSolutions")}</p>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                 {features.map((feature, index) => (
@@ -552,8 +544,8 @@ export default function Home() {
                                         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-[linear-gradient(135deg,#581c87,#6b21a8,#9333ea)] text-white shadow-lg shadow-purple-900/10">
                                             <feature.icon className="h-6 w-6" />
                                         </div>
-                                        <h3 className="text-[11px] font-bold text-gray-900 dark:text-white uppercase tracking-wider">{feature.title}</h3>
-                                        <p className="mt-2 text-[10px] leading-5 text-gray-600 dark:text-slate-400">{feature.description}</p>
+                                        <h3 className="text-[11px] font-bold text-gray-900 dark:text-white uppercase tracking-wider">{t(feature.titleKey)}</h3>
+                                        <p className="mt-2 text-[10px] leading-5 text-gray-600 dark:text-slate-400">{t(feature.descKey)}</p>
                                     </div>
                                 ))}
                             </div>
@@ -564,13 +556,13 @@ export default function Home() {
                         <div>
                             <div className="mb-8 max-w-2xl">
                                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-white/70">
-                                    National impact
+                                    {t("home.nationalImpact")}
                                 </p>
                                 <h2 className="mt-3 text-2xl font-semibold sm:text-3xl">
-                                    A stronger digital experience for Rwanda&apos;s school ecosystem
+                                    {t("home.strongerDigitalExperience")}
                                 </h2>
                                 <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-white/80">
-                                    The refreshed visual system makes school data, actions, and community insights feel more organized, more modern, and easier to trust.
+                                    {t("home.refreshedVisualSystem")}
                                 </p>
                             </div>
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -578,22 +570,22 @@ export default function Home() {
                                     <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-200">
                                         <ShieldCheck className="h-5 w-5" />
                                     </div>
-                                    <div className="text-base font-semibold text-slate-900 dark:text-white mb-1">Verified Schools</div>
-                                    <div className="text-sm text-slate-600 dark:text-white/80">Browse trusted institutions with real profiles, contacts, and admissions info.</div>
+                                    <div className="text-base font-semibold text-slate-900 dark:text-white mb-1">{t("home.verifiedSchools")}</div>
+                                    <div className="text-sm text-slate-600 dark:text-white/80">{t("home.verifiedSchoolsDesc")}</div>
                                 </div>
                                 <div className="rounded-[1.5rem] border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/10 p-5 backdrop-blur-md">
                                     <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:bg-amber-400/10 dark:text-amber-200">
                                         <Star className="h-5 w-5" />
                                     </div>
-                                    <div className="text-base font-semibold text-slate-900 dark:text-white mb-1">Top Rated</div>
-                                    <div className="text-sm text-slate-600 dark:text-white/80">Discover highly rated schools through honest student and parent reviews.</div>
+                                    <div className="text-base font-semibold text-slate-900 dark:text-white mb-1">{t("home.topRated")}</div>
+                                    <div className="text-sm text-slate-600 dark:text-white/80">{t("home.topRatedDesc")}</div>
                                 </div>
                                 <div className="rounded-[1.5rem] border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/10 p-5 backdrop-blur-md">
                                     <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/10 dark:text-emerald-200">
                                         <MapPin className="h-5 w-5" />
                                     </div>
-                                    <div className="text-base font-semibold text-slate-900 dark:text-white mb-1">Across Rwanda</div>
-                                    <div className="text-sm text-slate-600 dark:text-white/80">Explore schools from every corner of the country on the live interactive map.</div>
+                                    <div className="text-base font-semibold text-slate-900 dark:text-white mb-1">{t("home.acrossRwanda")}</div>
+                                    <div className="text-sm text-slate-600 dark:text-white/80">{t("home.acrossRwandaDesc")}</div>
                                 </div>
                             </div>
                         </div>

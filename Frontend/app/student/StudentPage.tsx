@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { 
-  Search, MapPin, Users, GraduationCap, Star, FileText, 
-  MessageSquare, AlertCircle, Shield, Calendar, Award, 
+import {
+  Search, MapPin, Users, GraduationCap, Star, FileText,
+  MessageSquare, AlertCircle, Shield, Calendar, Award,
   ChevronRight, Sparkles, Filter, Globe, School as SchoolIcon,
   ArrowRight, Inbox, Clock, CheckCircle, BookText, CheckCircle2,
   Trash2, Eye, Download
@@ -94,7 +94,7 @@ export default function StudentAccess() {
     if (!isAuthenticated) { router.push('/auth/signin'); return; }
     // Only students can apply to schools
     if (user?.role !== 'student') {
-      toast.error('Only students can apply to schools.');
+      toast.error(t("student.onlyStudentsCanApply"));
       return;
     }
     setSelectedSchool(school)
@@ -102,12 +102,12 @@ export default function StudentAccess() {
   }
 
   const tabs = [
-    { id: 'browse' as const, label: 'Find Schools', icon: Search },
-    { id: 'applications' as const, label: 'Applications', icon: FileText },
-    { id: 'grades' as const, label: 'Grades', icon: GraduationCap },
-    { id: 'events' as const, label: 'Events Hub', icon: Calendar },
-    { id: 'scholarships' as const, label: 'Scholarships', icon: Award },
-    { id: 'comments' as const, label: 'Reviews', icon: MessageSquare },
+    { id: 'browse' as const, label: t("student.tabFindSchools"), icon: Search },
+    { id: 'applications' as const, label: t("student.tabApplications"), icon: FileText },
+    { id: 'grades' as const, label: t("student.tabGrades"), icon: GraduationCap },
+    { id: 'events' as const, label: t("student.tabEventsHub"), icon: Calendar },
+    { id: 'scholarships' as const, label: t("student.tabScholarships"), icon: Award },
+    { id: 'comments' as const, label: t("student.tabReviews"), icon: MessageSquare },
   ]
 
   useEffect(() => {
@@ -158,8 +158,8 @@ export default function StudentAccess() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 relative shrink-0 ${
-                  active 
-                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' 
+                  active
+                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20'
                     : 'text-slate-500 hover:text-slate-100'
                 }`}
               >
@@ -355,9 +355,9 @@ export default function StudentAccess() {
                             <td className="px-4 py-3 text-[11px] font-bold text-slate-200">{grade.subject}</td>
                             <td className="px-4 py-3">
                               {grade.is_document ? (
-                                <a 
-                                  href={grade.document_url} 
-                                  target="_blank" 
+                                <a
+                                  href={grade.document_url}
+                                  target="_blank"
                                   rel="noopener noreferrer"
                                   className="flex items-center gap-2 text-[10px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors"
                                 >
@@ -452,14 +452,14 @@ export default function StudentAccess() {
             school={selectedSchool}
             onClose={() => setSelectedSchool(null)}
             onApply={() => {
-              if (isAuthenticated) { 
+              if (isAuthenticated) {
                 if (user?.role !== 'student') {
-                  toast.error('Only students can apply to schools.');
+                  toast.error(t("student.onlyStudentsCanApply"));
                   return;
                 }
-                setShowApplicationForm(true) 
-              } else { 
-                router.push('/auth/signin') 
+                setShowApplicationForm(true)
+              } else {
+                router.push('/auth/signin')
               }
             }}
           />

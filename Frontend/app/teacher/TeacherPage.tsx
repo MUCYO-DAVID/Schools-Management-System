@@ -27,6 +27,7 @@ import { searchStudents, type StudentSearchResult } from '../api/students';
 
 export default function TeacherPortal() {
   const { isAuthenticated, user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'announcements' | 'messages' | 'documents' | 'fees' | 'grades' | 'events'>('announcements');
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -189,7 +190,7 @@ export default function TeacherPortal() {
       setMessageBody('');
     } catch (error) {
       console.error('Failed to send message:', error);
-      alert('Failed to send message');
+      alert(t('teacher.failedSendMessage'));
     } finally {
       setIsSubmitting(false);
     }
@@ -232,7 +233,7 @@ export default function TeacherPortal() {
       setDocumentAudience('all');
     } catch (error) {
       console.error('Failed to upload document:', error);
-      alert('Failed to upload document');
+      alert(t('teacher.failedUploadDocument'));
     } finally {
       setIsSubmitting(false);
     }
@@ -253,7 +254,7 @@ export default function TeacherPortal() {
       setFeeCurrency('RWF');
     } catch (error) {
       console.error('Failed to create fee schedule:', error);
-      alert('Failed to create fee schedule');
+      alert(t('teacher.failedCreateFeeSchedule'));
     } finally {
       setIsSubmitting(false);
     }
@@ -354,23 +355,30 @@ export default function TeacherPortal() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-            {user?.role === 'teacher' ? 'Teacher Portal' : 'Staff Portal'}
+            {user?.role === 'teacher' ? t('teacher.teacherPortal') : t('teacher.staffPortal')}
           </h1>
           <p className="text-sm text-gray-600">
-            Announcements, documents, messages, and fee schedules for school staff.
+            {t('teacher.subtitle')}
           </p>
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200">
           <div className="mobile-tabs border-b border-gray-200">
-            {['announcements', 'messages', 'documents', 'fees', 'grades', 'events'].map((tab) => (
+            {([
+              { id: 'announcements', label: t('teacher.tabAnnouncements') },
+              { id: 'messages', label: t('teacher.tabMessages') },
+              { id: 'documents', label: t('teacher.tabDocuments') },
+              { id: 'fees', label: t('teacher.tabFees') },
+              { id: 'grades', label: t('teacher.tabGrades') },
+              { id: 'events', label: t('teacher.tabEvents') },
+            ] as const).map((tab) => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab as any)}
-                className={`px-4 sm:px-6 py-3 text-sm font-medium whitespace-nowrap shrink-0 ${activeTab === tab ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600'
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`px-4 sm:px-6 py-3 text-sm font-medium whitespace-nowrap shrink-0 ${activeTab === tab.id ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600'
                   }`}
               >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                {tab.label}
               </button>
             ))}
           </div>
@@ -840,7 +848,7 @@ export default function TeacherPortal() {
                 <h4 className="text-sm font-semibold text-gray-700 mb-3">Event Calendar</h4>
                 <EventCalendar
                   onEventClick={(event) => {
-                    alert(`Event: ${event.title}\nDate: ${new Date(event.start_date).toLocaleString()}\n${event.description || ''}`);
+                    alert(`${event.title}\n${new Date(event.start_date).toLocaleString()}\n${event.description || ''}`);
                   }}
                   schoolId={undefined}
                 />

@@ -103,9 +103,9 @@ export default function Schools() {
       await deleteSchool(deletingSchool.id);
       setSchools((prev) => prev.filter((s) => s.id !== deletingSchool.id));
       setDeletingSchool(null);
-      toast.success("School deleted successfully");
+      toast.success(t("schools.schoolDeletedSuccess"));
     } catch (error) {
-      toast.error("Unable to delete school. Please try again later.");
+      toast.error(t("schools.schoolDeleteFailed"));
     }
   };
 
@@ -117,17 +117,17 @@ export default function Schools() {
         setSchools((prev) =>
           prev.map((s) => (s.id === updatedSchool.id ? updatedSchool : s))
         );
-        toast.success("School updated successfully");
+        toast.success(t("schools.schoolUpdatedSuccess"));
       } else {
         // Add new school
         const newSchool = await addSchool(schoolData, images);
         setSchools((prev) => [...prev, newSchool]);
-        toast.success("School added successfully");
+        toast.success(t("schools.schoolAddedSuccess"));
       }
       setIsModalOpen(false);
       setEditingSchool(null);
     } catch (error) {
-      toast.error("Unable to save school. Please try again later.");
+      toast.error(t("schools.schoolSaveFailed"));
     }
   };
 
@@ -140,12 +140,12 @@ export default function Schools() {
           <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-8 text-center">
               <AlertCircle className="w-16 h-16 mx-auto text-red-600 mb-4" />
-              <h2 className="text-2xl font-bold text-red-900 mb-2">Access Denied</h2>
+              <h2 className="text-2xl font-bold text-red-900 mb-2">{t("schools.accessDenied")}</h2>
               <p className="text-red-700 mb-4">
-                This page is only accessible to school leaders and administrators.
+                {t("schools.accessDeniedMessage")}
               </p>
               <p className="text-red-600 text-sm">
-                If you are a student, please use the Student Access page to browse schools.
+                {t("schools.accessDeniedStudentHint")}
               </p>
             </div>
           </div>
@@ -166,14 +166,14 @@ export default function Schools() {
             <div className="relative z-10 flex flex-col items-center text-center">
               <div className="inline-flex items-center gap-2 bg-blue-600/10 border border-blue-500/20 px-4 py-1.5 rounded-full mb-4">
                 <Shield className="w-4 h-4 text-blue-400" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-300">Management Console</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-300">{t("schools.managementConsole")}</span>
               </div>
               <h1 className="text-4xl lg:text-6xl font-black tracking-tight text-slate-900 dark:text-white italic mb-4">
-                {t("schools")} <span className="text-blue-500">Registry</span>
+                {t("schools")} <span className="text-blue-500">{t("schools.registryTitle")}</span>
               </h1>
               <p className="text-slate-600 dark:text-slate-400 max-w-2xl text-lg font-medium">
-                Comprehensive oversight and management of Rwanda's educational institutions. 
-                <span className="block text-sm text-slate-500 mt-2 font-bold uppercase tracking-widest">Authorized Personnel Only</span>
+                {t("schools.registrySubtitle")}
+                <span className="block text-sm text-slate-500 mt-2 font-bold uppercase tracking-widest">{t("schools.authorizedPersonnelOnly")}</span>
               </p>
             </div>
           </div>
@@ -334,7 +334,7 @@ export default function Schools() {
                       onClick={() => router.push(`/schools/${school.id}`)}
                       className="text-[8px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-500 transition-colors flex items-center gap-1.5 group/btn"
                     >
-                      Analytics
+                      {t("schools.analytics")}
                       <ArrowRight className="w-2.5 h-2.5 group-hover/btn:translate-x-1 transition-transform" />
                     </button>
                     <div className="flex -space-x-1">
@@ -355,8 +355,8 @@ export default function Schools() {
               <div className="text-slate-700 mb-6">
                 <Search className="w-20 h-20 mx-auto opacity-20" />
               </div>
-              <h3 className="text-xl font-black text-slate-800 dark:text-slate-300 mb-2 uppercase tracking-widest">No schools found</h3>
-              <p className="text-slate-600 dark:text-slate-400 font-medium">Try adjusting your search or filter criteria</p>
+              <h3 className="text-xl font-black text-slate-800 dark:text-slate-300 mb-2 uppercase tracking-widest">{t("schools.noSchoolsFound")}</h3>
+              <p className="text-slate-600 dark:text-slate-400 font-medium">{t("schools.adjustSearchFilter")}</p>
             </div>
           )}
 

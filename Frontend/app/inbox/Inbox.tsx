@@ -13,6 +13,7 @@ import {
   searchUsers, fetchSuggestedUsers, fetchAllUsers, sendConnectionRequest, fetchFriends, fetchPendingRequests, respondToConnectionRequest, removeConnection 
 } from '../api/connections';
 import { useAuth } from '../providers/AuthProvider';
+import { useLanguage } from '../providers/LanguageProvider';
 import Navigation from '../components/Navigation';
 import UserProfile from '../components/UserProfile';
 import ConfirmModal from '../components/ConfirmModal';
@@ -49,6 +50,7 @@ interface ChatRoom {
 }
 
 export default function InboxPage() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'chats' | 'people' | 'requests'>('chats');
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
@@ -178,7 +180,7 @@ export default function InboxPage() {
       console.error('Error sending message:', err);
       setMessageInput(text);
       setSelectedFile(file);
-      toast.error('Failed to send message');
+      toast.error(t('inbox.failedSendMessage'));
     } finally {
       setIsUploading(false);
     }
@@ -188,7 +190,7 @@ export default function InboxPage() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) { // 10MB limit
-        toast.error('File is too large (max 10MB)');
+        toast.error(t('inbox.fileTooLarge'));
         return;
       }
       setSelectedFile(file);
@@ -226,10 +228,10 @@ export default function InboxPage() {
       setSuggestedUsers(prev => updateList(prev));
       setAllUsers(prev => updateList(prev));
       
-      toast.success('Friend request sent!');
+      toast.success(t('inbox.friendRequestSent'));
     } catch (err: any) {
       console.error('Error adding friend:', err);
-      toast.error('Failed to send request: ' + (err.message || 'Unknown error'));
+      toast.error(t('inbox.failedSendRequest').replace('{{message}}', err.message || 'Unknown error'));
     }
   };
 
@@ -260,21 +262,21 @@ export default function InboxPage() {
       setActiveTab('chats');
       refreshRooms();
     } catch (err: any) {
-      alert(err.message || 'Failed to start chat');
+      alert(err.message || t('inbox.failedStartChat'));
     }
   };
 
   const handleUnfollow = (targetUserId: number) => {
     setConfirmAction({
-      title: 'Unfollow Person',
-      message: 'Are you sure you want to unfollow this person? They will be removed from your connections.',
-      confirmText: 'Unfollow',
+      title: t('inbox.unfollowTitle'),
+      message: t('inbox.unfollowMessage'),
+      confirmText: t('inbox.unfollowConfirm'),
       variant: 'danger',
       onConfirm: async () => {
         setConfirmAction(null);
         try {
           await removeConnection(targetUserId);
-          toast.success('Unfollowed successfully');
+          toast.success(t('inbox.unfollowedSuccess'));
           
           const updateList = (list: any[]) => list.map(u => 
             Number(u.id) === Number(targetUserId) ? { ...u, connection_status: null, request_sender_id: null } : u
@@ -285,7 +287,7 @@ export default function InboxPage() {
           setFriends(prev => prev.filter(f => Number(f.id) !== Number(targetUserId)));
         } catch (err: any) {
           console.error('Error unfollowing:', err);
-          toast.error('Failed to unfollow');
+          toast.error(t('inbox.failedUnfollow'));
         }
       }
     });
@@ -314,9 +316,9 @@ export default function InboxPage() {
             {/* Sidebar Tabs */}
             <div className="flex border-b border-slate-200 dark:border-white/5 p-2 bg-slate-100 dark:bg-black/20">
               {[
-                { id: 'chats', label: 'Chats', icon: MessageCircle },
-                { id: 'people', label: 'People', icon: Users },
-                { id: 'requests', label: 'Requests', icon: UserPlus, badge: pendingRequests.length }
+                { id: 'chats', label: t('inbox.tabChats'), icon: MessageCircle },
+                { id: 'people', label: t('inbox.tabPeople'), icon: Users },
+                { id: 'requests', label: t('inbox.tabRequests'), icon: UserPlus, badge: pendingRequests.length }
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -348,7 +350,7 @@ export default function InboxPage() {
                   {rooms.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-slate-600 dark:text-slate-500 opacity-80">
                       <InboxIcon className="w-12 h-12 mb-4" />
-                      <p className="text-sm">Your inbox is empty</p>
+                      <p className="text-sm">{t('inbox.inboxEmpty')}</p>
                     </div>
                   ) : (
                     rooms.map((room) => (
@@ -383,7 +385,7 @@ export default function InboxPage() {
                             </span>
                           </div>
                           <p className="text-xs text-slate-600 dark:text-slate-400 truncate">
-                            {room.last_message || 'No messages yet...'}
+                            {room.last_message || t('inbox.noMessagesYet')}
                           </p>
                         </div>
                         {selectedRoom === room.id && (
@@ -402,7 +404,7 @@ export default function InboxPage() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                     <input
                       type="text"
-                      placeholder="Find anyone in the system..."
+                      placeholder={t('inbox.findAnyonePlaceholder')}
                       value={searchQuery}
                       onChange={(e) => {
                         setSearchQuery(e.target.value);
@@ -416,27 +418,27 @@ export default function InboxPage() {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between pl-1">
                       <p className="text-[10px] font-bold text-slate-600 dark:text-slate-500 uppercase tracking-widest">
-                        {searchQuery.length > 0 ? 'Search Results' : 'Everyone'}
+                        {searchQuery.length > 0 ? t('inbox.searchResults') : t('inbox.everyone')}
                       </p>
                       <span className="text-[10px] text-purple-500 font-bold">
-                        {loading ? 'Fetching...' : `${(searchQuery.length > 0 ? searchResults : allUsers).length} People`}
+                        {loading ? t('inbox.fetching') : t('inbox.peopleCount').replace('{{count}}', String((searchQuery.length > 0 ? searchResults : allUsers).length))}
                       </span>
                     </div>
                     
                     {loading && (searchQuery.length > 0 ? searchResults : allUsers).length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-10 opacity-50">
                         <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-4" />
-                        <p className="text-xs">Loading people...</p>
+                        <p className="text-xs">{t('inbox.loadingPeople')}</p>
                       </div>
                     ) : (searchQuery.length > 0 ? searchResults : allUsers).length === 0 ? (
                       <div className="text-center py-10 bg-white/5 rounded-3xl border border-dashed border-slate-200 dark:border-white/10">
                         <Users className="w-10 h-10 text-slate-600 mx-auto mb-3 opacity-20" />
-                        <p className="text-xs text-slate-500">No one found in the system</p>
-                        <button 
+                        <p className="text-xs text-slate-500">{t('inbox.noOneFound')}</p>
+                        <button
                           onClick={loadInitialData}
                           className="mt-4 text-[10px] text-purple-400 font-bold uppercase tracking-widest hover:text-purple-300 transition-colors"
                         >
-                          Retry Refresh
+                          {t('inbox.retryRefresh')}
                         </button>
                       </div>
                     ) : (
@@ -488,7 +490,7 @@ export default function InboxPage() {
                               <button 
                                 onClick={() => startChat(u.id)} 
                                 className="p-3 rounded-2xl text-purple-400 bg-purple-400/10 hover:bg-purple-400/20 transition-all hover:scale-110 active:scale-95"
-                                title="Message"
+                                title={t('inbox.message')}
                               >
                                 <MessageCircle className="w-5 h-5" />
                               </button>
@@ -496,21 +498,21 @@ export default function InboxPage() {
                               Number(u.request_sender_id) === Number(user?.id) ? (
                                 <div className="flex flex-col items-center px-3 py-1 bg-white/5 rounded-xl border border-slate-200 dark:border-white/5">
                                   <Clock className="w-4 h-4 text-slate-500 mb-0.5" />
-                                  <span className="text-[8px] text-slate-500 font-bold uppercase">Sent</span>
+                                  <span className="text-[8px] text-slate-500 font-bold uppercase">{t('inbox.requestSent')}</span>
                                 </div>
                               ) : (
                                 <button 
                                   onClick={() => setActiveTab('requests')} 
                                   className="px-4 py-2 bg-amber-500/20 text-amber-500 hover:bg-amber-500/30 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all"
                                 >
-                                  Accept?
+                                  {t('inbox.acceptQuestion')}
                                 </button>
                               )
                             ) : (
                                 <button 
                                   onClick={() => handleAddFriend(u.id)}
                                   className="p-3 rounded-2xl bg-purple-600 text-white hover:bg-purple-700 shadow-lg shadow-purple-600/20 transition-all hover:scale-110 active:scale-95 group-hover:shadow-purple-600/40"
-                                  title="Add Friend"
+                                  title={t('inbox.addFriend')}
                                 >
                                   <UserPlus className="w-5 h-5" />
                                 </button>
@@ -528,11 +530,11 @@ export default function InboxPage() {
 
               {activeTab === 'requests' && (
                 <div className="p-4 space-y-4">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Pending Invitations</p>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">{t('inbox.pendingInvitations')}</p>
                   {pendingRequests.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-slate-600 dark:text-slate-500 opacity-80">
                       <UserCheck className="w-12 h-12 mb-4" />
-                      <p className="text-sm">No pending requests</p>
+                      <p className="text-sm">{t('inbox.noPendingRequests')}</p>
                     </div>
                   ) : (
                     pendingRequests.map((req) => (
@@ -551,13 +553,13 @@ export default function InboxPage() {
                             onClick={() => handleRespondRequest(req.request_id, 'accepted')}
                             className="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold py-2 rounded-xl transition-all"
                           >
-                            Accept
+                            {t('inbox.accept')}
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleRespondRequest(req.request_id, 'rejected')}
                             className="flex-1 bg-white/5 hover:bg-white/10 text-slate-400 text-xs font-bold py-2 rounded-xl transition-all"
                           >
-                            Ignore
+                            {t('inbox.ignore')}
                           </button>
                         </div>
                       </div>
@@ -582,20 +584,20 @@ export default function InboxPage() {
                   <Sparkles className="w-6 h-6 text-yellow-400" />
                 </div>
               </div>
-              <h2 className="text-3xl font-black mb-4 tracking-tight text-slate-900 dark:text-white">RSBS Messenger</h2>
+              <h2 className="text-3xl font-black mb-4 tracking-tight text-slate-900 dark:text-white">{t('inbox.messengerTitle')}</h2>
               <p className="max-w-md text-slate-600 dark:text-slate-400 text-lg leading-relaxed">
-                Connect with school leaders, parents, and teachers. Our secure messaging system builds bridges across the education community.
+                {t('inbox.messengerSubtitle')}
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-4">
                 <button 
                   onClick={() => setActiveTab('people')}
                   className="bg-purple-600 px-8 py-4 rounded-3xl font-black tracking-widest text-xs uppercase text-white hover:bg-purple-700 transition-all hover:scale-105 shadow-xl shadow-purple-600/40"
                 >
-                  Find People
+                  {t('inbox.findPeople')}
                 </button>
                 <div className="flex items-center gap-2 bg-slate-100 dark:bg-white/5 px-6 py-4 rounded-3xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-700 dark:text-slate-300">
                   <Shield className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                  Privately Encrypted
+                  {t('inbox.privatelyEncrypted')}
                 </div>
               </div>
             </div>
@@ -623,7 +625,7 @@ export default function InboxPage() {
                     <h3 className="text-base font-black tracking-tight text-slate-900 dark:text-white">{currentRoom?.name || currentRoom?.school_name}</h3>
                     <div className="flex items-center gap-1.5">
                       <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-500/80">Active Connections</p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-500/80">{t('inbox.activeConnections')}</p>
                     </div>
                   </div>
                 </div>
@@ -631,7 +633,7 @@ export default function InboxPage() {
                   {user?.role === 'admin' && (
                     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600/20 border border-purple-500/30 text-[10px] font-black uppercase tracking-tighter text-purple-400">
                       <Shield className="w-3 h-3" />
-                      Admin Bypass Active
+                      {t('inbox.adminBypassActive')}
                     </div>
                   )}
                   <div className="relative">
@@ -650,7 +652,7 @@ export default function InboxPage() {
                           }}
                           className="w-full text-left px-4 py-3 text-red-400 hover:bg-white/5 transition-colors flex items-center gap-2"
                         >
-                          <UserX className="w-4 h-4" /> Unfollow
+                          <UserX className="w-4 h-4" /> {t('inbox.unfollow')}
                         </button>
                       </div>
                     )}
@@ -703,8 +705,8 @@ export default function InboxPage() {
                                 <FileText className="w-5 h-5 text-blue-400" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Document</p>
-                                <p className="text-xs font-bold truncate text-slate-200">View Attachment</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">{t('inbox.document')}</p>
+                                <p className="text-xs font-bold truncate text-slate-200">{t('inbox.viewAttachment')}</p>
                               </div>
                               <ChevronRight className="w-4 h-4 text-slate-500" />
                             </a>
@@ -760,13 +762,13 @@ export default function InboxPage() {
                   <button 
                     onClick={() => fileInputRef.current?.click()}
                     className="p-2 hover:bg-white/5 rounded-xl text-slate-500 hover:text-purple-400 transition-colors"
-                    title="Attach File"
+                    title={t('inbox.attachFile')}
                   >
                     <Paperclip className="w-5 h-5" />
                   </button>
                   <input
                     type="text"
-                    placeholder={selectedFile ? "Add a caption..." : "Type your message..."}
+                    placeholder={selectedFile ? t('inbox.addCaptionPlaceholder') : t('inbox.typeMessagePlaceholder')}
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -785,7 +787,7 @@ export default function InboxPage() {
                   </button>
                 </div>
                 <p className="mt-3 text-[10px] text-center text-slate-600 font-bold uppercase tracking-widest">
-                  End-to-end encryption active • RSBS Secure Chat
+                  {t('inbox.encryptionNotice')}
                 </p>
               </div>
             </>
@@ -803,7 +805,7 @@ export default function InboxPage() {
           <div className="relative w-full max-w-4xl max-h-[90vh] surface-panel rounded-[2.5rem] border border-slate-200 dark:border-white/10 overflow-hidden shadow-2xl flex flex-col">
             <div className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-white/5 bg-black/20">
               <div className="flex items-center gap-4">
-                <h3 className="text-xl font-black">User Profile</h3>
+                <h3 className="text-xl font-black">{t('profile.tabProfile')}</h3>
                 {(() => {
                   const target = [...allUsers, ...searchResults].find(u => u.id === selectedUserForDetail);
                   if (target?.connection_status === 'accepted') {
@@ -816,7 +818,7 @@ export default function InboxPage() {
                         className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-purple-600/20"
                       >
                         <MessageCircle className="w-4 h-4" />
-                        Send Message
+                        {t('inbox.message')}
                       </button>
                     );
                   }

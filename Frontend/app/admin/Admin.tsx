@@ -225,13 +225,13 @@ export default function AdminDashboard() {
       setScheduleForm({ title: "", amount: "", currency: scheduleForm.currency, dueDate: "" });
     } catch (error) {
       console.error("Failed to create fee schedule:", error);
-      alert("Failed to create fee schedule");
+      alert(t("admin.failedCreateFeeSchedule"));
     }
   };
 
   const exportCsv = (rows: Record<string, any>[], filename: string) => {
     if (!rows.length) {
-      alert("No data to export.");
+      alert(t("admin.noDataToExport"));
       return;
     }
     const headers = Object.keys(rows[0]);
@@ -459,7 +459,7 @@ export default function AdminDashboard() {
       await deleteSchool(id);
       setSchools((prev) => prev.filter((s) => s.id !== id));
     } catch (error) {
-      alert("Failed to delete school.");
+      alert(t("admin.failedDeleteSchool"));
     }
   };
 
@@ -478,7 +478,7 @@ export default function AdminDashboard() {
       setIsModalOpen(false);
       setEditingSchool(null);
     } catch (error) {
-      alert("Failed to save school.");
+      alert(t("admin.failedSaveSchool"));
     }
   };
 
@@ -499,44 +499,44 @@ export default function AdminDashboard() {
 
   const stats = [
     {
-      title: "Total Schools",
+      title: t("admin.statTotalSchools"),
       value: schools.length,
       icon: School,
       iconColor: "text-cyan-600",
       iconBg: "bg-cyan-100",
       accent: "from-cyan-500/20 via-sky-500/10 to-transparent",
       change: "+12%",
-      detail: "Registered institutions",
+      detail: t("admin.statRegisteredInstitutions"),
     },
     {
-      title: "Total Students",
+      title: t("admin.statTotalStudents"),
       value: totalStudents.toLocaleString(),
       icon: Users,
       iconColor: "text-emerald-600",
       iconBg: "bg-emerald-100",
       accent: "from-emerald-500/20 via-teal-500/10 to-transparent",
       change: "+8%",
-      detail: "Learners tracked platform-wide",
+      detail: t("admin.statLearnersTracked"),
     },
     {
-      title: "Public Schools",
+      title: t("admin.statPublicSchools"),
       value: publicSchools,
       icon: BarChart3,
       iconColor: "text-amber-600",
       iconBg: "bg-amber-100",
       accent: "from-amber-500/20 via-yellow-500/10 to-transparent",
       change: "+5%",
-      detail: "Public institutions in the network",
+      detail: t("admin.statPublicInstitutions"),
     },
     {
-      title: "Private Schools",
+      title: t("admin.statPrivateSchools"),
       value: privateSchools,
       icon: TrendingUp,
       iconColor: "text-violet-600",
       iconBg: "bg-violet-100",
       accent: "from-violet-500/20 via-fuchsia-500/10 to-transparent",
       change: "+15%",
-      detail: "Private institutions in the network",
+      detail: t("admin.statPrivateInstitutions"),
     },
   ]
   useEffect(() => {
@@ -587,7 +587,7 @@ export default function AdminDashboard() {
   // Gallery management handlers
   const handleCreateGallery = async () => {
     if (!selectedSchoolForGallery || !newGalleryTitle.trim()) {
-      alert("Please select a school and enter a gallery title");
+      alert(t("admin.selectSchoolAndGalleryTitle"));
       return;
     }
     try {
@@ -603,7 +603,7 @@ export default function AdminDashboard() {
       setNewGalleryDescription("");
       setSelectedGallery(gallery);
     } catch (err: any) {
-      alert("Failed to create gallery: " + (err.message || "Unknown error"));
+      alert(t("admin.failedCreateGallery").replace("{{message}}", err.message || "Unknown error"));
     }
   };
 
@@ -623,7 +623,7 @@ export default function AdminDashboard() {
 
       e.target.value = ""; // Reset input
     } catch (err: any) {
-      alert("Failed to upload image: " + (err.message || "Unknown error"));
+      alert(t("admin.failedUploadImage").replace("{{message}}", err.message || "Unknown error"));
     } finally {
       setUploading(false);
     }
@@ -636,7 +636,7 @@ export default function AdminDashboard() {
       await deleteGalleryItem(itemId);
       setGalleryItems(galleryItems.filter(item => item.id !== itemId));
     } catch (err: any) {
-      alert("Failed to delete image: " + (err.message || "Unknown error"));
+      alert(t("admin.failedDeleteImage").replace("{{message}}", err.message || "Unknown error"));
     }
   };
 
@@ -651,7 +651,7 @@ export default function AdminDashboard() {
         setGalleryItems([]);
       }
     } catch (err: any) {
-      alert("Failed to delete gallery: " + (err.message || "Unknown error"));
+      alert(t("admin.failedDeleteGallery").replace("{{message}}", err.message || "Unknown error"));
     }
   };
 
@@ -680,7 +680,7 @@ export default function AdminDashboard() {
       await deleteSurveyTemplate(id);
       await loadSurveys();
     } catch (err: any) {
-      alert(err.message || 'Failed to delete survey');
+      alert(err.message || t('errors.failedDeleteSurvey'));
     }
   };
 
@@ -818,18 +818,18 @@ export default function AdminDashboard() {
   };
 
   const tabs = [
-    { id: "overview", label: "Overview", icon: Activity },
-    { id: "schools", label: "School Management", icon: School },
-    { id: "users", label: "User Management", icon: Users },
-    { id: "grades", label: "Grades", icon: GraduationCap },
-    { id: "events", label: "Events", icon: Calendar },
-    { id: "galleries", label: "Galleries", icon: Image },
-    { id: "scholarships", label: "Scholarships", icon: Award },
-    { id: "surveys", label: "Surveys", icon: FileText },
-    { id: "announcements", label: "Announcements", icon: Megaphone },
-    { id: "ads", label: "Advertisements", icon: Radio },
-    { id: "payments", label: "Payments", icon: BarChart3 },
-    { id: "reports", label: "Reports", icon: BarChart3 },
+    { id: "overview", label: t("admin.tabOverview"), icon: Activity },
+    { id: "schools", label: t("admin.tabSchoolManagement"), icon: School },
+    { id: "users", label: t("admin.tabUserManagement"), icon: Users },
+    { id: "grades", label: t("admin.tabGrades"), icon: GraduationCap },
+    { id: "events", label: t("admin.tabEvents"), icon: Calendar },
+    { id: "galleries", label: t("admin.tabGalleries"), icon: Image },
+    { id: "scholarships", label: t("admin.tabScholarships"), icon: Award },
+    { id: "surveys", label: t("admin.tabSurveys"), icon: FileText },
+    { id: "announcements", label: t("admin.tabAnnouncements"), icon: Megaphone },
+    { id: "ads", label: t("admin.tabAdvertisements"), icon: Radio },
+    { id: "payments", label: t("admin.tabPayments"), icon: BarChart3 },
+    { id: "reports", label: t("admin.tabReports"), icon: BarChart3 },
   ];
 
   const activeTabMeta = tabs.find((tab) => tab.id === activeTab) ?? tabs[0];
@@ -846,29 +846,29 @@ export default function AdminDashboard() {
             <div className="max-w-3xl">
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-medium text-blue-100 backdrop-blur">
                 <Activity className="h-3.5 w-3.5" />
-                Admin workspace
+                {t("admin.adminWorkspace")}
               </div>
-              <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">{t("admin")}</h1>
+              <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">{t("admin.title")}</h1>
               <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-300 sm:text-sm">
-                Manage schools, monitor performance, and review activity from one polished control center.
+                {t("admin.subtitle")}
               </p>
             </div>
 
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:min-w-[390px]">
               <div className="rounded-2xl border border-white/10 bg-white/10 p-3 backdrop-blur">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Active View</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{t("admin.activeView")}</p>
                 <p className="mt-1.5 text-base font-semibold text-white">{activeTabMeta.label}</p>
-                <p className="mt-1 text-[11px] text-slate-300">Same workflow, better layout.</p>
+                <p className="mt-1 text-[11px] text-slate-300">{t("admin.sameWorkflowBetterLayout")}</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/10 p-3 backdrop-blur">
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Schools</p>
                 <p className="mt-1.5 text-xl font-semibold text-white">{schools.length}</p>
-                <p className="mt-1 text-[11px] text-slate-300">Institutions listed.</p>
+                <p className="mt-1 text-[11px] text-slate-300">{t("admin.institutionsListed")}</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/10 p-3 backdrop-blur">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Students</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{t("schools.students")}</p>
                 <p className="mt-1.5 text-xl font-semibold text-white">{totalStudents.toLocaleString()}</p>
-                <p className="mt-1 text-[11px] text-slate-300">Live total tracked.</p>
+                <p className="mt-1 text-[11px] text-slate-300">{t("admin.liveTotalTracked")}</p>
               </div>
             </div>
           </div>
@@ -886,7 +886,7 @@ export default function AdminDashboard() {
                 <div className="flex-1">
                   <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
                     <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-                    {stat.change} this month
+                    {t("admin.thisMonth").replace("{{change}}", stat.change)}
                   </div>
                   <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{stat.title}</p>
                   <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">{stat.value}</p>
@@ -949,15 +949,15 @@ export default function AdminDashboard() {
                         <Activity className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="text-base font-semibold text-slate-900 dark:text-white">Recent Activity</h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Latest admin-side changes.</p>
+                        <h3 className="text-base font-semibold text-slate-900 dark:text-white">{t("admin.recentActivity")}</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{t("admin.recentActivitySubtitle")}</p>
                       </div>
                     </div>
                     <div className="space-y-2 max-h-52 overflow-y-auto">
                       {recentActivities.length === 0 ? (
                         <div className="rounded-2xl border border-dashed border-slate-300/80 bg-white/70 py-10 text-center dark:border-white/10 dark:bg-white/5">
                           <Activity className="mx-auto mb-3 h-12 w-12 text-slate-300 dark:text-slate-600" />
-                          <p className="text-sm text-slate-500 dark:text-slate-400">No recent activities</p>
+                          <p className="text-sm text-slate-500 dark:text-slate-400">{t("admin.noRecentActivities")}</p>
                         </div>
                       ) : (
                         recentActivities.map(({ id, action, school, created_at }) => (
@@ -986,8 +986,8 @@ export default function AdminDashboard() {
                         <Plus className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="text-base font-semibold text-slate-900 dark:text-white">Quick Actions</h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Main shortcuts in a compact layout.</p>
+                        <h3 className="text-base font-semibold text-slate-900 dark:text-white">{t("admin.quickActions")}</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{t("admin.quickActionsSubtitle")}</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-1 gap-2">
@@ -1000,8 +1000,8 @@ export default function AdminDashboard() {
                           <Plus className="w-5 h-5" />
                         </div>
                         <div className="text-left">
-                          <span className="block text-sm font-semibold text-slate-900 dark:text-white">Add New School</span>
-                          <span className="text-[11px] text-slate-500 dark:text-slate-400">Register a new school in the system</span>
+                          <span className="block text-sm font-semibold text-slate-900 dark:text-white">{t("admin.addNewSchool")}</span>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400">{t("admin.addNewSchoolDesc")}</span>
                         </div>
                       </button>
                       <button
@@ -1013,8 +1013,8 @@ export default function AdminDashboard() {
                           <Users className="w-5 h-5" />
                         </div>
                         <div className="text-left">
-                          <span className="block text-sm font-semibold text-slate-900 dark:text-white">Manage Users</span>
-                          <span className="text-[11px] text-slate-500 dark:text-slate-400">View and manage system users</span>
+                          <span className="block text-sm font-semibold text-slate-900 dark:text-white">{t("admin.manageUsers")}</span>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400">{t("admin.manageUsersDesc")}</span>
                         </div>
                       </button>
                       <button
@@ -1026,10 +1026,10 @@ export default function AdminDashboard() {
                           <Radio className="w-5 h-5" />
                         </div>
                         <div className="text-left flex-1">
-                          <span className="block text-sm font-semibold text-slate-900 dark:text-white">Review ad applications</span>
+                          <span className="block text-sm font-semibold text-slate-900 dark:text-white">{t("admin.reviewAdApplications")}</span>
                           <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                            Approve or reject sponsored ads
-                            {pendingAdsCount > 0 ? ` · ${pendingAdsCount} pending` : ""}
+                            {t("admin.reviewAdApplicationsDesc")}
+                            {pendingAdsCount > 0 ? ` · ${t("admin.pendingCount").replace("{{count}}", String(pendingAdsCount))}` : ""}
                           </span>
                         </div>
                       </button>
@@ -1042,8 +1042,8 @@ export default function AdminDashboard() {
                           <BarChart3 className="w-5 h-5" />
                         </div>
                         <div className="text-left">
-                          <span className="block text-sm font-semibold text-slate-900 dark:text-white">View Reports</span>
-                          <span className="text-[11px] text-slate-500 dark:text-slate-400">Access detailed analytics and reports</span>
+                          <span className="block text-sm font-semibold text-slate-900 dark:text-white">{t("admin.viewReports")}</span>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400">{t("admin.viewReportsDesc")}</span>
                         </div>
                       </button>
                     </div>
@@ -1055,7 +1055,7 @@ export default function AdminDashboard() {
             {activeTab === "schools" && (
               <div>
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900">School Management</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">{t("admin.tabSchoolManagement")}</h3>
                   <button
                     onClick={handleAddSchool}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors w-full sm:w-auto justify-center"
@@ -1095,19 +1095,19 @@ export default function AdminDashboard() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          School Name
+                          {t("schools.schoolName")}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Location
+                          {t("schools.location")}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Type
+                          {t("schools.type")}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Students
+                          {t("schools.students")}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
+                          {t("schools.actions")}
                         </th>
                       </tr>
                     </thead>
@@ -1181,7 +1181,7 @@ export default function AdminDashboard() {
             {activeTab === "users" && (
               <div>
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900">User Management</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">{t("admin.tabUserManagement")}</h3>
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-900">
@@ -1193,7 +1193,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-                  <h4 className="text-base font-semibold text-gray-900 mb-4">Create User</h4>
+                  <h4 className="text-base font-semibold text-gray-900 mb-4">{t("admin.createUser")}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <input
                       value={userForm.firstName}
@@ -1256,7 +1256,7 @@ export default function AdminDashboard() {
                     className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
                     type="button"
                   >
-                    Create User
+                    {t("admin.createUser")}
                   </button>
                   {userCreateMessage && (
                     <p className="mt-3 text-sm text-green-700">{userCreateMessage}</p>
@@ -1266,7 +1266,7 @@ export default function AdminDashboard() {
                 {editingUser && (
                   <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-base font-semibold text-gray-900">Edit User</h4>
+                      <h4 className="text-base font-semibold text-gray-900">{t("admin.editUser")}</h4>
                       <button
                         onClick={() => setEditingUser(null)}
                         className="text-sm text-gray-500 hover:text-gray-700"
@@ -1479,7 +1479,7 @@ export default function AdminDashboard() {
 
                   {showLinkParentChild && (
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
-                      <h5 className="text-sm font-semibold text-gray-900 mb-3">Create Relationship</h5>
+                      <h5 className="text-sm font-semibold text-gray-900 mb-3">{t("admin.createRelationship")}</h5>
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                         <select
                           value={linkForm.parent_id}
@@ -1489,7 +1489,7 @@ export default function AdminDashboard() {
                           }}
                           className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
                         >
-                          <option value="">Select Parent</option>
+                          <option value="">{t("admin.selectParent")}</option>
                           {users.filter(u => u.role === 'parent').map(u => (
                             <option key={u.id} value={u.id}>
                               {u.first_name} {u.last_name} ({u.email})
@@ -1501,7 +1501,7 @@ export default function AdminDashboard() {
                           onChange={(e) => setLinkForm(prev => ({ ...prev, child_id: e.target.value }))}
                           className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
                         >
-                          <option value="">Select Child (Student)</option>
+                          <option value="">{t("admin.selectChild")}</option>
                           {users.filter(u => u.role === 'student').map(u => (
                             <option key={u.id} value={u.id}>
                               {u.first_name} {u.last_name} ({u.email})
@@ -1632,7 +1632,7 @@ export default function AdminDashboard() {
                                           setLinkMessage('Relationship removed successfully');
                                           setTimeout(() => setLinkMessage(''), 3000);
                                         } catch (err: any) {
-                                          alert('Failed to remove relationship: ' + (err.message || 'Unknown error'));
+                                          alert(t('admin.failedRemoveRelationship').replace('{{message}}', err.message || 'Unknown error'));
                                         }
                                       }
                                     }}
@@ -1666,7 +1666,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-                  <h4 className="text-base font-semibold text-gray-900 mb-4">Publish Announcement</h4>
+                  <h4 className="text-base font-semibold text-gray-900 mb-4">{t("admin.publishAnnouncement")}</h4>
                   <div className="space-y-4">
                     <input
                       value={announcementForm.title}
@@ -1710,11 +1710,11 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h4 className="text-base font-semibold text-gray-900 mb-4">Published Announcements</h4>
+                  <h4 className="text-base font-semibold text-gray-900 mb-4">{t("admin.tabAnnouncements")}</h4>
                   {announcementsLoading ? (
-                    <p className="text-sm text-gray-500">Loading announcements...</p>
+                    <p className="text-sm text-gray-500">{t("admin.loadingAnnouncements")}</p>
                   ) : announcements.length === 0 ? (
-                    <p className="text-sm text-gray-500">No announcements yet.</p>
+                    <p className="text-sm text-gray-500">{t("admin.noAnnouncementsYet")}</p>
                   ) : (
                     <div className="space-y-4">
                       {announcements.map((ann) => (
@@ -1810,7 +1810,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h4 className="text-base font-semibold text-gray-900 mb-4">Create Fee Schedule</h4>
+                  <h4 className="text-base font-semibold text-gray-900 mb-4">{t("admin.createFeeSchedule")}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <input
                       value={scheduleForm.title}
@@ -1853,9 +1853,9 @@ export default function AdminDashboard() {
                   <div className="bg-white border border-gray-200 rounded-lg p-4">
                     <h4 className="text-sm font-semibold text-gray-700 mb-3">Fee Schedules</h4>
                     {paymentsLoading ? (
-                      <p className="text-sm text-gray-500">Loading schedules...</p>
+                      <p className="text-sm text-gray-500">{t("admin.loadingSchedules")}</p>
                     ) : feeSchedules.length === 0 ? (
-                      <p className="text-sm text-gray-500">No schedules yet.</p>
+                      <p className="text-sm text-gray-500">{t("admin.noSchedulesYet")}</p>
                     ) : (
                       <div className="space-y-2">
                         {feeSchedules.slice(0, 8).map((schedule) => (
@@ -1873,9 +1873,9 @@ export default function AdminDashboard() {
                   <div className="bg-white border border-gray-200 rounded-lg p-4">
                     <h4 className="text-sm font-semibold text-gray-700 mb-3">Invoices</h4>
                     {paymentsLoading ? (
-                      <p className="text-sm text-gray-500">Loading invoices...</p>
+                      <p className="text-sm text-gray-500">{t("admin.loadingInvoices")}</p>
                     ) : feeInvoices.length === 0 ? (
-                      <p className="text-sm text-gray-500">No invoices yet.</p>
+                      <p className="text-sm text-gray-500">{t("admin.noInvoicesYet")}</p>
                     ) : (
                       <div className="space-y-2">
                         {feeInvoices.slice(0, 8).map((invoice) => (
@@ -1893,9 +1893,9 @@ export default function AdminDashboard() {
                   <div className="bg-white border border-gray-200 rounded-lg p-4">
                     <h4 className="text-sm font-semibold text-gray-700 mb-3">Transactions</h4>
                     {paymentsLoading ? (
-                      <p className="text-sm text-gray-500">Loading transactions...</p>
+                      <p className="text-sm text-gray-500">{t("admin.loadingTransactions")}</p>
                     ) : feeTransactions.length === 0 ? (
-                      <p className="text-sm text-gray-500">No transactions yet.</p>
+                      <p className="text-sm text-gray-500">{t("admin.noTransactionsYet")}</p>
                     ) : (
                       <div className="space-y-2">
                         {feeTransactions.slice(0, 8).map((tx) => (
@@ -2070,7 +2070,7 @@ export default function AdminDashboard() {
 
                 {gradesLoading ? (
                   <div className="text-center py-8">
-                    <p className="text-gray-500">Loading grades...</p>
+                    <p className="text-gray-500">{t("admin.loadingGrades")}</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -2168,7 +2168,7 @@ export default function AdminDashboard() {
                     }}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="">Select a school...</option>
+                    <option value="">{t("admin.selectSchool")}</option>
                     {schools.map((school) => (
                       <option key={school.id} value={school.id}>
                         {school.name} - {school.location}
@@ -2182,22 +2182,22 @@ export default function AdminDashboard() {
                     {/* Galleries List */}
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                       <div className="flex items-center justify-between mb-4">
-                        <h4 className="text-lg font-semibold text-gray-900">Galleries</h4>
+                        <h4 className="text-lg font-semibold text-gray-900">{t("admin.tabGalleries")}</h4>
                         <button
                           onClick={() => setShowCreateGallery(true)}
                           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
                         >
                           <Plus className="w-4 h-4" />
-                          Create Gallery
+                          {t("admin.createNewGallery")}
                         </button>
                       </div>
 
                       {galleriesLoading ? (
                         <div className="text-center py-8">
-                          <p className="text-gray-500">Loading galleries...</p>
+                          <p className="text-gray-500">{t("admin.loadingGalleries")}</p>
                         </div>
                       ) : galleries.length === 0 ? (
-                        <p className="text-gray-500 text-center py-8">No galleries yet. Create one to get started!</p>
+                        <p className="text-gray-500 text-center py-8">{t("admin.noGalleriesYet")}</p>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           {galleries.map((gallery) => (
@@ -2254,7 +2254,7 @@ export default function AdminDashboard() {
                         </div>
 
                         {galleryItems.length === 0 ? (
-                          <p className="text-gray-500 text-center py-8">No images in this gallery yet.</p>
+                          <p className="text-gray-500 text-center py-8">{t("admin.noImagesInGallery")}</p>
                         ) : (
                           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             {galleryItems.map((item) => (
@@ -2293,13 +2293,13 @@ export default function AdminDashboard() {
 
                 {scholarshipsLoading ? (
                   <div className="text-center py-8">
-                    <p className="text-gray-500">Loading scholarships...</p>
+                    <p className="text-gray-500">{t("admin.loadingScholarships")}</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {scholarships.length === 0 ? (
                       <div className="col-span-full text-center py-8 text-gray-500">
-                        No scholarships available
+                        {t("admin.noScholarshipsAvailable")}
                       </div>
                     ) : (
                       scholarships.map((scholarship) => (
@@ -2365,7 +2365,7 @@ export default function AdminDashboard() {
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                 <div className="bg-white rounded-lg max-w-md w-full">
                   <div className="bg-blue-50 border-b border-blue-200 px-6 py-4 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-gray-900">Create New Gallery</h2>
+                    <h2 className="text-xl font-bold text-gray-900">{t("admin.createNewGallery")}</h2>
                     <button
                       onClick={() => {
                         setShowCreateGallery(false);

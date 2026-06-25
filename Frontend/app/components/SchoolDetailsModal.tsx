@@ -6,6 +6,7 @@ import type { School } from '../types';
 import { fetchGalleries, fetchGallery } from '../api/galleries';
 import { getImageUrl } from '../../lib/image-utils';
 import { BACKEND_URL } from '@/lib/backend';
+import { useLanguage } from '../providers/LanguageProvider';
 
 interface SchoolDetails {
   description?: string;
@@ -29,6 +30,7 @@ interface SchoolDetailsModalProps {
 }
 
 export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolDetailsModalProps) {
+  const { t } = useLanguage();
   const [details, setDetails] = useState<SchoolDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
@@ -175,28 +177,28 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
                   <Users className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div className="text-lg font-black text-gray-900 dark:text-white">{school.students.toLocaleString()}</div>
-                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Students</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('schools.students')}</div>
               </div>
               <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-3 border border-slate-100 dark:border-slate-800 group hover:scale-[1.02] transition-transform">
                 <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-500/10 rounded-lg flex items-center justify-center mb-2">
                   <Calendar className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                 </div>
                 <div className="text-lg font-black text-gray-900 dark:text-white">{school.established}</div>
-                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Established</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('schools.established')}</div>
               </div>
               <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-3 border border-slate-100 dark:border-slate-800 group hover:scale-[1.02] transition-transform">
                 <div className="w-8 h-8 bg-pink-100 dark:bg-pink-500/10 rounded-lg flex items-center justify-center mb-2">
                   <Star className="w-4 h-4 text-pink-600 dark:text-pink-400" />
                 </div>
                 <div className="text-lg font-black text-gray-900 dark:text-white">{school.rating_count || 0}</div>
-                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Reviews</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('schools.reviews')}</div>
               </div>
               <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-3 border border-slate-100 dark:border-slate-800 group hover:scale-[1.02] transition-transform">
                 <div className="w-8 h-8 bg-violet-100 dark:bg-violet-500/10 rounded-lg flex items-center justify-center mb-2">
                   <GraduationCap className="w-4 h-4 text-violet-600 dark:text-violet-400" />
                 </div>
                 <div className="text-lg font-black text-gray-900 dark:text-white leading-tight truncate">{school.level}</div>
-                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Level</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('schools.level')}</div>
               </div>
             </div>
 
@@ -215,7 +217,7 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
                   }`}
                 >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  {t(`schools.${tab}`)}
                 </button>
               ))}
             </div>
@@ -230,15 +232,15 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
                         <div className="w-7 h-7 bg-purple-600 rounded-lg flex items-center justify-center text-white">
                           <BookOpen className="w-3.5 h-3.5" />
                         </div>
-                        <h4 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-[10px]">Academic Profile</h4>
+                        <h4 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-[10px]">{t('schools.academicProfile')}</h4>
                       </div>
                       <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed mb-2">
-                        A {school.type.toLowerCase()} institution providing {school.level.toLowerCase()} education for {school.students} students.
+                        {t('schools.academicProfileText').replace('{{type}}', school.type.toLowerCase()).replace('{{level}}', school.level.toLowerCase()).replace('{{students}}', String(school.students))}
                       </p>
                       <div className="space-y-1">
                          <div className="flex items-center gap-1.5 text-[10px] font-semibold text-purple-700 dark:text-purple-400">
                             <CheckCircle className="w-3 h-3" />
-                            <span>Rwanda Education Certified</span>
+                            <span>{t('schools.rwandaEducationCertified')}</span>
                          </div>
                       </div>
                     </div>
@@ -248,10 +250,10 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
                         <div className="w-7 h-7 bg-violet-600 rounded-lg flex items-center justify-center text-white">
                           <Building2 className="w-3.5 h-3.5" />
                         </div>
-                        <h4 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-[10px]">Key Features</h4>
+                        <h4 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-[10px]">{t('schools.keyFeatures')}</h4>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
-                        {['Verified', 'Community Rated', school.type].map(tag => (
+                        {[t('schools.verified'), t('schools.communityRated'), school.type].map(tag => (
                           <span key={tag} className="px-2 py-0.5 bg-white/50 dark:bg-slate-900/50 rounded-full text-[9px] font-bold text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-500/20">
                             {tag}
                           </span>
@@ -262,7 +264,7 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
 
                   {details?.description && (
                     <div>
-                      <h4 className="text-sm font-black text-gray-900 dark:text-white mb-2">Mission Statement</h4>
+                      <h4 className="text-sm font-black text-gray-900 dark:text-white mb-2">{t('schools.missionStatement')}</h4>
                       <div className="bg-slate-50 dark:bg-slate-800/30 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
                         <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed italic">
                           "{details.description}"
@@ -324,7 +326,7 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
                   ) : (
                     <div className="text-center py-20 bg-slate-50 dark:bg-slate-800/30 rounded-[3rem] border border-dashed border-slate-200 dark:border-slate-700">
                       <ImageIcon className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-                      <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">Visuals coming soon</p>
+                      <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">{t('schools.visualsComingSoon')}</p>
                     </div>
                   )}
                 </div>
@@ -335,7 +337,7 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
                   {loading ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-4">
                       <div className="animate-spin rounded-full h-10 w-10 border-[3px] border-blue-600 border-t-transparent"></div>
-                      <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Gathering details...</p>
+                      <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">{t('schools.gatheringDetails')}</p>
                     </div>
                   ) : details ? (
                     <div className="space-y-8">
@@ -343,7 +345,7 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
                         <div className="p-6 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/40 dark:to-slate-900/40 rounded-[2rem] border border-slate-100 dark:border-slate-800">
                           <h5 className="flex items-center gap-2 text-sm font-black text-gray-900 dark:text-white uppercase tracking-[0.1em] mb-4">
                             <FileText className="w-4 h-4 text-purple-500" />
-                            Description
+                            {t('schools.description')}
                           </h5>
                           <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed whitespace-pre-wrap">
                             {details.description}
@@ -353,11 +355,11 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {[
-                        { label: 'Facilities', icon: Building2, content: details.facilities, color: 'blue' },
-                        { label: 'Academic Programs', icon: BookOpen, content: details.programs, color: 'purple' },
-                        { label: 'Admission', icon: CheckCircle, content: details.admission_requirements, color: 'emerald' },
-                        { label: 'Investment & Fees', icon: DollarSign, content: details.fees_info, color: 'amber' },
-                        { label: 'Uniform & Dress Code', icon: Shirt, content: details.uniform_info, color: 'pink' }
+                        { label: t('schools.facilities'), icon: Building2, content: details.facilities, color: 'blue' },
+                        { label: t('schools.academicPrograms'), icon: BookOpen, content: details.programs, color: 'purple' },
+                        { label: t('schools.admission'), icon: CheckCircle, content: details.admission_requirements, color: 'emerald' },
+                        { label: t('schools.investmentFees'), icon: DollarSign, content: details.fees_info, color: 'amber' },
+                        { label: t('schools.uniformDressCode'), icon: Shirt, content: details.uniform_info, color: 'pink' }
                         ].filter(s => s.content).map(section => (
                         <div key={section.label} className="group">
                           <h5 className="flex items-center gap-2 text-sm font-black text-gray-900 dark:text-white uppercase tracking-[0.1em] mb-4">
@@ -373,7 +375,7 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
                     </div>
                   ) : (
                     <div className="text-center py-20 bg-slate-50 dark:bg-slate-800/30 rounded-[3rem] border border-slate-200 dark:border-slate-700">
-                      <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">Detailed data unavailable</p>
+                      <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">{t('schools.detailedDataUnavailable')}</p>
                     </div>
                   )}
                 </div>
@@ -383,11 +385,11 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
                 <div className="space-y-8">
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[
-                      { label: 'Principal', value: details?.principal_name, icon: User, type: 'text' },
-                      { label: 'Email Address', value: details?.contact_email, icon: Mail, type: 'email' },
-                      { label: 'Contact Number', value: details?.contact_phone, icon: Phone, type: 'tel' },
-                      { label: 'Official Website', value: details?.website, icon: Globe, type: 'url' },
-                      { label: 'Operating Hours', value: details?.working_hours, icon: Clock, type: 'text' }
+                      { label: t('schools.principal'), value: details?.principal_name, icon: User, type: 'text' },
+                      { label: t('schools.emailAddress'), value: details?.contact_email, icon: Mail, type: 'email' },
+                      { label: t('schools.contactNumber'), value: details?.contact_phone, icon: Phone, type: 'tel' },
+                      { label: t('schools.officialWebsite'), value: details?.website, icon: Globe, type: 'url' },
+                      { label: t('schools.operatingHours'), value: details?.working_hours, icon: Clock, type: 'text' }
                     ].filter(c => c.value).map(contact => (
                       <div key={contact.label} className="flex items-center gap-4 p-5 bg-slate-50 dark:bg-slate-800/50 rounded-[1.5rem] border border-slate-100 dark:border-slate-800">
                         <div className="w-12 h-12 bg-white dark:bg-slate-900 rounded-2xl flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-sm">
@@ -413,7 +415,7 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
                     <div className="p-6 bg-gradient-to-br from-slate-900 to-slate-800 dark:from-slate-800 dark:to-slate-950 rounded-[2rem] text-white">
                        <h5 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest mb-4">
                         <MapPin className="w-4 h-4 text-rose-500" />
-                        Physical Location
+                        {t('schools.physicalLocation')}
                       </h5>
                       <p className="text-slate-300 font-medium leading-relaxed">{details.address}</p>
                     </div>
@@ -432,7 +434,7 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
                 onClick={onApply}
                 className="flex-1 group relative flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-xl shadow-purple-600/20 transition-all hover:scale-[1.01] active:scale-[0.99]"
               >
-                Apply to {school.name.split(' ')[0]}
+                {t('schools.applyTo').replace('{{name}}', school.name.split(' ')[0])}
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
             )}
@@ -440,7 +442,7 @@ export default function SchoolDetailsModal({ school, onClose, onApply }: SchoolD
               onClick={onClose}
               className="px-6 py-3 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-sm transition-all hover:bg-slate-100 dark:hover:bg-slate-800"
             >
-              Return Home
+              {t('schools.returnHome')}
             </button>
           </div>
         </div>

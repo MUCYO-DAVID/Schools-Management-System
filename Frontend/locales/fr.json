@@ -380,7 +380,25 @@
     "verified": "Vérifié",
     "communityRated": "Évalué par la communauté",
     "missionStatement": "Déclaration de mission",
-    "applyNow": "Postuler maintenant"
+    "applyNow": "Postuler maintenant",
+    "contact": "Contact",
+    "visualsComingSoon": "Visuels bientôt disponibles",
+    "gatheringDetails": "Collecte des détails...",
+    "description": "Description",
+    "facilities": "Installations",
+    "academicPrograms": "Programmes académiques",
+    "admission": "Admission",
+    "investmentFees": "Frais de scolarité",
+    "uniformDressCode": "Uniforme et code vestimentaire",
+    "detailedDataUnavailable": "Données détaillées non disponibles",
+    "principal": "Directeur",
+    "emailAddress": "Adresse e-mail",
+    "contactNumber": "Numéro de contact",
+    "officialWebsite": "Site officiel",
+    "operatingHours": "Heures d'ouverture",
+    "physicalLocation": "Emplacement physique",
+    "applyTo": "Postuler à {{name}}",
+    "returnHome": "Retour à l'accueil"
   },
 
   "admin": {
@@ -450,7 +468,17 @@
     "failedUploadImage": "Échec du téléchargement de l'image : {{message}}",
     "failedDeleteImage": "Échec de la suppression de l'image : {{message}}",
     "failedDeleteGallery": "Échec de la suppression de la galerie : {{message}}",
-    "failedRemoveRelationship": "Échec de la suppression de la relation : {{message}}"
+    "failedRemoveRelationship": "Échec de la suppression de la relation : {{message}}",
+    "noScholarshipsAvailable": "Aucune bourse disponible",
+    "statTotalSchools": "Total des écoles",
+    "statRegisteredInstitutions": "Institutions enregistrées",
+    "statTotalStudents": "Total des étudiants",
+    "statLearnersTracked": "Apprenants suivis sur la plateforme",
+    "statPublicSchools": "Écoles publiques",
+    "statPublicInstitutions": "Institutions publiques dans le réseau",
+    "statPrivateSchools": "Écoles privées",
+    "statPrivateInstitutions": "Institutions privées dans le réseau",
+    "adminWorkspace": "Espace de travail administrateur"
   },
 
   "student": {
@@ -664,7 +692,9 @@
     "failedDeleteImage": "Échec de la suppression de l'image : {{message}}",
     "applicationApprovedSuccess": "Candidature approuvée avec succès ! L'étudiant a été notifié par email.",
     "applicationRejectedSuccess": "Candidature rejetée. L'étudiant a été notifié par email.",
-    "failedDeleteSurvey": "Échec de la suppression du sondage"
+    "failedDeleteSurvey": "Échec de la suppression du sondage",
+    "accessDeniedDesc": "Cette page est uniquement accessible aux directeurs d'école.",
+    "goToStudentPortal": "Aller au Portail Étudiant"
   },
 
   "survey": {
@@ -712,7 +742,20 @@
     "pleaseSignInToReply": "Veuillez vous connecter pour répondre",
     "failedPostReply": "Échec de la publication de la réponse. Veuillez réessayer.",
     "pleaseSignInToShare": "Veuillez vous connecter pour partager votre avis.",
-    "failedPost": "Échec de la publication. Veuillez réessayer."
+    "failedPost": "Échec de la publication. Veuillez réessayer.",
+    "panelSubtitle": "Partagez votre expérience scolaire. Les plus aimés apparaissent en premier.",
+    "whichSchool": "Quelle école ? (optionnel)",
+    "yourRating": "Votre note",
+    "wouldYouRecommend": "Recommanderiez-vous ?",
+    "yesRecommend": "Oui, je recommande",
+    "notRecommend": "Je ne recommande pas",
+    "posting": "Publication...",
+    "share": "Partager",
+    "recommends": "Recommande",
+    "notRecommended": "Non recommandé",
+    "communityMember": "Membre de la communauté",
+    "viewAllCommunityFeedback": "Voir tous les avis de la communauté",
+    "noCommentsBe": "Aucun commentaire pour l'instant. Soyez le premier à partager !"
   },
 
   "profile": {

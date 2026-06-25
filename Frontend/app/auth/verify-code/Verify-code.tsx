@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../providers/AuthProvider';
+import { useLanguage } from '../../providers/LanguageProvider';
 import Link from 'next/link';
 import { Shield, AlertCircle } from 'lucide-react';
 import AuthBackground from '../../components/AuthBackground';
@@ -10,6 +11,7 @@ import { BACKEND_URL } from '@/lib/backend';
 
 export default function VerifyCodePage() {
   const backendUrl = BACKEND_URL;
+  const { t } = useLanguage();
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [emailForVerification, setEmailForVerification] = useState<string | null>(null);
@@ -45,7 +47,7 @@ export default function VerifyCodePage() {
 
     try {
       if (!emailForVerification) {
-        setError('Email not found for verification. Please sign in again.');
+        setError(t("auth.verifyCode.emailNotFound"));
         return;
       }
       let requestBody: any = { email: emailForVerification };
@@ -53,7 +55,7 @@ export default function VerifyCodePage() {
       if (requiresLeaderQuestions) {
         // For leaders, send answers to verification questions
         if (!leaderAnswer1.trim() || !leaderAnswer2.trim()) {
-          setError('Please answer both verification questions.');
+          setError(t("auth.verifyCode.answerBothQuestions"));
           return;
         }
         requestBody.leaderAnswers = {
@@ -63,7 +65,7 @@ export default function VerifyCodePage() {
       } else {
         // For regular users, send verification code
         if (!code.trim()) {
-          setError('Please enter the verification code.');
+          setError(t("auth.verifyCode.enterCode"));
           return;
         }
         requestBody.code = code;
@@ -79,7 +81,7 @@ export default function VerifyCodePage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Verification failed');
+        throw new Error(errorData.message || t("auth.verifyCode.verificationFailed"));
       }
 
       const { token, user } = await response.json();
@@ -111,7 +113,7 @@ export default function VerifyCodePage() {
         router.push('/home');
       }
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred during verification');
+      setError(err.message || t("auth.verifyCode.unexpectedError"));
     } finally {
       setIsVerifying(false);
     }
@@ -126,12 +128,12 @@ export default function VerifyCodePage() {
 
     try {
       if (!emailForVerification) {
-        setError('Email not found to resend code.');
+        setError(t("auth.verifyCode.emailNotFoundResend"));
         return;
       }
 
       if (requiresLeaderQuestions) {
-        setError('Please answer the verification questions above.');
+        setError(t("auth.verifyCode.answerQuestionsAbove"));
         return;
       }
 
@@ -150,18 +152,18 @@ export default function VerifyCodePage() {
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to resend code');
+        throw new Error(data.message || t("auth.verifyCode.failedResend"));
       }
 
       setResendSuccess(
         data.message ||
-          'New code queued! Check your inbox within a minute (and spam folder).'
+          t("auth.verifyCode.codeQueued")
       );
     } catch (err: any) {
       if (err?.name === 'AbortError') {
-        setError('Request timed out. The server may be waking up — try again in a few seconds.');
+        setError(t("auth.verifyCode.requestTimedOut"));
       } else {
-        setError(err.message || 'An unexpected error occurred while resending code');
+        setError(err.message || t("auth.verifyCode.unexpectedErrorResend"));
       }
     } finally {
       setIsResending(false);
@@ -186,17 +188,17 @@ export default function VerifyCodePage() {
           <div className="mb-7">
             {requiresLeaderQuestions ? (
               <>
-                <h2 className="text-white text-3xl font-bold mb-3">Leader Verification</h2>
+                <h2 className="text-white text-3xl font-bold mb-3">{t("auth.verifyCode.leaderVerificationTitle")}</h2>
                 <p className="text-[#b3b3b3] text-sm">
-                  Please answer the following questions to verify your leadership role.
+                  {t("auth.verifyCode.leaderVerificationSubtitle")}
                 </p>
               </>
             ) : (
               <>
-                <h2 className="text-white text-2xl font-bold mb-2">Verify Email</h2>
+                <h2 className="text-white text-2xl font-bold mb-2">{t("auth.verifyCode.verifyEmailTitle")}</h2>
                 <p className="text-[#b3b3b3] text-sm">
-                  A verification code was sent to <span className="text-purple-400 font-medium">{emailForVerification}</span>.
-                  Check your spam or promotions folder if you do not see it within a minute.
+                  {t("auth.verifyCode.codeSentTo")}{' '}<span className="text-purple-400 font-medium">{emailForVerification}</span>.
+                  {' '}{t("auth.verifyCode.checkSpam")}
                 </p>
               </>
             )}
@@ -232,7 +234,7 @@ export default function VerifyCodePage() {
                     htmlFor="answer1"
                     className="absolute left-5 top-4 text-[#8c8c8c] text-sm transition-all peer-focus:text-[11px] peer-focus:top-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#8c8c8c] peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:top-2 pointer-events-none"
                   >
-                    Primary responsibility
+                    {t("auth.verifyCode.primaryResponsibilityLabel")}
                   </label>
                 </div>
                 <div className="relative">
@@ -249,7 +251,7 @@ export default function VerifyCodePage() {
                     htmlFor="answer2"
                     className="absolute left-5 top-4 text-[#8c8c8c] text-sm transition-all peer-focus:text-[11px] peer-focus:top-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#8c8c8c] peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:top-2 pointer-events-none"
                   >
-                    Authorized to manage info? (Yes/No)
+                    {t("auth.verifyCode.authorizedManageLabel")}
                   </label>
                 </div>
               </>
@@ -268,7 +270,7 @@ export default function VerifyCodePage() {
                   htmlFor="code"
                   className="absolute left-5 top-4 text-[#8c8c8c] text-sm transition-all peer-focus:text-[11px] peer-focus:top-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#8c8c8c] peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:top-2 pointer-events-none"
                 >
-                  Verification Code
+                  {t("auth.verifyCode.verificationCodeLabel")}
                 </label>
               </div>
             )}
@@ -284,9 +286,9 @@ export default function VerifyCodePage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Verifying...
+                  {t("auth.verifyCode.verifying")}
                 </>
-              ) : (requiresLeaderQuestions ? 'Verify Leadership' : 'Verify Code')}
+              ) : (requiresLeaderQuestions ? t("auth.verifyCode.verifyLeadership") : t("auth.verifyCode.verifyCode"))}
             </button>
 
             {!requiresLeaderQuestions && (
@@ -303,9 +305,9 @@ export default function VerifyCodePage() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Resending...
+                      {t("auth.verifyCode.resending")}
                     </>
-                  ) : 'Resend Code'}
+                  ) : t("auth.verifyCode.resendCode")}
                 </button>
               </div>
             )}

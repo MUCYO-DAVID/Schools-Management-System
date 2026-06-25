@@ -77,7 +77,7 @@ export default function LeaderDashboard() {
           setApplications(data)
         } catch (err: any) {
           console.error('Error fetching leader applications:', err);
-          setError(err.message || 'Failed to fetch applications')
+          setError(err.message || t('leader.failedFetchApplications'))
         } finally {
           setLoading(false)
         }
@@ -173,7 +173,7 @@ export default function LeaderDashboard() {
       await deleteSurveyTemplate(id);
       await loadSurveys();
     } catch (err: any) {
-      alert(err.message || 'Failed to delete survey');
+      alert(err.message || t('leader.failedDeleteSurvey'));
     }
   };
 
@@ -239,7 +239,7 @@ export default function LeaderDashboard() {
   // Gallery management handlers
   const handleCreateGallery = async () => {
     if (!selectedSchoolId || !newGalleryTitle.trim()) {
-      alert('Please select a school and enter a gallery title');
+      alert(t('leader.selectSchoolAndGalleryTitle'));
       return;
     }
     try {
@@ -255,7 +255,7 @@ export default function LeaderDashboard() {
       setNewGalleryDescription("");
       setSelectedGallery(gallery);
     } catch (err: any) {
-      alert('Failed to create gallery: ' + (err.message || 'Unknown error'));
+      alert(t('leader.failedCreateGallery').replace('{{message}}', err.message || 'Unknown error'));
     }
   };
 
@@ -275,7 +275,7 @@ export default function LeaderDashboard() {
       
       e.target.value = ''; // Reset input
     } catch (err: any) {
-      alert('Failed to upload image: ' + (err.message || 'Unknown error'));
+      alert(t('leader.failedUploadImage').replace('{{message}}', err.message || 'Unknown error'));
     } finally {
       setUploading(false);
     }
@@ -288,7 +288,7 @@ export default function LeaderDashboard() {
       await deleteGalleryItem(itemId);
       setGalleryItems(galleryItems.filter(item => item.id !== itemId));
     } catch (err: any) {
-      alert('Failed to delete image: ' + (err.message || 'Unknown error'));
+      alert(t('leader.failedDeleteImage').replace('{{message}}', err.message || 'Unknown error'));
     }
   };
 
@@ -301,12 +301,12 @@ export default function LeaderDashboard() {
       setActionLoading(application.id)
       setActionError(null)
       await approveApplication(application.id)
-      
+
       // Refresh applications
       const updatedApps = await getLeaderApplications()
       setApplications(updatedApps)
-      
-      alert('Application approved successfully! Student has been notified via email.')
+
+      alert(t('leader.applicationApprovedSuccess'))
     } catch (err: any) {
       setActionError(err.message || 'Failed to approve application')
     } finally {
@@ -339,7 +339,7 @@ export default function LeaderDashboard() {
       
       setShowRejectModal(null)
       setRejectionReason("")
-      alert('Application rejected. Student has been notified via email.')
+      alert(t('leader.applicationRejectedSuccess'))
     } catch (err: any) {
       setActionError(err.message || 'Failed to reject application')
     } finally {
@@ -373,26 +373,26 @@ export default function LeaderDashboard() {
         <Navigation />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-900">
-            <p className="font-semibold mb-1">Leader usage</p>
-            <p>Use the Staff Portal for announcements, documents, and fee schedules.</p>
+            <p className="font-semibold mb-1">{t('leader.leaderUsageTitle')}</p>
+            <p>{t('leader.leaderUsageDesc')}</p>
             <button
               onClick={() => router.push('/teacher')}
               className="mt-2 inline-flex items-center px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs"
             >
-              Open Staff Portal
+              {t('leader.goToStaffPortal')}
             </button>
           </div>
           <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
             <AlertCircle className="w-16 h-16 mx-auto text-red-600 mb-4" />
-            <h2 className="text-2xl font-bold text-red-900 mb-2">Access Denied</h2>
+            <h2 className="text-2xl font-bold text-red-900 mb-2">{t('leader.accessDenied')}</h2>
             <p className="text-red-700 mb-4">
-              This page is only accessible to school leaders.
+              {t('leader.accessDeniedDesc')}
             </p>
             <button
               onClick={() => router.push('/student')}
               className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Go to Student Portal
+              {t('leader.goToStudentPortal')}
             </button>
           </div>
         </div>
@@ -407,7 +407,7 @@ export default function LeaderDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading applications...</p>
+            <p className="mt-4 text-gray-600">{t('leader.loadingApplications')}</p>
           </div>
         </div>
       </div>
@@ -423,9 +423,9 @@ export default function LeaderDashboard() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
             <School className="w-8 h-8 text-blue-600" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">School Leader Dashboard</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('leader.dashboardTitle')}</h1>
           </div>
-          <p className="text-gray-600">View and manage applications to your schools</p>
+          <p className="text-gray-600">{t('leader.dashboardSubtitle')}</p>
         </div>
 
         {/* Tabs */}
@@ -440,7 +440,7 @@ export default function LeaderDashboard() {
               }`}
             >
               <FileText className="w-5 h-5 inline mr-2" />
-              Applications
+              {t('leader.tabApplications')}
             </button>
             <button
               onClick={() => setActiveTab('gallery')}
@@ -451,7 +451,7 @@ export default function LeaderDashboard() {
               }`}
             >
               <ImageIcon className="w-5 h-5 inline mr-2" />
-              Gallery Management
+              {t('leader.tabGalleryManagement')}
             </button>
             <button
               onClick={() => setActiveTab('surveys')}
@@ -462,7 +462,7 @@ export default function LeaderDashboard() {
               }`}
             >
               <FileText className="w-5 h-5 inline mr-2" />
-              Surveys
+              {t('leader.tabSurveys')}
             </button>
           </nav>
         </div>
@@ -475,7 +475,7 @@ export default function LeaderDashboard() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Total Applications</p>
+                <p className="text-sm text-gray-600 mb-1">{t('leader.totalApplications')}</p>
                 <p className="text-2xl font-bold text-gray-900">{applications.length}</p>
               </div>
               <FileText className="w-8 h-8 text-blue-600" />
@@ -484,7 +484,7 @@ export default function LeaderDashboard() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Pending</p>
+                <p className="text-sm text-gray-600 mb-1">{t('leader.pending')}</p>
                 <p className="text-2xl font-bold text-yellow-600">
                   {applications.filter(a => a.status === 'pending').length}
                 </p>
@@ -495,7 +495,7 @@ export default function LeaderDashboard() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Approved</p>
+                <p className="text-sm text-gray-600 mb-1">{t('leader.approved')}</p>
                 <p className="text-2xl font-bold text-green-600">
                   {applications.filter(a => a.status === 'approved').length}
                 </p>
@@ -506,7 +506,7 @@ export default function LeaderDashboard() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Rejected</p>
+                <p className="text-sm text-gray-600 mb-1">{t('leader.rejected')}</p>
                 <p className="text-2xl font-bold text-red-600">
                   {applications.filter(a => a.status === 'rejected').length}
                 </p>
@@ -522,7 +522,7 @@ export default function LeaderDashboard() {
             <div className="flex-1">
               <input
                 type="text"
-                placeholder="Search by name, email, or school..."
+                placeholder={t('leader.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -533,11 +533,11 @@ export default function LeaderDashboard() {
               onChange={(e) => setFilterStatus(e.target.value as any)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-              <option value="withdrawn">Withdrawn</option>
+              <option value="all">{t('leader.allStatus')}</option>
+              <option value="pending">{t('leader.statusPending')}</option>
+              <option value="approved">{t('leader.statusApproved')}</option>
+              <option value="rejected">{t('leader.statusRejected')}</option>
+              <option value="withdrawn">{t('leader.statusWithdrawn')}</option>
             </select>
           </div>
         </div>
@@ -556,7 +556,7 @@ export default function LeaderDashboard() {
         {Object.keys(applicationsBySchool).length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
             <FileText className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No applications found</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('leader.noApplicationsFound')}</h3>
             <p className="text-gray-600">
               {searchTerm || filterStatus !== 'all' 
                 ? 'Try adjusting your filters' 
@@ -736,7 +736,7 @@ export default function LeaderDashboard() {
                   </div>
 
                   {galleries.length === 0 ? (
-                    <p className="text-gray-500 text-center py-8">No galleries yet. Create one to get started!</p>
+                    <p className="text-gray-500 text-center py-8">{t('leader.noGalleriesYet')}</p>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {galleries.map((gallery) => (
@@ -783,7 +783,7 @@ export default function LeaderDashboard() {
                     </div>
 
                     {galleryItems.length === 0 ? (
-                      <p className="text-gray-500 text-center py-8">No images in this gallery yet.</p>
+                      <p className="text-gray-500 text-center py-8">{t('leader.noImagesInGallery')}</p>
                     ) : (
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {galleryItems.map((item) => (
@@ -812,7 +812,7 @@ export default function LeaderDashboard() {
             ) : (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
                 <School className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Schools Found</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">{t('leader.noSchoolsFound')}</h3>
                 <p className="text-gray-600">You need to create a school first before managing galleries.</p>
               </div>
             )}
@@ -1018,7 +1018,7 @@ export default function LeaderDashboard() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full">
             <div className="bg-blue-50 border-b border-blue-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Create New Gallery</h2>
+              <h2 className="text-xl font-bold text-gray-900">{t('leader.createNewGallery')}</h2>
               <button
                 onClick={() => {
                   setShowCreateGallery(false);

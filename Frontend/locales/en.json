@@ -380,7 +380,25 @@
     "verified": "Verified",
     "communityRated": "Community Rated",
     "missionStatement": "Mission Statement",
-    "applyNow": "Apply Now"
+    "applyNow": "Apply Now",
+    "contact": "Contact",
+    "visualsComingSoon": "Visuals coming soon",
+    "gatheringDetails": "Gathering details...",
+    "description": "Description",
+    "facilities": "Facilities",
+    "academicPrograms": "Academic Programs",
+    "admission": "Admission",
+    "investmentFees": "Investment & Fees",
+    "uniformDressCode": "Uniform & Dress Code",
+    "detailedDataUnavailable": "Detailed data unavailable",
+    "principal": "Principal",
+    "emailAddress": "Email Address",
+    "contactNumber": "Contact Number",
+    "officialWebsite": "Official Website",
+    "operatingHours": "Operating Hours",
+    "physicalLocation": "Physical Location",
+    "applyTo": "Apply to {{name}}",
+    "returnHome": "Return Home"
   },
 
   "admin": {
@@ -450,7 +468,17 @@
     "failedUploadImage": "Failed to upload image: {{message}}",
     "failedDeleteImage": "Failed to delete image: {{message}}",
     "failedDeleteGallery": "Failed to delete gallery: {{message}}",
-    "failedRemoveRelationship": "Failed to remove relationship: {{message}}"
+    "failedRemoveRelationship": "Failed to remove relationship: {{message}}",
+    "noScholarshipsAvailable": "No scholarships available",
+    "statTotalSchools": "Total Schools",
+    "statRegisteredInstitutions": "Registered institutions",
+    "statTotalStudents": "Total Students",
+    "statLearnersTracked": "Learners tracked platform-wide",
+    "statPublicSchools": "Public Schools",
+    "statPublicInstitutions": "Public institutions in the network",
+    "statPrivateSchools": "Private Schools",
+    "statPrivateInstitutions": "Private institutions in the network",
+    "adminWorkspace": "Admin workspace"
   },
 
   "student": {
@@ -664,7 +692,9 @@
     "failedDeleteImage": "Failed to delete image: {{message}}",
     "applicationApprovedSuccess": "Application approved successfully! Student has been notified via email.",
     "applicationRejectedSuccess": "Application rejected. Student has been notified via email.",
-    "failedDeleteSurvey": "Failed to delete survey"
+    "failedDeleteSurvey": "Failed to delete survey",
+    "accessDeniedDesc": "This page is only accessible to school leaders.",
+    "goToStudentPortal": "Go to Student Portal"
   },
 
   "survey": {
@@ -712,7 +742,20 @@
     "pleaseSignInToReply": "Please sign in to reply",
     "failedPostReply": "Failed to post reply. Please try again.",
     "pleaseSignInToShare": "Please sign in to share your feedback.",
-    "failedPost": "Failed to post. Please try again."
+    "failedPost": "Failed to post. Please try again.",
+    "panelSubtitle": "Share your school experience. Most liked shown first.",
+    "whichSchool": "Which school? (optional)",
+    "yourRating": "Your rating",
+    "wouldYouRecommend": "Would you recommend?",
+    "yesRecommend": "Yes, recommend",
+    "notRecommend": "Not recommend",
+    "posting": "Posting...",
+    "share": "Share",
+    "recommends": "Recommends",
+    "notRecommended": "Not recommended",
+    "communityMember": "Community Member",
+    "viewAllCommunityFeedback": "View all community feedback",
+    "noCommentsBe": "No comments yet. Be the first to share!"
   },
 
   "profile": {

@@ -4,21 +4,23 @@ import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Navigation from "../components/Navigation"
 import { BACKEND_URL } from "@/lib/backend"
+import { useLanguage } from "../providers/LanguageProvider"
 
 import { Star, Shield, Building2, BookText, MousePointer2, ArrowRight, MessageSquare, CheckCircle2, X, Sparkles } from "lucide-react"
 
 export default function SurveyPage() {
+  const { t } = useLanguage()
   const router = useRouter()
   const searchParams = useSearchParams()
   const schoolId = typeof window !== 'undefined' ? searchParams?.get("schoolId") || "" : "";
-  
+
   // States for multiple rating categories
   const [overallRating, setOverallRating] = useState(0)
   const [teachingQuality, setTeachingQuality] = useState(0)
   const [facilitiesQuality, setFacilitiesQuality] = useState(0)
   const [safetyQuality, setSafetyQuality] = useState(0)
   const [easeOfUse, setEaseOfUse] = useState(0)
-  
+
   const [wouldRecommend, setWouldRecommend] = useState<"yes" | "no" | "">("")
   const [comments, setComments] = useState("")
   const [submitting, setSubmitting] = useState(false)
@@ -28,10 +30,10 @@ export default function SurveyPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!overallRating || !teachingQuality || !facilitiesQuality || !safetyQuality || !easeOfUse || !wouldRecommend) {
-      setError("Please complete all ratings and recommendation.")
+      setError(t("survey.completeAllRatings"))
       return
     }
-    
+
     setError("")
     setSubmitting(true)
 
@@ -50,7 +52,7 @@ export default function SurveyPage() {
           ease_of_use: easeOfUse
         }),
       })
-      
+
       if (response.ok) {
         setSuccess(true)
         setTimeout(() => router.push("/home"), 2000)
@@ -58,7 +60,7 @@ export default function SurveyPage() {
         throw new Error("Submission failed")
       }
     } catch (err: any) {
-      setError(err.message || "Failed to submit survey")
+      setError(err.message || t("survey.failedSubmitSurvey"))
     } finally {
       setSubmitting(false)
     }
@@ -92,8 +94,8 @@ export default function SurveyPage() {
       <div className="page-shell flex items-center justify-center p-6 text-center">
         <div className="animate-in fade-in zoom-in duration-500">
           <CheckCircle2 className="w-20 h-20 text-emerald-500 mx-auto mb-6" />
-          <h1 className="text-3xl font-bold mb-2 text-slate-900 dark:text-white">Thank you!</h1>
-          <p className="text-slate-600 dark:text-slate-400">Your feedback has been recorded. Redirecting you home...</p>
+          <h1 className="text-3xl font-bold mb-2 text-slate-900 dark:text-white">{t("survey.thankYou")}</h1>
+          <p className="text-slate-600 dark:text-slate-400">{t("survey.feedbackRecorded")}</p>
         </div>
       </div>
     )
@@ -107,18 +109,18 @@ export default function SurveyPage() {
       <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none" />
 
       <Navigation />
-      
+
       <div className="relative z-10 max-w-2xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-16">
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-600/10 border border-purple-500/20 text-purple-400 text-xs font-semibold uppercase tracking-widest mb-4">
             <MessageSquare className="w-3.5 h-3.5" />
-            School Experience Survey
+            {t("survey.schoolExperienceSurvey")}
           </div>
           <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white mb-4 tracking-tight">
-            How was your <span className="text-purple-600 dark:text-purple-500">experience?</span>
+            {t("survey.howWasExperience")}
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-lg">
-            Help the Rwanda education community by sharing your honest feedback. It takes less than a minute.
+            {t("survey.surveyIntro")}
           </p>
         </div>
 
@@ -133,42 +135,42 @@ export default function SurveyPage() {
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12">
               <div className="md:col-span-2">
-                <RatingStars 
-                  label="Overall Satisfaction" 
-                  icon={Sparkles} 
-                  value={overallRating} 
-                  onChange={setOverallRating} 
+                <RatingStars
+                  label={t("survey.overallSatisfaction")}
+                  icon={Sparkles}
+                  value={overallRating}
+                  onChange={setOverallRating}
                 />
               </div>
-              <RatingStars 
-                label="Teaching Quality" 
-                icon={BookText} 
-                value={teachingQuality} 
-                onChange={setTeachingQuality} 
+              <RatingStars
+                label={t("survey.teachingQuality")}
+                icon={BookText}
+                value={teachingQuality}
+                onChange={setTeachingQuality}
               />
-              <RatingStars 
-                label="Facilities & Environment" 
-                icon={Building2} 
-                value={facilitiesQuality} 
-                onChange={setFacilitiesQuality} 
+              <RatingStars
+                label={t("survey.facilitiesEnvironment")}
+                icon={Building2}
+                value={facilitiesQuality}
+                onChange={setFacilitiesQuality}
               />
-              <RatingStars 
-                label="Safety & Student Support" 
-                icon={Shield} 
-                value={safetyQuality} 
-                onChange={setSafetyQuality} 
+              <RatingStars
+                label={t("survey.safetyStudentSupport")}
+                icon={Shield}
+                value={safetyQuality}
+                onChange={setSafetyQuality}
               />
-              <RatingStars 
-                label="Ease of Using the Platform" 
-                icon={MousePointer2} 
-                value={easeOfUse} 
-                onChange={setEaseOfUse} 
+              <RatingStars
+                label={t("survey.easeOfUsingPlatform")}
+                icon={MousePointer2}
+                value={easeOfUse}
+                onChange={setEaseOfUse}
               />
             </div>
 
             <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
               <label className="block text-sm font-medium text-slate-800 dark:text-slate-200 mb-4">
-                Would you recommend this school to others?
+                {t("survey.wouldRecommend")}
               </label>
               <div className="flex gap-4">
                 <button
@@ -181,7 +183,7 @@ export default function SurveyPage() {
                   }`}
                 >
                   <CheckCircle2 className={`w-5 h-5 transition-transform group-hover:scale-110 ${wouldRecommend === "yes" ? "animate-in zoom-in" : ""}`} />
-                  <span className="font-bold">Highly Recommend</span>
+                  <span className="font-bold">{t("survey.highlyRecommend")}</span>
                 </button>
                 <button
                   type="button"
@@ -193,21 +195,21 @@ export default function SurveyPage() {
                   }`}
                 >
                   <X className={`w-5 h-5 transition-transform group-hover:scale-110 ${wouldRecommend === "no" ? "animate-in zoom-in" : ""}`} />
-                  <span className="font-bold">Not Recommended</span>
+                  <span className="font-bold">{t("survey.notRecommended")}</span>
                 </button>
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-800 dark:text-slate-200 mb-4">
-                Tell us more (Optional)
+                {t("survey.tellUsMoreOptional")}
               </label>
               <textarea
                 value={comments}
                 onChange={(e) => setComments(e.target.value)}
                 rows={4}
                 className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700 rounded-2xl p-4 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all placeholder:text-slate-500"
-                placeholder="What was the best part? Any areas for improvement?"
+                placeholder={t("survey.commentsPlaceholder")}
               />
             </div>
 
@@ -219,11 +221,11 @@ export default function SurveyPage() {
               {submitting ? (
                 <div className="flex items-center gap-3">
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Submitting...</span>
+                  <span>{t("survey.submitting")}</span>
                 </div>
               ) : (
                 <>
-                  Submit My Review
+                  {t("survey.submitMyReview")}
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
@@ -234,5 +236,3 @@ export default function SurveyPage() {
     </div>
   )
 }
-
-

@@ -4,12 +4,14 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../providers/AuthProvider';
+import { useLanguage } from '../../providers/LanguageProvider';
 import AuthShell from '../components/AuthShell';
 import type { School } from '@/app/types';
 import { fetchSchools } from '@/api/school';
 import { BACKEND_URL as backendUrl } from '@/lib/backend';
 
 const SignUpPage = () => {
+  const { t } = useLanguage();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -48,19 +50,19 @@ const SignUpPage = () => {
     setIsLoading(true);
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t("auth.signup.passwordsDoNotMatch"));
       setIsLoading(false);
       return;
     }
 
     if (!agreeToTerms) {
-      setError('You must agree to the terms and conditions');
+      setError(t("auth.signup.mustAgreeTerms"));
       setIsLoading(false);
       return;
     }
 
     if ((role === 'student' || role === 'teacher') && !selectedSchoolId) {
-      setError('Please select your school');
+      setError(t("auth.signup.selectSchoolRequired"));
       setIsLoading(false);
       return;
     }
@@ -92,7 +94,7 @@ const SignUpPage = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Registration failed');
+        throw new Error(errorData.message || t("auth.signup.registrationFailed"));
       }
 
       const data = await response.json();
@@ -115,7 +117,7 @@ const SignUpPage = () => {
         router.push('/auth/signin');
       }
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred');
+      setError(err.message || t("auth.signup.registrationFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -123,24 +125,24 @@ const SignUpPage = () => {
 
   return (
     <AuthShell
-      title="Create your account"
+      title={t("auth.signup.title")}
       subtitle={
         <>
-          Already have an account?{" "}
+          {t("auth.signup.subtitleHaveAccount")}{" "}
           <Link href="/auth/signin" className="font-semibold text-white hover:underline underline-offset-4">
-            Sign in
+            {t("auth.signup.signInLink")}
           </Link>
         </>
       }
       footer={
         <span className="text-white/60">
-          By continuing, you agree to our{" "}
+          {t("auth.signup.footerTerms")}{" "}
           <Link href="#" className="text-white hover:underline underline-offset-4">
-            Terms
+            {t("auth.signup.terms")}
           </Link>{" "}
           and{" "}
           <Link href="#" className="text-white hover:underline underline-offset-4">
-            Privacy Policy
+            {t("auth.signup.privacyPolicy")}
           </Link>
           .
         </span>
@@ -156,7 +158,7 @@ const SignUpPage = () => {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <label htmlFor="firstName" className="text-sm font-medium text-white/80">
-              First name
+              {t("auth.signup.firstNameLabel")}
             </label>
             <input
               id="firstName"
@@ -169,7 +171,7 @@ const SignUpPage = () => {
           </div>
           <div className="space-y-2">
             <label htmlFor="lastName" className="text-sm font-medium text-white/80">
-              Last name
+              {t("auth.signup.lastNameLabel")}
             </label>
             <input
               id="lastName"
@@ -184,7 +186,7 @@ const SignUpPage = () => {
 
         <div className="space-y-2">
           <label htmlFor="email" className="text-sm font-medium text-white/80">
-            Email
+            {t("auth.signup.emailLabel")}
           </label>
           <input
             id="email"
@@ -198,7 +200,7 @@ const SignUpPage = () => {
 
         <div className="space-y-2">
           <label htmlFor="role" className="text-sm font-medium text-white/80">
-            Registering as
+            {t("auth.signup.registeringAsLabel")}
           </label>
           <select
             id="role"
@@ -208,18 +210,18 @@ const SignUpPage = () => {
             required
           >
             <option value="student" className="bg-black">
-              Student
+              {t("auth.signup.roleStudent")}
             </option>
             <option value="teacher" className="bg-black">
-              Teacher
+              {t("auth.signup.roleTeacher")}
             </option>
             <option value="leader" className="bg-black">
-              School Leader
+              {t("auth.signup.roleSchoolLeader")}
             </option>
           </select>
           {role === 'leader' && (
             <p className="text-xs text-purple-200/80">
-              School leaders will be asked additional identity verification questions.
+              {t("auth.signup.leaderVerificationHint")}
             </p>
           )}
         </div>
@@ -227,7 +229,7 @@ const SignUpPage = () => {
         {role === 'teacher' && (
           <div className="space-y-2">
             <label htmlFor="subject" className="text-sm font-medium text-white/80">
-              Subject / Lesson
+              {t("auth.signup.subjectLabel")}
             </label>
             <input
               id="subject"
@@ -243,7 +245,7 @@ const SignUpPage = () => {
         {(role === 'student' || role === 'teacher') && (
           <div className="space-y-2">
             <label htmlFor="selectedSchoolId" className="text-sm font-medium text-white/80">
-              School
+              {t("auth.signup.schoolLabel")}
             </label>
             <select
               id="selectedSchoolId"
@@ -253,7 +255,7 @@ const SignUpPage = () => {
               required
             >
               <option value="" disabled className="bg-black">
-                Select your school
+                {t("auth.signup.selectSchool")}
               </option>
               {schoolsSorted.map((school) => (
                 <option key={school.id} value={school.id} className="bg-black">
@@ -267,7 +269,7 @@ const SignUpPage = () => {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium text-white/80">
-              Password
+              {t("auth.signup.passwordLabel")}
             </label>
             <input
               id="password"
@@ -280,7 +282,7 @@ const SignUpPage = () => {
           </div>
           <div className="space-y-2">
             <label htmlFor="confirmPassword" className="text-sm font-medium text-white/80">
-              Confirm password
+              {t("auth.signup.confirmPasswordLabel")}
             </label>
             <input
               id="confirmPassword"
@@ -303,9 +305,9 @@ const SignUpPage = () => {
             required
           />
           <span>
-            I agree to the{" "}
+            {t("auth.signup.agreeTerms")}{" "}
             <Link href="#" className="font-semibold text-white hover:underline underline-offset-4">
-              Terms & Conditions
+              {t("auth.signup.termsAndConditions")}
             </Link>
           </span>
         </label>
@@ -317,7 +319,7 @@ const SignUpPage = () => {
             isLoading ? 'cursor-not-allowed opacity-70' : ''
           }`}
         >
-          {isLoading ? 'Creating account…' : 'Create account'}
+          {isLoading ? t("auth.signup.creatingAccount") : t("auth.signup.submit")}
         </button>
       </form>
     </AuthShell>

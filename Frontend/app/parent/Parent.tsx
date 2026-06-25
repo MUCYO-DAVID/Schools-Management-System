@@ -20,9 +20,11 @@ import { fetchEvents } from '../api/events';
 import { fetchParentChildren } from '../api/parentChild';
 import { GraduationCap, Calendar, Users, MessageCircle, ChevronRight } from 'lucide-react';
 import EventCalendar from '../components/EventCalendar';
+import { useLanguage } from '../providers/LanguageProvider';
 
 export default function ParentPortal() {
   const { isAuthenticated, user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'announcements' | 'messages' | 'documents' | 'payments' | 'grades' | 'events'>('announcements');
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -150,7 +152,7 @@ export default function ParentPortal() {
       setMessageBody('');
     } catch (error) {
       console.error('Failed to send message:', error);
-      alert('Failed to send message');
+      alert(t('parent.failedSendMessage'));
     } finally {
       setIsSubmitting(false);
     }
@@ -163,7 +165,7 @@ export default function ParentPortal() {
       setFeeInvoices((prev) => [invoice, ...prev]);
     } catch (error) {
       console.error('Failed to create invoice:', error);
-      alert('Unable to create invoice');
+      alert(t('parent.unableCreateInvoice'));
     } finally {
       setIsSubmitting(false);
     }
@@ -176,10 +178,10 @@ export default function ParentPortal() {
       setFeeInvoices((prev) =>
         prev.map((inv) => (inv.id === result.invoice.id ? result.invoice : inv))
       );
-      alert(`Sandbox payment successful. Reference: ${result.receipt.reference}`);
+      alert(t('parent.sandboxPaymentSuccess').replace('{{reference}}', result.receipt.reference));
     } catch (error) {
       console.error('Payment failed:', error);
-      alert('Payment failed');
+      alert(t('parent.paymentFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -199,7 +201,7 @@ export default function ParentPortal() {
       }
     } catch (error) {
       console.error('Stripe payment failed:', error);
-      alert('Stripe payment failed');
+      alert(t('parent.stripePaymentFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -219,7 +221,7 @@ export default function ParentPortal() {
 
   const handleSelectProvider = async (provider: 'MTN' | 'Airtel') => {
     if (!paymentFlow.invoice || !paymentFlow.phoneNumber) {
-      alert('Please enter phone number');
+      alert(t('parent.enterPhoneNumber'));
       return;
     }
     setIsSubmitting(true);
@@ -239,7 +241,7 @@ export default function ParentPortal() {
       }));
     } catch (error) {
       console.error('Failed to initiate payment:', error);
-      alert('Failed to initiate payment');
+      alert(t('parent.failedInitiatePayment'));
     } finally {
       setIsSubmitting(false);
     }
@@ -247,7 +249,7 @@ export default function ParentPortal() {
 
   const handleConfirmMobileMoneyPayment = async () => {
     if (!paymentFlow.invoice || !paymentFlow.provider || !paymentFlow.reference) {
-      alert('Invalid payment state');
+      alert(t('parent.invalidPaymentState'));
       return;
     }
     setIsSubmitting(true);
@@ -266,7 +268,7 @@ export default function ParentPortal() {
       }));
     } catch (error) {
       console.error('Payment confirmation failed:', error);
-      alert('Payment confirmation failed');
+      alert(t('parent.paymentConfirmationFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -291,7 +293,7 @@ export default function ParentPortal() {
       setReceiptData(data);
     } catch (error) {
       console.error('Failed to load receipt:', error);
-      alert('Failed to load receipt');
+      alert(t('parent.failedLoadReceipt'));
     } finally {
       setReceiptLoading(false);
     }
@@ -319,22 +321,29 @@ export default function ParentPortal() {
       <Navigation />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Parent Portal</h1>
-          <p className="text-sm text-gray-600">Announcements, messages, documents, and payments</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('parent.title')}</h1>
+          <p className="text-sm text-gray-600">{t('parent.subtitle')}</p>
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200">
           <div className="mobile-tabs border-b border-gray-200">
-            {['announcements', 'messages', 'documents', 'payments', 'grades', 'events'].map((tab) => (
+            {([
+              { id: 'announcements', label: t('parent.tabAnnouncements') },
+              { id: 'messages', label: t('parent.tabMessages') },
+              { id: 'documents', label: t('parent.tabDocuments') },
+              { id: 'payments', label: t('parent.tabPayments') },
+              { id: 'grades', label: t('parent.tabGrades') },
+              { id: 'events', label: t('parent.tabEvents') },
+            ] as const).map((tab) => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab as any)}
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
                 className={`px-4 sm:px-6 py-3 text-sm font-medium whitespace-nowrap shrink-0 ${
-                  activeTab === tab ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600'
+                  activeTab === tab.id ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600'
                 }`}
               >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                {tab === 'messages' && unreadCount > 0 && (
+                {tab.label}
+                {tab.id === 'messages' && unreadCount > 0 && (
                   <span className="ml-2 inline-flex items-center justify-center rounded-full bg-red-500 text-white text-xs px-2 py-0.5">
                     {unreadCount}
                   </span>
@@ -655,7 +664,7 @@ export default function ParentPortal() {
           </h3>
           <EventCalendar
             onEventClick={(event) => {
-              alert(`Event: ${event.title}\nDate: ${new Date(event.start_date).toLocaleString()}\n${event.description || ''}\nLocation: ${event.location || 'N/A'}`);
+              alert(`${event.title}\n${new Date(event.start_date).toLocaleString()}\n${event.description || ''}`);
             }}
             schoolId={undefined}
           />

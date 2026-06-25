@@ -7,12 +7,20 @@ import Navigation from "../components/Navigation"
 import { useLanguage } from "../providers/LanguageProvider"
 import { BACKEND_URL } from "@/lib/backend"
 
+const subjectLabelKeys: Record<string, string> = {
+  general: "contact.subjectGeneralShort",
+  pilot: "contact.subjectPilot",
+  registration: "contact.subjectRegistrationInterest",
+  feedback: "contact.subjectFeedback",
+  other: "contact.subjectOther",
+}
+
 const subjectOptions = [
-  { value: "general", label: "General" },
-  { value: "pilot", label: "Pilot / Partnership" },
-  { value: "registration", label: "Registration interest" },
-  { value: "feedback", label: "Feedback" },
-  { value: "other", label: "Other" },
+  { value: "general" },
+  { value: "pilot" },
+  { value: "registration" },
+  { value: "feedback" },
+  { value: "other" },
 ] as const
 
 const inputClass =
@@ -48,7 +56,7 @@ export default function Contact() {
       setTimeout(() => setSubmitted(false), 5000)
     } catch (err) {
       console.error(err)
-      setError("Could not send your message. Please try again.")
+      setError(t("contact.couldNotSendMessage"))
     } finally {
       setIsSubmitting(false)
     }
@@ -70,13 +78,13 @@ export default function Contact() {
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-10 sm:max-w-lg sm:py-16">
         <div className="mb-8 text-center">
           <span className="inline-block rounded-full bg-purple-500/10 px-3 py-1 text-xs font-medium text-purple-600 dark:text-purple-400">
-            Early access · 2026
+            {t("contact.earlyAccessBadge")}
           </span>
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
             {t("contact")}
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-            We&apos;re building RSBS for schools, students, and parents in Rwanda — not nationwide yet, just getting started.
+            {t("contact.contactIntro")}
           </p>
         </div>
 
@@ -99,9 +107,9 @@ export default function Contact() {
         {submitted ? (
           <div className="flex flex-col items-center gap-3 rounded-2xl bg-emerald-500/5 px-6 py-10 text-center ring-1 ring-emerald-500/20">
             <CheckCircle2 className="h-8 w-8 text-emerald-500" />
-            <p className="text-sm font-medium text-slate-900 dark:text-white">Message sent</p>
+            <p className="text-sm font-medium text-slate-900 dark:text-white">{t("contact.messageSent")}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              We&apos;ll get back to you within 2–3 business days.
+              {t("contact.messageSentFollowUp")}
             </p>
           </div>
         ) : (
@@ -120,7 +128,7 @@ export default function Contact() {
                 value={formData.name}
                 onChange={handleChange}
                 required
-                placeholder="Name"
+                placeholder={t("contact.namePlaceholder")}
                 className={inputClass}
               />
               <input
@@ -130,7 +138,7 @@ export default function Contact() {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                placeholder="Email"
+                placeholder={t("contact.emailPlaceholder")}
                 className={inputClass}
               />
             </div>
@@ -143,10 +151,10 @@ export default function Contact() {
               required
               className={`${inputClass} text-slate-500 dark:text-slate-400`}
             >
-              <option value="">What&apos;s this about?</option>
+              <option value="">{t("contact.whatsThisAbout")}</option>
               {subjectOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {opt.label}
+                  {t(subjectLabelKeys[opt.value])}
                 </option>
               ))}
             </select>
@@ -158,7 +166,7 @@ export default function Contact() {
               onChange={handleChange}
               rows={4}
               required
-              placeholder="Your message..."
+              placeholder={t("contact.yourMessagePlaceholder")}
               className={`${inputClass} resize-none`}
             />
 
@@ -170,12 +178,12 @@ export default function Contact() {
               {isSubmitting ? (
                 <>
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white dark:border-slate-900/30 dark:border-t-slate-900" />
-                  Sending
+                  {t("contact.sending")}
                 </>
               ) : (
                 <>
                   <Send className="h-4 w-4" />
-                  Send
+                  {t("contact.send")}
                 </>
               )}
             </button>
@@ -183,7 +191,7 @@ export default function Contact() {
         )}
 
         <p className="mt-8 text-center text-xs text-slate-400 dark:text-slate-500">
-          Targeting 50+ pilot schools across 5 districts
+          {t("contact.pilotSchoolsTarget")}
         </p>
       </main>
     </div>

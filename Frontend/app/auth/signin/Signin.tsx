@@ -4,15 +4,17 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../providers/AuthProvider';
+import { useLanguage } from '../../providers/LanguageProvider';
 import AuthShell from '../components/AuthShell';
 import { BACKEND_URL } from '@/lib/backend';
 
 export default function SignInPage() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingHint, setLoadingHint] = useState('Signing in…');
+  const [loadingHint, setLoadingHint] = useState('');
   const router = useRouter();
   const { login } = useAuth();
 
@@ -20,7 +22,7 @@ export default function SignInPage() {
     e.preventDefault();
     if (isLoading) return;
     setError('');
-    setLoadingHint('Checking credentials…');
+    setLoadingHint(t("auth.signin.checkingCredentials"));
     setIsLoading(true);
 
     const controller = new AbortController();
@@ -65,7 +67,7 @@ export default function SignInPage() {
         router.push('/auth/verify-code');
       } else {
         // Regular user (student) — redirect quickly; OTP email sends in background
-        setLoadingHint('Redirecting to verification…');
+        setLoadingHint(t("auth.signin.redirectingToVerification"));
         localStorage.setItem('userEmailForVerification', email);
         localStorage.setItem('requiresLeaderQuestions', 'false');
         // Save redirect for after verification (don't remove redirectAfterLogin yet)
@@ -76,14 +78,14 @@ export default function SignInPage() {
       }
     } catch (err: any) {
       if (err?.name === 'AbortError') {
-        setError('Sign in timed out. The server may be waking up — please try again in a few seconds.');
+        setError(t("auth.signin.signInTimedOut"));
       } else {
-        setError(err.message || 'An unexpected error occurred');
+        setError(err.message || t("auth.signin.unexpectedError"));
       }
     } finally {
       window.clearTimeout(timeoutId);
       setIsLoading(false);
-      setLoadingHint('Signing in…');
+      setLoadingHint(t("auth.signin.signingIn"));
     }
   };
 
@@ -98,12 +100,12 @@ export default function SignInPage() {
 
   return (
     <AuthShell
-      title="Sign in"
+      title={t("auth.signin.title")}
       subtitle={
         <>
-          New here?{' '}
+          {t("auth.signin.subtitleNewHere")}{' '}
           <Link href="/auth/signup" className="font-semibold text-white hover:underline underline-offset-4">
-            Create an account
+            {t("auth.signin.createAccountLink")}
           </Link>
         </>
       }
@@ -117,7 +119,7 @@ export default function SignInPage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <label htmlFor="email" className="text-sm font-medium text-white/80">
-            Email
+            {t("auth.signin.emailLabel")}
           </label>
           <input
             id="email"
@@ -133,7 +135,7 @@ export default function SignInPage() {
 
         <div className="space-y-2">
           <label htmlFor="password" className="text-sm font-medium text-white/80">
-            Password
+            {t("auth.signin.passwordLabel")}
           </label>
           <input
             id="password"
@@ -154,7 +156,7 @@ export default function SignInPage() {
             isLoading ? 'cursor-not-allowed opacity-70' : ''
           }`}
         >
-          {isLoading ? loadingHint : 'Sign in'}
+          {isLoading ? loadingHint : t("auth.signin.submit")}
         </button>
       </form>
     </AuthShell>

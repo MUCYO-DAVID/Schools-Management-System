@@ -16,6 +16,7 @@ import {
     XCircle,
 } from 'lucide-react';
 import { useAuth } from '../providers/AuthProvider';
+import { useLanguage } from '../providers/LanguageProvider';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import { BACKEND_URL } from '@/lib/backend';
@@ -67,6 +68,7 @@ function Avatar({ firstName, lastName, avatarUrl, size = 8 }: { firstName?: stri
 }
 
 export default function HomeCommunityPanel() {
+    const { t } = useLanguage();
     const { user, isAuthenticated } = useAuth();
     const [surveys, setSurveys] = useState<Survey[]>([]);
     const [schools, setSchools] = useState<SchoolOption[]>([]);
@@ -119,7 +121,7 @@ export default function HomeCommunityPanel() {
     const handlePost = async () => {
         if (!comment.trim()) return;
         if (!isAuthenticated) {
-            alert('Please sign in to share your feedback.');
+            alert(t('community.pleaseSignInToShare'));
             return;
         }
         setPosting(true);
@@ -147,7 +149,7 @@ export default function HomeCommunityPanel() {
             await fetchSurveys();
         } catch (e) {
             console.error(e);
-            alert('Failed to post. Please try again.');
+            alert(t('community.failedPost'));
         } finally {
             setPosting(false);
         }
@@ -155,7 +157,7 @@ export default function HomeCommunityPanel() {
 
     const handleLike = async (surveyId: number) => {
         if (!isAuthenticated) {
-            alert('Please sign in to like comments');
+            alert(t('community.pleaseSignInToLike'));
             return;
         }
         setLikingId(surveyId);
@@ -188,9 +190,9 @@ export default function HomeCommunityPanel() {
             <div className="rounded-[1.75rem] border border-slate-200 bg-white/85 p-5 shadow-[0_24px_70px_-52px_rgba(15,23,42,0.55)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/85">
                 <div className="flex items-start justify-between gap-3 mb-4">
                     <div>
-                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Community Feedback</h3>
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{t('community.communityFeedback')}</h3>
                         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                            Share your school experience. Most liked shown first.
+                            {t('community.panelSubtitle')}
                         </p>
                     </div>
                     <div className="rounded-2xl bg-purple-600/10 p-2.5 text-purple-600 dark:text-purple-300">
@@ -203,7 +205,7 @@ export default function HomeCommunityPanel() {
                     <button
                         onClick={() => {
                             if (!isAuthenticated) {
-                                alert('Please sign in to share your feedback.');
+                                alert(t('community.pleaseSignInToShare'));
                                 return;
                             }
                             setShowForm(true);
@@ -212,21 +214,21 @@ export default function HomeCommunityPanel() {
                         className="w-full flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 hover:border-purple-300 hover:bg-purple-50/60 hover:text-purple-700 transition-all dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-purple-500/40 dark:hover:bg-purple-500/10 dark:hover:text-purple-300"
                     >
                         <Sparkles className="h-4 w-4 flex-shrink-0" />
-                        <span>Share your school experience...</span>
+                        <span>{t('community.shareExperiencePlaceholder')}</span>
                     </button>
                 ) : (
                     <div className="space-y-3 rounded-2xl border border-purple-200 bg-purple-50/60 p-4 dark:border-purple-500/20 dark:bg-purple-500/5">
                         {/* School selector */}
                         <div>
                             <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
-                                Which school? (optional)
+                                {t('community.whichSchool')}
                             </label>
                             <select
                                 value={selectedSchool}
                                 onChange={(e) => setSelectedSchool(e.target.value)}
                                 className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                             >
-                                <option value="">General feedback</option>
+                                <option value="">{t('community.generalFeedbackOption')}</option>
                                 {schools.map((s) => (
                                     <option key={s.id} value={s.id}>{s.name}</option>
                                 ))}
@@ -237,7 +239,7 @@ export default function HomeCommunityPanel() {
                         {selectedSchool && (
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
-                                    Your rating
+                                    {t('community.yourRating')}
                                 </label>
                                 <div className="flex gap-1">
                                     {[1, 2, 3, 4, 5].map((star) => (
@@ -264,7 +266,7 @@ export default function HomeCommunityPanel() {
                         {/* Recommend options */}
                         <div>
                             <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
-                                Would you recommend?
+                                {t('community.wouldYouRecommend')}
                             </label>
                             <div className="flex gap-2">
                                 <button
@@ -276,7 +278,7 @@ export default function HomeCommunityPanel() {
                                         }`}
                                 >
                                     <CheckCircle2 className="h-3.5 w-3.5" />
-                                    Yes, recommend
+                                    {t('community.yesRecommend')}
                                 </button>
                                 <button
                                     type="button"
@@ -287,7 +289,7 @@ export default function HomeCommunityPanel() {
                                         }`}
                                 >
                                     <XCircle className="h-3.5 w-3.5" />
-                                    Not recommend
+                                    {t('community.notRecommend')}
                                 </button>
                             </div>
                         </div>
@@ -298,7 +300,7 @@ export default function HomeCommunityPanel() {
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
                             rows={3}
-                            placeholder="Share your thoughts about the school or platform..."
+                            placeholder={t('community.shareThoughtsPlaceholder')}
                             className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder-slate-500"
                         />
 
@@ -308,7 +310,7 @@ export default function HomeCommunityPanel() {
                                 onClick={() => { setShowForm(false); setComment(''); setWouldRecommend(null); setRating(0); }}
                                 className="rounded-xl px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
                             >
-                                Cancel
+                                {t('common.cancel')}
                             </button>
                             <button
                                 onClick={handlePost}
@@ -316,7 +318,7 @@ export default function HomeCommunityPanel() {
                                 className="flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-purple-600/20 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                             >
                                 <Send className="h-3.5 w-3.5" />
-                                {posting ? 'Posting...' : 'Share'}
+                                {posting ? t('community.posting') : t('community.share')}
                             </button>
                         </div>
                     </div>
@@ -332,7 +334,7 @@ export default function HomeCommunityPanel() {
                 ) : surveys.length === 0 ? (
                     <div className="rounded-[1.5rem] border border-slate-200 bg-white/80 p-6 text-center dark:border-slate-800 dark:bg-slate-950/80">
                         <MessageCircle className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-                        <p className="text-xs text-slate-500 dark:text-slate-400">No comments yet. Be the first to share!</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{t('community.noCommentsBe')}</p>
                     </div>
                 ) : (
                     surveys.map((survey, idx) => (
@@ -361,7 +363,7 @@ export default function HomeCommunityPanel() {
                                         <span className="text-xs font-semibold text-slate-900 dark:text-white">
                                             {survey.first_name && survey.last_name
                                                 ? `${survey.first_name} ${survey.last_name}`
-                                                : 'Community Member'}
+                                                : t('community.communityMember')}
                                         </span>
                                         {survey.school_name && (
                                             <>
@@ -406,9 +408,9 @@ export default function HomeCommunityPanel() {
                                             }`}
                                     >
                                         {survey.would_recommend ? (
-                                            <><CheckCircle2 className="h-3 w-3" /> Recommends</>
+                                            <><CheckCircle2 className="h-3 w-3" /> {t('community.recommends')}</>
                                         ) : (
-                                            <><XCircle className="h-3 w-3" /> Not recommended</>
+                                            <><XCircle className="h-3 w-3" /> {t('community.notRecommended')}</>
                                         )}
                                     </span>
                                 </div>
@@ -446,7 +448,7 @@ export default function HomeCommunityPanel() {
                     className="flex items-center justify-center gap-2 rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50/80 py-3.5 text-xs font-semibold text-blue-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 transition-all dark:border-slate-700 dark:bg-slate-900/60 dark:text-blue-400 dark:hover:border-blue-500/40 dark:hover:bg-blue-500/5"
                 >
                     <Users className="h-4 w-4" />
-                    View all community feedback
+                    {t('community.viewAllCommunityFeedback')}
                     <ChevronRight className="h-3.5 w-3.5" />
                 </Link>
             </div>

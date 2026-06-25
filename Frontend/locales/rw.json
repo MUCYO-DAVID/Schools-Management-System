@@ -380,7 +380,25 @@
     "verified": "Yagenzuwe",
     "communityRated": "Yamanotiwe n'Umuryango",
     "missionStatement": "Intego y'Ikigo",
-    "applyNow": "Saba Ubu"
+    "applyNow": "Saba Ubu",
+    "contact": "Twandikire",
+    "visualsComingSoon": "Amafoto azaza vuba",
+    "gatheringDetails": "Gukusanya amakuru...",
+    "description": "Ibisobanuro",
+    "facilities": "Ibikorwa remezo",
+    "academicPrograms": "Gahunda z'Uburezi",
+    "admission": "Kwinjira",
+    "investmentFees": "Amafaranga y'Ishuri",
+    "uniformDressCode": "Ikirangirire n'Imyambaro",
+    "detailedDataUnavailable": "Amakuru arambuye ntabasha kuboneka",
+    "principal": "Umuyobozi",
+    "emailAddress": "Aderesi ya imeyili",
+    "contactNumber": "Numero yo gutumanahana",
+    "officialWebsite": "Urubuga Rasmi",
+    "operatingHours": "Amasaha yo Gukorera",
+    "physicalLocation": "Aho Biherereye",
+    "applyTo": "Saba kuri {{name}}",
+    "returnHome": "Garuka Ahabanza"
   },
 
   "admin": {
@@ -450,7 +468,17 @@
     "failedUploadImage": "Kohereza ifoto ntibyakunze: {{message}}",
     "failedDeleteImage": "Gusiba ifoto ntibyakunze: {{message}}",
     "failedDeleteGallery": "Gusiba inyandiko y'amafoto ntibyakunze: {{message}}",
-    "failedRemoveRelationship": "Gukuraho isano ntibyakunze: {{message}}"
+    "failedRemoveRelationship": "Gukuraho isano ntibyakunze: {{message}}",
+    "noScholarshipsAvailable": "Nta buryo bwo kwishyura ubushomeri bubonetse",
+    "statTotalSchools": "Amashuri Yose",
+    "statRegisteredInstitutions": "Imitunganyirize yanditswe",
+    "statTotalStudents": "Umunyeshuri Yose",
+    "statLearnersTracked": "Abiga bakurikiranwa kuri platformu",
+    "statPublicSchools": "Amashuri ya Leta",
+    "statPublicInstitutions": "Imitunganyirize ya leta mu murimo",
+    "statPrivateSchools": "Amashuri Yigenga",
+    "statPrivateInstitutions": "Imitunganyirize yigenga mu murimo",
+    "adminWorkspace": "Ahantu h'Akazi k'Umuyobozi"
   },
 
   "student": {
@@ -664,7 +692,9 @@
     "failedDeleteImage": "Gusiba ifoto ntibyakunze: {{message}}",
     "applicationApprovedSuccess": "Ubusabe bwemejwe neza! Umunyeshuri yamenyeshejwe kuri imeyili.",
     "applicationRejectedSuccess": "Ubusabe bwanzwe. Umunyeshuri yamenyeshejwe kuri imeyili.",
-    "failedDeleteSurvey": "Gusiba ubushakashatsi ntibyakunze"
+    "failedDeleteSurvey": "Gusiba ubushakashatsi ntibyakunze",
+    "accessDeniedDesc": "Iyi paji irebwa gusa n'abayobozi b'amashuri.",
+    "goToStudentPortal": "Jya ku Irembo ry'Umunyeshuri"
   },
 
   "survey": {
@@ -712,7 +742,20 @@
     "pleaseSignInToReply": "Nyamuneka injira kugira ngo usubize",
     "failedPostReply": "Kohereza igisubizo ntibyakunze. Nyamuneka ongera ugerageze.",
     "pleaseSignInToShare": "Nyamuneka injira kugira ngo usangire ibitekerezo byawe.",
-    "failedPost": "Kohereza ntibyakunze. Nyamuneka ongera ugerageze."
+    "failedPost": "Kohereza ntibyakunze. Nyamuneka ongera ugerageze.",
+    "panelSubtitle": "Sangira uburambe bwawe bw'ishuri. Ibikunda cyane bigaragara mbere.",
+    "whichSchool": "Ishuri riyihe? (si ngombwa)",
+    "yourRating": "Amanota yawe",
+    "wouldYouRecommend": "Wigisha abandi?",
+    "yesRecommend": "Yego, nigisha",
+    "notRecommend": "Siga",
+    "posting": "Kohereza...",
+    "share": "Sangira",
+    "recommends": "Ashima",
+    "notRecommended": "Ntishimirwa",
+    "communityMember": "Umunyamuryango",
+    "viewAllCommunityFeedback": "Reba ibitekerezo byose by'umuryango",
+    "noCommentsBe": "Nta bitekerezo ubu. Banza usangire!"
   },
 
   "profile": {

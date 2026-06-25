@@ -4,8 +4,11 @@ import Navigation from '../components/Navigation';
 import SurveyCommentsFeed from '../components/SurveyCommentsFeed';
 import AdPlacement from '../components/AdPlacement';
 import { Users, MessageCircle, TrendingUp } from 'lucide-react';
+import { useLanguage } from '../providers/LanguageProvider';
 
 export default function CommunityPage() {
+    const { t } = useLanguage();
+
     return (
         <div className="page-shell">
             <Navigation />
@@ -18,32 +21,31 @@ export default function CommunityPage() {
                                 <Users className="h-6 w-6" />
                             </div>
                             <div>
-                                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">Rwanda Schools</p>
-                                <h1 className="text-2xl font-semibold">Community Feedback</h1>
+                                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">{t("community.rwandaSchools")}</p>
+                                <h1 className="text-2xl font-semibold">{t("community.communityFeedback")}</h1>
                             </div>
                         </div>
                         <p className="text-sm leading-6 text-white/80">
-                            All school recommendations, reviews, and feedback from students, parents, and the wider community.
-                            The most liked comments rise to the top.
+                            {t("community.communityIntro")}
                         </p>
                         <div className="mt-5 grid grid-cols-3 gap-3">
                             <div className="rounded-[1.25rem] border border-white/20 bg-black/30 px-4 py-3">
-                                <p className="text-xs text-white/80">Sort order</p>
-                                <p className="text-sm font-semibold text-white">Most Liked First</p>
+                                <p className="text-xs text-white/80">{t("community.sortOrder")}</p>
+                                <p className="text-sm font-semibold text-white">{t("community.mostLikedFirst")}</p>
                             </div>
                             <div className="rounded-[1.25rem] border border-white/20 bg-black/30 px-4 py-3">
                                 <div className="flex items-center gap-1.5">
                                     <MessageCircle className="h-4 w-4 text-blue-200" />
-                                    <p className="text-sm font-semibold text-white">Open to all</p>
+                                    <p className="text-sm font-semibold text-white">{t("community.openToAll")}</p>
                                 </div>
-                                <p className="text-xs text-white/80">Members can reply</p>
+                                <p className="text-xs text-white/80">{t("community.membersCanReply")}</p>
                             </div>
                             <div className="rounded-[1.25rem] border border-white/20 bg-black/30 px-4 py-3">
                                 <div className="flex items-center gap-1.5">
                                     <TrendingUp className="h-4 w-4 text-emerald-200" />
-                                    <p className="text-sm font-semibold text-white">Real-time</p>
+                                    <p className="text-sm font-semibold text-white">{t("community.realTime")}</p>
                                 </div>
-                                <p className="text-xs text-white/80">Always up-to-date</p>
+                                <p className="text-xs text-white/80">{t("community.alwaysUpToDate")}</p>
                             </div>
                         </div>
                     </div>
