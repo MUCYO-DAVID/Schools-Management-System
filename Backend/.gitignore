@@ -19,10 +19,6 @@ yarn-error.log*
 # env files
 .env*
 
-# user uploads (serve from disk in production storage)
-/uploads/ads/
-/uploads/galleries/
-/uploads/avatars/
 
 # vercel
 .vercel
