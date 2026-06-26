@@ -424,7 +424,7 @@ export default function Home() {
                                                             className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                                                             onError={(e) => {
                                                                 const target = e.target as HTMLImageElement;
-                                                                target.src = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=600&auto=format&fit=crop';
+                                                                target.src = '/placeholder.jpg';
                                                             }}
                                                         />
                                                         <div className="absolute left-4 top-4 z-20 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">

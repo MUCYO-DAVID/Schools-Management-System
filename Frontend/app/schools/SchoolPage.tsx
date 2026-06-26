@@ -112,20 +112,16 @@ export default function Schools() {
   const handleSaveSchool = async (schoolData: Omit<School, "id">, images: File[], imagesToDelete: string[]) => {
     try {
       if (editingSchool) {
-        // Update existing school
-        const updatedSchool = await updateSchool(editingSchool.id, schoolData, images, imagesToDelete);
-        setSchools((prev) =>
-          prev.map((s) => (s.id === updatedSchool.id ? updatedSchool : s))
-        );
+        await updateSchool(editingSchool.id, schoolData, images, imagesToDelete);
         toast.success(t("schools.schoolUpdatedSuccess"));
       } else {
-        // Add new school
-        const newSchool = await addSchool(schoolData, images);
-        setSchools((prev) => [...prev, newSchool]);
+        await addSchool(schoolData, images);
         toast.success(t("schools.schoolAddedSuccess"));
       }
       setIsModalOpen(false);
       setEditingSchool(null);
+      // Reload from API so image_urls are properly parsed
+      await loadSchools();
     } catch (error) {
       toast.error(t("schools.schoolSaveFailed"));
     }
@@ -253,7 +249,7 @@ export default function Schools() {
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=600&auto=format&fit=crop';
+                      target.src = '/placeholder.jpg';
                     }}
                   />
                   

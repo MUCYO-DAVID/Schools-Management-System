@@ -213,7 +213,7 @@ export default function StudentAccess() {
                           className="absolute h-full w-full object-cover group-hover:scale-110 transition-transform duration-1000"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            target.src = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=600&auto=format&fit=crop';
+                            target.src = '/placeholder.jpg';
                           }}
                         />
                         <div className="absolute top-3 left-3 z-20">
