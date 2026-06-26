@@ -13,9 +13,10 @@ export default function SurveyPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const schoolId = typeof window !== 'undefined' ? searchParams?.get("schoolId") || "" : "";
+  const initialRating = typeof window !== 'undefined' ? Number(searchParams?.get("rating") || 0) : 0;
 
   // States for multiple rating categories
-  const [overallRating, setOverallRating] = useState(0)
+  const [overallRating, setOverallRating] = useState(initialRating)
   const [teachingQuality, setTeachingQuality] = useState(0)
   const [facilitiesQuality, setFacilitiesQuality] = useState(0)
   const [safetyQuality, setSafetyQuality] = useState(0)

@@ -155,6 +155,10 @@
       "passwordsDoNotMatch": "Passwords do not match",
       "mustAgreeTerms": "You must agree to the terms and conditions",
       "selectSchoolRequired": "Please select your school",
+      "cantSeeMySchool": "I can't see my school in the list",
+      "enterYourSchoolName": "Type your school name",
+      "backToSchoolList": "Back to school list",
+      "enterSchoolNameRequired": "Please enter your school name",
       "registrationFailed": "Registration failed",
       "unexpectedError": "An unexpected error occurred"
     },

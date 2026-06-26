@@ -21,6 +21,8 @@ const SignUpPage = () => {
   const [selectedSchoolId, setSelectedSchoolId] = useState('');
   const [schools, setSchools] = useState<School[]>([]);
   const [subject, setSubject] = useState('');
+  const [schoolNotFound, setSchoolNotFound] = useState(false);
+  const [schoolNotFoundName, setSchoolNotFoundName] = useState('');
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -61,8 +63,14 @@ const SignUpPage = () => {
       return;
     }
 
-    if ((role === 'student' || role === 'teacher') && !selectedSchoolId) {
+    if ((role === 'student' || role === 'teacher') && !selectedSchoolId && !schoolNotFound) {
       setError(t("auth.signup.selectSchoolRequired"));
+      setIsLoading(false);
+      return;
+    }
+
+    if (schoolNotFound && !schoolNotFoundName.trim()) {
+      setError(t("auth.signup.enterSchoolNameRequired"));
       setIsLoading(false);
       return;
     }
@@ -74,13 +82,14 @@ const SignUpPage = () => {
         email,
         password,
         role,
-        school_id: selectedSchoolId
+        school_id: schoolNotFound ? null : (selectedSchoolId || null),
+        school_not_found_name: schoolNotFound ? schoolNotFoundName.trim() : undefined,
       };
 
       // Add teacher-specific fields if role is teacher
       if (role === 'teacher') {
         const school = schools.find(s => s.id === selectedSchoolId);
-        payload.school_name = school?.name || '';
+        payload.school_name = schoolNotFound ? schoolNotFoundName.trim() : (school?.name || '');
         payload.subject = subject;
       }
 
@@ -247,22 +256,51 @@ const SignUpPage = () => {
             <label htmlFor="selectedSchoolId" className="text-sm font-medium text-white/80">
               {t("auth.signup.schoolLabel")}
             </label>
-            <select
-              id="selectedSchoolId"
-              value={selectedSchoolId}
-              onChange={(e) => setSelectedSchoolId(e.target.value)}
-              className="h-11 w-full cursor-pointer rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition focus:border-purple-400/60 focus:ring-2 focus:ring-purple-500/30"
-              required
-            >
-              <option value="" disabled className="bg-black">
-                {t("auth.signup.selectSchool")}
-              </option>
-              {schoolsSorted.map((school) => (
-                <option key={school.id} value={school.id} className="bg-black">
-                  {school.name}
-                </option>
-              ))}
-            </select>
+            {!schoolNotFound ? (
+              <>
+                <select
+                  id="selectedSchoolId"
+                  value={selectedSchoolId}
+                  onChange={(e) => setSelectedSchoolId(e.target.value)}
+                  className="h-11 w-full cursor-pointer rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition focus:border-purple-400/60 focus:ring-2 focus:ring-purple-500/30"
+                >
+                  <option value="" disabled className="bg-black">
+                    {t("auth.signup.selectSchool")}
+                  </option>
+                  {schoolsSorted.map((school) => (
+                    <option key={school.id} value={school.id} className="bg-black">
+                      {school.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => { setSchoolNotFound(true); setSelectedSchoolId(''); }}
+                  className="text-xs text-purple-300 hover:text-white underline underline-offset-2 transition"
+                >
+                  {t("auth.signup.cantSeeMySchool")}
+                </button>
+              </>
+            ) : (
+              <>
+                <input
+                  id="schoolNotFoundName"
+                  type="text"
+                  placeholder={t("auth.signup.enterYourSchoolName")}
+                  className="h-11 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition focus:border-purple-400/60 focus:ring-2 focus:ring-purple-500/30 placeholder:text-white/40"
+                  value={schoolNotFoundName}
+                  onChange={(e) => setSchoolNotFoundName(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => { setSchoolNotFound(false); setSchoolNotFoundName(''); }}
+                  className="text-xs text-purple-300 hover:text-white underline underline-offset-2 transition"
+                >
+                  {t("auth.signup.backToSchoolList")}
+                </button>
+              </>
+            )}
           </div>
         )}
 

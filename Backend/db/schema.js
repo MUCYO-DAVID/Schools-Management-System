@@ -28,7 +28,7 @@ async function initializeDb() {
     // Add profile columns if they don't exist
     try {
       await pool.query(`
-        ALTER TABLE users 
+        ALTER TABLE users
         ADD COLUMN IF NOT EXISTS phone VARCHAR(50),
         ADD COLUMN IF NOT EXISTS avatar_url TEXT,
         ADD COLUMN IF NOT EXISTS bio TEXT,
@@ -38,6 +38,13 @@ async function initializeDb() {
       `);
     } catch (alterError) {
       console.warn('⚠️  Could not add profile columns to users (may already exist):', alterError.message);
+    }
+
+    // Add school_not_found_name for users whose school was not in the list
+    try {
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS school_not_found_name VARCHAR(255);`);
+    } catch (alterError) {
+      console.warn('⚠️  Could not add school_not_found_name column to users (may already exist):', alterError.message);
     }
 
     // Create user preferences table
@@ -194,11 +201,21 @@ async function initializeDb() {
     // Add user_id column if it doesn't exist (for existing databases)
     try {
       await pool.query(`
-        ALTER TABLE surveys 
+        ALTER TABLE surveys
         ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
       `);
     } catch (alterError) {
       console.warn('⚠️  Could not add user_id column to surveys (may already exist):', alterError.message);
+    }
+
+    // Add detailed rating columns if they don't exist
+    try {
+      await pool.query(`ALTER TABLE surveys ADD COLUMN IF NOT EXISTS teaching_quality INTEGER CHECK (teaching_quality BETWEEN 1 AND 5);`);
+      await pool.query(`ALTER TABLE surveys ADD COLUMN IF NOT EXISTS facilities_quality INTEGER CHECK (facilities_quality BETWEEN 1 AND 5);`);
+      await pool.query(`ALTER TABLE surveys ADD COLUMN IF NOT EXISTS safety_quality INTEGER CHECK (safety_quality BETWEEN 1 AND 5);`);
+      await pool.query(`ALTER TABLE surveys ADD COLUMN IF NOT EXISTS ease_of_use INTEGER CHECK (ease_of_use BETWEEN 1 AND 5);`);
+    } catch (alterError) {
+      console.warn('⚠️  Could not add detailed rating columns to surveys (may already exist):', alterError.message);
     }
 
     // Survey Likes - Track likes on survey comments

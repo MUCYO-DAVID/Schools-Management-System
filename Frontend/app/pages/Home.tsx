@@ -22,7 +22,7 @@ import AdvertiseModal from "../components/AdvertiseModal"
 import { useAuth } from "../providers/AuthProvider"
 import { useLanguage } from "../providers/LanguageProvider"
 import type { School } from "../types"
-import { fetchNearbySchools, fetchTopSchools, rateSchool } from "@/api/school"
+import { fetchNearbySchools, fetchTopSchools } from "@/api/school"
 import SchoolDetailsModal from "../components/SchoolDetailsModal"
 import dynamic from "next/dynamic"
 import { getImageUrl } from "../../lib/image-utils"
@@ -156,15 +156,9 @@ export default function Home() {
         }
     }, [userLocation])
 
-    const handleRate = async (schoolId: string, value: number) => {
-        try {
-            setRatingSchoolId(schoolId)
-            await rateSchool(schoolId, value)
-            router.push(`/survey?schoolId=${schoolId}`)
-        } catch (err) {
-            console.error("Failed to rate school", err)
-            setRatingSchoolId(null)
-        }
+    const handleRate = (schoolId: string, value: number) => {
+        setRatingSchoolId(schoolId)
+        router.push(`/survey?schoolId=${schoolId}&rating=${value}`)
     }
 
     const features = [

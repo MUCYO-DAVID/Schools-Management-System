@@ -148,16 +148,16 @@ router.post('/surveys', async (req, res) => {
   try {
     const result = await pool.query(
       `INSERT INTO surveys (
-        school_id, user_id, rating, would_recommend, comments, 
+        school_id, user_id, rating, would_recommend, comments,
         teaching_quality, facilities_quality, safety_quality, ease_of_use
       )
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
       [
-        school_id || null, 
-        userId, 
-        rating || null, 
-        would_recommend ?? null, 
+        school_id || null,
+        userId,
+        rating || null,
+        would_recommend ?? null,
         comments || null,
         teaching_quality || null,
         facilities_quality || null,
@@ -166,10 +166,26 @@ router.post('/surveys', async (req, res) => {
       ]
     );
 
+    // Also update the school's aggregate rating so top-schools stays accurate
+    if (school_id && rating) {
+      try {
+        await pool.query(
+          `UPDATE schools
+           SET rating_total = rating_total + $1,
+               rating_count = rating_count + 1,
+               updated_at = NOW()
+           WHERE id = $2`,
+          [Number(rating), school_id]
+        );
+      } catch (updateErr) {
+        console.warn('Warning: survey saved but failed to update school rating:', updateErr.message);
+      }
+    }
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('Error creating survey:', err.message);
-    res.status(500).send('Server Error');
+    res.status(500).json({ message: 'Server Error' });
   }
 });
 

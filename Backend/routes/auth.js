@@ -114,6 +114,7 @@ router.post('/auth/signup', async (req, res) => {
     school_name,
     subject,
     school_id,
+    school_not_found_name,
   } = req.body;
   const email = normalizeEmail(req.body.email);
 
@@ -131,8 +132,8 @@ router.post('/auth/signup', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const newUser = await pool.query(
-      'INSERT INTO users (first_name, last_name, email, password, role, school_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, first_name, last_name, email, role, school_id',
-      [first_name, last_name, email, hashedPassword, userRole, school_id || null]
+      'INSERT INTO users (first_name, last_name, email, password, role, school_id, school_not_found_name) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, first_name, last_name, email, role, school_id, school_not_found_name',
+      [first_name, last_name, email, hashedPassword, userRole, school_id || null, school_not_found_name || null]
     );
 
     const userId = newUser.rows[0].id;
@@ -240,7 +241,7 @@ router.post('/auth/verify-code', async (req, res) => {
         return res.status(500).json({ message: 'Token generation failed' });
       }
       const { id, first_name, last_name, email, role } = userData;
-      console.log(`✅ Login complete — token issued for ${email}`);
+      console.log(`Login complete — token issued for ${email}`);
       res.json({ token, user: { id, first_name, last_name, email, role } });
     });
 

@@ -257,6 +257,13 @@ export default function StudentAccess() {
                             Info
                           </button>
                           <button
+                            onClick={() => router.push(`/survey?schoolId=${school.id}`)}
+                            className="flex-1 border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1"
+                          >
+                            <Star className="w-2.5 h-2.5 fill-amber-400" />
+                            Rate
+                          </button>
+                          <button
                             onClick={() => handleApplyClick(school)}
                             className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-purple-600/10 transition-all active:scale-95"
                           >

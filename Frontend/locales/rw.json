@@ -155,6 +155,10 @@
       "passwordsDoNotMatch": "Amagambo banga ntafanye",
       "mustAgreeTerms": "Ugomba kwemera amabwiriza n'ibisabwa",
       "selectSchoolRequired": "Nyamuneka hitamo ishuri ryawe",
+      "cantSeeMySchool": "Ntabwo mbona ishuri ryanjye ku rutonde",
+      "enterYourSchoolName": "Andika izina ry'ishuri ryawe",
+      "backToSchoolList": "Subira ku rutonde rw'amashuri",
+      "enterSchoolNameRequired": "Nyamuneka injiza izina ry'ishuri ryawe",
       "registrationFailed": "Kwiyandikisha ntibyakunze",
       "unexpectedError": "Habaye ikosa ridateganijwe"
     },
