@@ -5,20 +5,10 @@ const authMiddleware = require('../middleware/auth');
 
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
+const { uploadToCloudinary, isConfigured: cloudinaryConfigured } = require('../utils/cloudinary');
 
-// Multer storage configuration for chat attachments
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '..', 'uploads'));
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const ext = path.extname(file.originalname);
-    cb(null, `chat-${uniqueSuffix}${ext}`);
-  },
-});
-
-const upload = multer({ storage });
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Get or create direct chat room between two users
 router.post('/chat/rooms/direct', authMiddleware, async (req, res) => {
@@ -189,9 +179,18 @@ router.post('/chat/rooms/:roomId/messages', authMiddleware, upload.single('attac
     const { message, message_type } = req.body;
     let attachment_url = req.body.attachment_url;
 
-    // If a file was uploaded, use its URL
     if (req.file) {
-      attachment_url = `/uploads/${req.file.filename}`;
+      if (cloudinaryConfigured()) {
+        const resourceType = req.file.mimetype.startsWith('image/') ? 'image' : 'raw';
+        attachment_url = await uploadToCloudinary(req.file.buffer, { folder: 'rsbs/chat', resource_type: resourceType });
+      } else {
+        const uploadDir = path.join(__dirname, '..', 'uploads');
+        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+        const ext = path.extname(req.file.originalname);
+        const filename = `chat-${uniqueSuffix}${ext}`;
+        fs.writeFileSync(path.join(uploadDir, filename), req.file.buffer);
+        attachment_url = `/uploads/${filename}`;
+      }
     }
 
     if (!message && !attachment_url) {

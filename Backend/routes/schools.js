@@ -6,20 +6,39 @@ const multer = require('multer');
 const router = express.Router();
 const pool = require('../db');
 const { authMiddleware, leaderMiddleware } = require('../middleware/authMiddleware');
+const { uploadToCloudinary, deleteFromCloudinary, isConfigured: cloudinaryConfigured } = require('../utils/cloudinary');
 
-// Multer storage configuration for school images
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '..', 'uploads'));
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const ext = path.extname(file.originalname);
-    cb(null, `${uniqueSuffix}${ext}`);
-  },
-});
+// Use memory storage so we can upload buffers to Cloudinary
+const upload = multer({ storage: multer.memoryStorage() });
 
-const upload = multer({ storage });
+// Upload a file — Cloudinary if configured, else fall back to local disk
+async function storeFile(file, subfolder = '') {
+  if (cloudinaryConfigured()) {
+    const folder = subfolder ? `rsbs/${subfolder}` : 'rsbs/schools';
+    return uploadToCloudinary(file.buffer, { folder, resource_type: 'auto' });
+  }
+  // Local fallback for development without Cloudinary credentials
+  const uploadDir = path.join(__dirname, '..', 'uploads', subfolder);
+  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+  const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+  const ext = path.extname(file.originalname);
+  const filename = `${uniqueSuffix}${ext}`;
+  const dest = path.join(uploadDir, filename);
+  fs.writeFileSync(dest, file.buffer);
+  return subfolder ? `/uploads/${subfolder}/${filename}` : `/uploads/${filename}`;
+}
+
+// Delete a stored file — Cloudinary or local disk
+async function removeFile(url) {
+  if (!url) return;
+  if (url.startsWith('http')) {
+    await deleteFromCloudinary(url);
+  } else {
+    const rel = url.startsWith('/') ? url.slice(1) : url;
+    const filePath = path.join(__dirname, '..', rel);
+    if (fs.existsSync(filePath)) fs.unlink(filePath, () => {});
+  }
+}
 
 router.get('/schools', async (req, res) => {
   try {
@@ -146,7 +165,13 @@ router.post('/schools', authMiddleware, leaderMiddleware, upload.array('images',
   const englishName = name;
   const kinyarwandaName = name_rw || nameRw || '';
 
-  const imageUrls = (req.files || []).map((file) => `/uploads/${file.filename}`);
+  let imageUrls = [];
+  try {
+    imageUrls = await Promise.all((req.files || []).map((f) => storeFile(f)));
+  } catch (uploadErr) {
+    console.error('Image upload failed:', uploadErr.message);
+    return res.status(500).json({ message: 'Image upload failed' });
+  }
 
   try {
     // Get the user ID from the authenticated request
@@ -314,46 +339,30 @@ router.put('/schools/:id', authMiddleware, leaderMiddleware, upload.array('image
       }
     }
 
-    // Normalize imagesToDelete into an array and extract paths
-    let toDelete = [];
-    if (imagesToDelete) {
-      const deleteItems = Array.isArray(imagesToDelete) ? imagesToDelete : [imagesToDelete];
-      toDelete = deleteItems.map(url => {
-        if (!url) return '';
-        try {
-          // If it's a full URL, extract the path. Otherwise, it might already be a path.
-          if (url.startsWith('http')) {
-            const parsedUrl = new URL(url);
-            return parsedUrl.pathname;
-          }
-          return url;
-        } catch (e) {
-          return url;
-        }
-      });
+    // Normalize imagesToDelete — can be full URLs (Cloudinary) or legacy local paths
+    const deleteItems = imagesToDelete
+      ? (Array.isArray(imagesToDelete) ? imagesToDelete : [imagesToDelete])
+      : [];
+
+    // Remove deleted images from the tracked list and storage
+    for (const rawUrl of deleteItems) {
+      if (!rawUrl) continue;
+      // Match against both the exact stored value and the full-URL equivalent
+      const idx = currentImages.findIndex(
+        (stored) => stored === rawUrl || stored === rawUrl.replace(/^https?:\/\/[^/]+/, '')
+      );
+      if (idx !== -1) currentImages.splice(idx, 1);
+      await removeFile(rawUrl);
     }
 
-    // Remove deleted images from the list and disk
-    toDelete.forEach((imagePath) => {
-      if (!imagePath) return;
-      
-      const index = currentImages.indexOf(imagePath);
-      if (index !== -1) {
-        currentImages.splice(index, 1);
-      }
-      
-      // Safety check: only delete if it's in our uploads folder
-      if (imagePath.includes('/uploads/')) {
-        const relativePath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
-        const filePath = path.join(__dirname, '..', relativePath);
-        if (fs.existsSync(filePath)) {
-          fs.unlink(filePath, () => { });
-        }
-      }
-    });
-
-    // Add newly uploaded images
-    const newImageUrls = (req.files || []).map((file) => `/uploads/${file.filename}`);
+    // Upload new images to Cloudinary (or local fallback)
+    let newImageUrls = [];
+    try {
+      newImageUrls = await Promise.all((req.files || []).map((f) => storeFile(f)));
+    } catch (uploadErr) {
+      console.error('Image upload failed:', uploadErr.message);
+      return res.status(500).json({ message: 'Image upload failed' });
+    }
     const finalImages = [...currentImages, ...newImageUrls];
 
     const englishName = name;

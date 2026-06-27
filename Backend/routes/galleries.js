@@ -5,37 +5,47 @@ const authMiddleware = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadDir = 'uploads/galleries';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'gallery-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+const { uploadToCloudinary, deleteFromCloudinary, isConfigured: cloudinaryConfigured } = require('../utils/cloudinary');
 
 const upload = multer({
-  storage: storage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: function (req, file, cb) {
     const allowedTypes = /jpeg|jpg|png|gif|mp4|mov|avi|webm/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
-
-    if (mimetype && extname) {
-      return cb(null, true);
-    } else {
-      cb(new Error('Only image and video files are allowed'));
-    }
+    if (mimetype && extname) return cb(null, true);
+    cb(new Error('Only image and video files are allowed'));
   }
 });
+
+async function storeGalleryFile(file) {
+  const isVideo = file.mimetype.startsWith('video/');
+  if (cloudinaryConfigured()) {
+    return uploadToCloudinary(file.buffer, {
+      folder: 'rsbs/galleries',
+      resource_type: isVideo ? 'video' : 'image',
+    });
+  }
+  const uploadDir = path.join(__dirname, '..', 'uploads', 'galleries');
+  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+  const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+  const ext = path.extname(file.originalname);
+  const filename = `gallery-${uniqueSuffix}${ext}`;
+  fs.writeFileSync(path.join(uploadDir, filename), file.buffer);
+  return `/uploads/galleries/${filename}`;
+}
+
+async function removeGalleryFile(url) {
+  if (!url) return;
+  if (url.startsWith('http')) {
+    await deleteFromCloudinary(url);
+  } else {
+    const rel = url.startsWith('/') ? url.slice(1) : url;
+    const filePath = path.join(__dirname, '..', rel);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  }
+}
 
 // Get all galleries (public or filtered by school)
 router.get('/galleries', async (req, res) => {
@@ -221,9 +231,8 @@ router.post('/galleries/:id/items', authMiddleware, upload.single('media'), asyn
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    // Determine media type
     const mediaType = req.file.mimetype.startsWith('video/') ? 'video' : 'photo';
-    const mediaUrl = `/uploads/galleries/${req.file.filename}`;
+    const mediaUrl = await storeGalleryFile(req.file);
 
     const result = await pool.query(
       `INSERT INTO gallery_items (gallery_id, media_type, media_url, title, description, order_index)
@@ -279,13 +288,9 @@ router.delete('/gallery-items/:id', authMiddleware, async (req, res) => {
 
     const { id } = req.params;
 
-    // Get the item to delete associated file
     const item = await pool.query('SELECT * FROM gallery_items WHERE id = $1', [id]);
     if (item.rows.length > 0 && item.rows[0].media_url) {
-      const filePath = path.join(__dirname, '..', item.rows[0].media_url);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
+      await removeGalleryFile(item.rows[0].media_url);
     }
 
     await pool.query('DELETE FROM gallery_items WHERE id = $1', [id]);

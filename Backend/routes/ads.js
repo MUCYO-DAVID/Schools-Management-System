@@ -15,27 +15,32 @@ const renewalDays = Number(process.env.AD_CAMPAIGN_RENEWAL_DAYS || 30);
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const stripe = stripeSecretKey ? require('stripe')(stripeSecretKey) : null;
 
-const adsDir = path.join(__dirname, '..', 'uploads', 'ads');
-if (!fs.existsSync(adsDir)) {
-  fs.mkdirSync(adsDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, adsDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) || '.jpg';
-    cb(null, `ad-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
-  },
-});
+const { uploadToCloudinary, deleteFromCloudinary, isConfigured: cloudinaryConfigured } = require('../utils/cloudinary');
 
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 25 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const ok = file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/');
     cb(ok ? null : new Error('Only image or video files are allowed'), ok);
   },
 });
+
+async function storeAdFile(file) {
+  const isVideo = file.mimetype.startsWith('video/');
+  if (cloudinaryConfigured()) {
+    return uploadToCloudinary(file.buffer, {
+      folder: 'rsbs/ads',
+      resource_type: isVideo ? 'video' : 'image',
+    });
+  }
+  const adsDir = path.join(__dirname, '..', 'uploads', 'ads');
+  if (!fs.existsSync(adsDir)) fs.mkdirSync(adsDir, { recursive: true });
+  const ext = path.extname(file.originalname) || '.jpg';
+  const filename = `ad-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+  fs.writeFileSync(path.join(adsDir, filename), file.buffer);
+  return `/uploads/ads/${filename}`;
+}
 
 const jsonError = (res, status, message, error) =>
   res.status(status).json({
@@ -119,7 +124,7 @@ router.post('/ads', authMiddleware, (req, res) => {
       }
 
       const mediaType = req.file.mimetype.startsWith('video/') ? 'video' : 'image';
-      const mediaUrl = `/uploads/ads/${req.file.filename}`;
+      const mediaUrl = await storeAdFile(req.file);
 
       const advertiser = await getAdvertiserFromRequest(req);
       if (!advertiser) {
