@@ -8,8 +8,29 @@ const multer = require('multer');
 const csv = require('csv-parser');
 const { Readable } = require('stream');
 
-// Configure multer for file uploads
 const upload = multer({ storage: multer.memoryStorage() });
+
+// Returns the school_id the teacher is registered to, or null if not set
+async function getTeacherSchool(userId) {
+  const r = await pool.query('SELECT school_id FROM users WHERE id = $1', [userId]);
+  return r.rows[0]?.school_id || null;
+}
+
+// Enforces that a teacher can only act on their own school.
+// Returns true (and sends 403) when the request should be blocked.
+async function teacherSchoolMismatch(req, res, school_id) {
+  if (req.user.role !== 'teacher') return false;
+  const teacherSchool = await getTeacherSchool(req.user.id);
+  if (!teacherSchool) {
+    res.status(403).json({ message: 'Your account is not assigned to a school. Contact your administrator.' });
+    return true;
+  }
+  if (String(teacherSchool) !== String(school_id)) {
+    res.status(403).json({ message: 'You can only manage grades for your own school.' });
+    return true;
+  }
+  return false;
+}
 
 // Get grades for a student (parent/student/teacher/admin can access)
 router.get('/grades/student/:studentId', authMiddleware, async (req, res) => {
@@ -17,9 +38,21 @@ router.get('/grades/student/:studentId', authMiddleware, async (req, res) => {
     const { studentId } = req.params;
     const { term, academic_year, school_id } = req.query;
 
-    // Permission check
+    // Students can only see their own grades
     if (req.user.role === 'student' && req.user.id !== parseInt(studentId)) {
       return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // Teachers can only view grades for students at their own school
+    if (req.user.role === 'teacher') {
+      const teacherSchool = await getTeacherSchool(req.user.id);
+      if (!teacherSchool) {
+        return res.status(403).json({ message: 'Your account is not assigned to a school.' });
+      }
+      const studentSchool = await pool.query('SELECT school_id FROM users WHERE id = $1', [studentId]);
+      if (!studentSchool.rows[0]?.school_id || String(studentSchool.rows[0].school_id) !== String(teacherSchool)) {
+        return res.status(403).json({ message: 'You can only view grades for students at your school.' });
+      }
     }
 
     let query = `
@@ -143,6 +176,9 @@ router.post('/grades', authMiddleware, async (req, res) => {
     if (!student_user_id || !school_id || !subject) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
+
+    // Teacher can only post grades for their own school
+    if (await teacherSchoolMismatch(req, res, school_id)) return;
 
     // Validation for non-document grades
     if (!is_document && !grade) {
@@ -300,6 +336,9 @@ router.post('/report-cards/generate', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
+    // Teacher can only generate report cards for their own school
+    if (await teacherSchoolMismatch(req, res, school_id)) return;
+
     // Calculate overall grade from all subject grades
     const gradesResult = await pool.query(
       'SELECT * FROM grades WHERE student_user_id = $1 AND school_id = $2 AND term = $3 AND academic_year = $4',
@@ -413,6 +452,9 @@ router.post('/grades/bulk-upload', authMiddleware, upload.single('file'), async 
       return res.status(400).json({ message: 'Missing required fields: school_id, term, academic_year' });
     }
 
+    // Teacher can only bulk-upload grades for their own school
+    if (await teacherSchoolMismatch(req, res, school_id)) return;
+
     const results = [];
     const errors = [];
     const csvData = [];
@@ -521,6 +563,9 @@ router.post('/report-cards/bulk-generate', authMiddleware, async (req, res) => {
     if (!school_id || !term || !academic_year) {
       return res.status(400).json({ message: 'Missing required fields: school_id, term, academic_year' });
     }
+
+    // Teacher can only bulk-generate report cards for their own school
+    if (await teacherSchoolMismatch(req, res, school_id)) return;
 
     // Get students - either specific IDs or all students in the school
     let studentsQuery = `

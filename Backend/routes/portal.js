@@ -28,6 +28,11 @@ const upload = multer({
 
 const isStaffRole = (role) => ['admin', 'leader', 'teacher'].includes(role);
 
+async function getTeacherSchool(userId) {
+  const r = await pool.query('SELECT school_id FROM users WHERE id = $1', [userId]);
+  return r.rows[0]?.school_id || null;
+}
+
 router.get('/portal/announcements', authMiddleware, async (req, res) => {
   try {
     const role = req.user.role;
@@ -59,11 +64,21 @@ router.post('/portal/announcements', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'title and body are required' });
     }
 
+    // Teachers must be assigned to a school and can only post for their own school
+    let schoolId = req.body.school_id || null;
+    if (req.user.role === 'teacher') {
+      const teacherSchool = await getTeacherSchool(req.user.id);
+      if (!teacherSchool) {
+        return res.status(403).json({ message: 'Your account is not assigned to a school. Contact your administrator.' });
+      }
+      schoolId = teacherSchool;
+    }
+
     const result = await pool.query(
-      `INSERT INTO announcements (title, body, audience_role, created_by)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO announcements (title, body, audience_role, created_by, school_id)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [title, body, audience_role, req.user.id]
+      [title, body, audience_role, req.user.id, schoolId]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -212,12 +227,22 @@ router.post('/portal/documents', authMiddleware, upload.single('file'), async (r
       return res.status(400).json({ message: 'title and file are required' });
     }
 
+    // Teachers must be assigned to a school and can only upload for their own school
+    let schoolId = req.body.school_id || null;
+    if (req.user.role === 'teacher') {
+      const teacherSchool = await getTeacherSchool(req.user.id);
+      if (!teacherSchool) {
+        return res.status(403).json({ message: 'Your account is not assigned to a school. Contact your administrator.' });
+      }
+      schoolId = teacherSchool;
+    }
+
     const fileUrl = `/uploads/portal/${req.file.filename}`;
     const result = await pool.query(
-      `INSERT INTO portal_documents (title, file_url, audience_role, uploaded_by)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO portal_documents (title, file_url, audience_role, uploaded_by, school_id)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [title, fileUrl, audience_role, req.user.id]
+      [title, fileUrl, audience_role, req.user.id, schoolId]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -230,22 +255,27 @@ router.get('/portal/recipients', authMiddleware, async (req, res) => {
   try {
     const role = req.query.role;
     const params = [];
-    let query = 'SELECT id, first_name, last_name, email, role FROM users';
+    let query = 'SELECT id, first_name, last_name, email, role FROM users WHERE 1=1';
 
-    if (role) {
-      query += ' WHERE role = $1';
+    // Teachers can only message students and parents from their own school
+    if (req.user.role === 'teacher') {
+      const teacherSchool = await getTeacherSchool(req.user.id);
+      if (!teacherSchool) {
+        return res.status(403).json({ message: 'Your account is not assigned to a school.' });
+      }
+      params.push(teacherSchool);
+      query += ` AND school_id = $${params.length}`;
+      params.push(['student', 'parent']);
+      query += ` AND role = ANY($${params.length})`;
+    } else if (role) {
       params.push(role);
+      query += ` AND role = $${params.length}`;
     }
 
-    if (params.length > 0) {
-      query += ' AND id != $2';
-      params.push(req.user.id);
-    } else {
-      query += ' WHERE id != $1';
-      params.push(req.user.id);
-    }
-
+    params.push(req.user.id);
+    query += ` AND id != $${params.length}`;
     query += ' ORDER BY first_name ASC';
+
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
