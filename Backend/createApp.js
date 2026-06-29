@@ -25,6 +25,8 @@ const surveyTemplatesRouter = require('./routes/surveyTemplates');
 const connectionsRouter = require('./routes/connections');
 const adsRouter = require('./routes/ads');
 const { getEmailStatus, verifyEmailConnection, sendTestEmail } = require('./utils/emailService');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./swagger');
 
 const normalizeOrigin = (origin) => origin.replace(/\/$/, '');
 const splitOrigins = (value) =>
@@ -88,6 +90,12 @@ const createApp = () => {
   app.use(express.json());
 
   app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+  // Swagger UI — open at /api-docs (no auth required for presentation)
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: 'RSBS API Docs',
+    swaggerOptions: { persistAuthorization: true },
+  }));
 
   app.use('/api', schoolsRouter);
   app.use('/api', contactsRouter);
