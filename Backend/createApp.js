@@ -24,6 +24,7 @@ const parentChildRouter = require('./routes/parentChild');
 const surveyTemplatesRouter = require('./routes/surveyTemplates');
 const connectionsRouter = require('./routes/connections');
 const adsRouter = require('./routes/ads');
+const reportsRouter = require('./routes/reports');
 const { getEmailStatus, verifyEmailConnection, sendTestEmail } = require('./utils/emailService');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./swagger');
@@ -119,6 +120,7 @@ const createApp = () => {
   app.use('/api', surveyTemplatesRouter);
   app.use('/api', connectionsRouter);
   app.use('/api', adsRouter);
+  app.use('/api/reports', reportsRouter);
 
   app.get('/api/health', (req, res) => {
     res.json({

@@ -18,18 +18,20 @@ import {
 } from '../api/portal';
 import { fetchFeeSchedules, createFeeSchedule } from '../api/payments';
 import { BASE_URL } from '@/api/school';
-import { fetchGrades, createGrade } from '../api/grades';
+import { fetchGrades, createGrade, fetchReportCards } from '../api/grades';
 import { fetchEvents, createEvent } from '../api/events';
-import { GraduationCap, Calendar, Plus, MessageCircle, ChevronRight } from 'lucide-react';
+import { GraduationCap, Calendar, Plus, MessageCircle, ChevronRight, FileBarChart, Download } from 'lucide-react';
 import EventCalendar from '../components/EventCalendar';
 import { fetchSchools } from '@/api/school';
 import { searchStudents, type StudentSearchResult } from '../api/students';
+import jsPDF from 'jspdf';
+import { autoTable, drawReportHeader, drawSignatureBlock } from '../utils/reportPdf';
 
 export default function TeacherPortal() {
   const { isAuthenticated, user, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'announcements' | 'messages' | 'documents' | 'fees' | 'grades' | 'events'>('announcements');
+  const [activeTab, setActiveTab] = useState<'announcements' | 'messages' | 'documents' | 'fees' | 'grades' | 'events' | 'reports'>('announcements');
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
   const [inbox, setInbox] = useState<any[]>([]);
@@ -69,6 +71,14 @@ export default function TeacherPortal() {
   const [gradeComments, setGradeComments] = useState('');
   const [isDocumentUpload, setIsDocumentUpload] = useState(false);
   const [gradeDocumentUrl, setGradeDocumentUrl] = useState('');
+
+  // Reports state
+  const [reportStudentId, setReportStudentId] = useState('');
+  const [reportStudentQuery, setReportStudentQuery] = useState('');
+  const [selectedReportStudentLabel, setSelectedReportStudentLabel] = useState('');
+  const [reportStudentSuggestions, setReportStudentSuggestions] = useState<StudentSearchResult[]>([]);
+  const [isSearchingReportStudents, setIsSearchingReportStudents] = useState(false);
+  const [generatingReport, setGeneratingReport] = useState(false);
 
   // Events state
   const [events, setEvents] = useState<any[]>([]);
@@ -163,6 +173,31 @@ export default function TeacherPortal() {
 
     return () => clearTimeout(handle);
   }, [activeTab, isAuthenticated, gradeStudentQuery, gradeSchoolId]);
+
+  // Report student search (debounced)
+  useEffect(() => {
+    if (activeTab !== 'reports' || !isAuthenticated) return;
+    const q = reportStudentQuery.trim();
+    if (q.length < 2) {
+      setReportStudentSuggestions([]);
+      return;
+    }
+
+    const handle = setTimeout(async () => {
+      try {
+        setIsSearchingReportStudents(true);
+        const results = await searchStudents({ q, school_id: gradeSchoolId || undefined, limit: 20 });
+        setReportStudentSuggestions(results);
+      } catch (err) {
+        console.error('Student search failed:', err);
+        setReportStudentSuggestions([]);
+      } finally {
+        setIsSearchingReportStudents(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(handle);
+  }, [activeTab, isAuthenticated, reportStudentQuery, gradeSchoolId]);
 
   // Load events when tab is active
   useEffect(() => {
@@ -315,6 +350,83 @@ export default function TeacherPortal() {
     }
   };
 
+  const handleGenerateStudentReport = async () => {
+    if (!reportStudentId) {
+      toast.error('Please select a student first');
+      return;
+    }
+
+    setGeneratingReport(true);
+    try {
+      const [studentGrades, reportCards] = await Promise.all([
+        fetchGrades({ student_id: Number(reportStudentId) }),
+        fetchReportCards(Number(reportStudentId)).catch(() => []),
+      ]);
+
+      const doc = new jsPDF();
+      const signerName = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : 'Class Teacher';
+
+      let y = await drawReportHeader(doc, {
+        title: 'Student Progress Report',
+        subtitle: `Student: ${selectedReportStudentLabel || reportStudentQuery}`,
+      });
+
+      if (studentGrades.length === 0) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.text('No grades have been recorded for this student yet.', 14, y);
+        y += 10;
+      } else {
+        autoTable(doc, {
+          startY: y,
+          head: [['Subject', 'Grade', 'Score', 'Term', 'Academic Year', 'Comments']],
+          body: studentGrades.map((g: any) => [
+            g.subject,
+            g.grade,
+            g.score != null ? `${g.score}/${g.max_score}` : '—',
+            g.term,
+            g.academic_year,
+            g.comments || '—',
+          ]),
+          styles: { fontSize: 8 },
+          headStyles: { fillColor: [37, 99, 235] },
+        });
+        y = (doc as any).lastAutoTable.finalY + 10;
+      }
+
+      if (reportCards.length > 0) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.text('Report Cards', 14, y);
+        y += 5;
+        autoTable(doc, {
+          startY: y,
+          head: [['Term', 'Academic Year', 'Overall Grade', 'Overall %', 'Attendance %', 'Teacher Comments']],
+          body: reportCards.map((rc: any) => [
+            rc.term,
+            rc.academic_year,
+            rc.overall_grade || '—',
+            rc.overall_percentage != null ? Number(rc.overall_percentage).toFixed(1) : '—',
+            rc.attendance_percentage != null ? Number(rc.attendance_percentage).toFixed(1) : '—',
+            rc.teacher_comments || '—',
+          ]),
+          styles: { fontSize: 8 },
+          headStyles: { fillColor: [5, 150, 105] },
+          margin: { bottom: 45 },
+        });
+      }
+
+      drawSignatureBlock(doc, { name: signerName || 'Class Teacher', role: 'Class Teacher' });
+      doc.save(`student-report-${reportStudentId}-${Date.now()}.pdf`);
+      toast.success('Report generated');
+    } catch (error: any) {
+      console.error('Failed to generate student report:', error);
+      toast.error(error.message || 'Failed to generate report');
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
+
   const handleCreateEvent = async () => {
     if (!eventTitle.trim() || !eventStartDate) {
       toast.error('Title and start date are required');
@@ -371,6 +483,7 @@ export default function TeacherPortal() {
               { id: 'fees', label: t('teacher.tabFees') },
               { id: 'grades', label: t('teacher.tabGrades') },
               { id: 'events', label: t('teacher.tabEvents') },
+              { id: 'reports', label: t('teacher.tabReports') },
             ] as const).map((tab) => (
               <button
                 key={tab.id}
@@ -852,6 +965,69 @@ export default function TeacherPortal() {
                   }}
                   schoolId={undefined}
                 />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'reports' && (
+            <div className="p-6 space-y-6">
+              <div className="border border-gray-200 rounded-lg p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <FileBarChart className="w-5 h-5" />
+                  Generate Student Progress Report
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Pick a student to generate a PDF report of how they've worked — their grades and report card, with the school letterhead and your signature.
+                </p>
+                <div className="relative max-w-md">
+                  <input
+                    value={selectedReportStudentLabel || reportStudentQuery}
+                    onChange={(e) => {
+                      setSelectedReportStudentLabel('');
+                      setReportStudentId('');
+                      setReportStudentQuery(e.target.value);
+                    }}
+                    placeholder="Type student name or email..."
+                    className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full"
+                  />
+                  {(isSearchingReportStudents || reportStudentSuggestions.length > 0) && !selectedReportStudentLabel && (
+                    <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-56 overflow-auto">
+                      {isSearchingReportStudents && (
+                        <div className="px-3 py-2 text-xs text-gray-500">Searching...</div>
+                      )}
+                      {!isSearchingReportStudents && reportStudentSuggestions.length === 0 && (
+                        <div className="px-3 py-2 text-xs text-gray-500">No students found</div>
+                      )}
+                      {!isSearchingReportStudents && reportStudentSuggestions.map((s) => {
+                        const label = `${s.first_name} ${s.last_name} • ${s.email}`;
+                        return (
+                          <button
+                            type="button"
+                            key={s.id}
+                            onClick={() => {
+                              setReportStudentId(String(s.id));
+                              setSelectedReportStudentLabel(label);
+                              setReportStudentQuery(label);
+                              setReportStudentSuggestions([]);
+                            }}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50"
+                          >
+                            <div className="text-gray-900 font-medium">{s.first_name} {s.last_name}</div>
+                            <div className="text-xs text-gray-500">{s.email}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                <button
+                  disabled={generatingReport || !reportStudentId}
+                  onClick={handleGenerateStudentReport}
+                  className="mt-4 bg-blue-600 text-white text-sm px-6 py-2 rounded-md disabled:opacity-50 hover:bg-blue-700 flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  {generatingReport ? 'Generating...' : 'Generate Report (PDF)'}
+                </button>
               </div>
             </div>
           )}

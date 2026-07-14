@@ -12,6 +12,8 @@ import { fetchGalleries, createGallery, uploadGalleryMedia, deleteGalleryItem, f
 import SurveyBuilder from "../components/SurveyBuilder"
 import SurveyAnalytics from "../components/SurveyAnalytics"
 import { fetchSurveyTemplates, deleteSurveyTemplate, type SurveyTemplate } from "@/app/api/surveyTemplates"
+import jsPDF from "jspdf"
+import { autoTable, drawReportHeader, drawSignatureBlock } from "@/app/utils/reportPdf"
 
 export default function LeaderDashboard() {
   const { t } = useLanguage()
@@ -29,7 +31,8 @@ export default function LeaderDashboard() {
   const [actionError, setActionError] = useState<string | null>(null)
   
   // Gallery management state
-  const [activeTab, setActiveTab] = useState<'applications' | 'gallery' | 'surveys'>('applications')
+  const [activeTab, setActiveTab] = useState<'applications' | 'gallery' | 'surveys' | 'reports'>('applications')
+  const [generatingReport, setGeneratingReport] = useState(false)
   const [leaderSchools, setLeaderSchools] = useState<any[]>([])
   const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null)
   const [galleries, setGalleries] = useState<any[]>([])
@@ -234,6 +237,59 @@ export default function LeaderDashboard() {
       month: 'short',
       day: 'numeric'
     })
+  }
+
+  const handleDownloadApplicationsReport = async () => {
+    setGeneratingReport(true)
+    try {
+      const doc = new jsPDF()
+      const signerName = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : 'School Leader'
+      const total = applications.length
+      const pending = applications.filter(a => a.status === 'pending').length
+      const approved = applications.filter(a => a.status === 'approved').length
+      const rejected = applications.filter(a => a.status === 'rejected').length
+      const withdrawn = applications.filter(a => a.status === 'withdrawn').length
+
+      let y = await drawReportHeader(doc, {
+        title: 'Student Applications Report',
+        subtitle: 'Applications received, accepted and denied across your schools',
+      })
+
+      autoTable(doc, {
+        startY: y,
+        head: [['Total Applied', 'Approved', 'Rejected', 'Pending', 'Withdrawn']],
+        body: [[String(total), String(approved), String(rejected), String(pending), String(withdrawn)]],
+        theme: 'grid',
+        headStyles: { fillColor: [37, 99, 235] },
+      })
+
+      y = (doc as any).lastAutoTable.finalY + 10
+
+      autoTable(doc, {
+        startY: y,
+        head: [['Student', 'Email', 'School', 'Status', 'Applied On', 'Reviewed On', 'Rejection Reason']],
+        body: applications.map(a => [
+          `${a.first_name} ${a.last_name}`,
+          a.email,
+          a.school_name || '',
+          a.status,
+          formatDate(a.created_at),
+          a.reviewed_at ? formatDate(a.reviewed_at) : '—',
+          a.rejection_reason || '—',
+        ]),
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [30, 41, 59] },
+        margin: { bottom: 45 },
+      })
+
+      drawSignatureBlock(doc, { name: signerName || 'School Leader', role: 'School Leader' })
+      doc.save(`applications-report-${Date.now()}.pdf`)
+    } catch (err) {
+      console.error('Failed to generate applications report:', err)
+      alert('Failed to generate report')
+    } finally {
+      setGeneratingReport(false)
+    }
   }
 
   // Gallery management handlers
@@ -463,6 +519,17 @@ export default function LeaderDashboard() {
             >
               <FileText className="w-5 h-5 inline mr-2" />
               {t('leader.tabSurveys')}
+            </button>
+            <button
+              onClick={() => setActiveTab('reports')}
+              className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-sm whitespace-nowrap shrink-0 ${
+                activeTab === 'reports'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <BarChart3 className="w-5 h-5 inline mr-2" />
+              Reports
             </button>
           </nav>
         </div>
@@ -816,6 +883,87 @@ export default function LeaderDashboard() {
                 <p className="text-gray-600">You need to create a school first before managing galleries.</p>
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'reports' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Applications Report</h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    A summary of how many students applied to your schools, and how many were accepted or denied.
+                  </p>
+                </div>
+                <button
+                  onClick={handleDownloadApplicationsReport}
+                  disabled={generatingReport || applications.length === 0}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  {generatingReport ? 'Generating...' : 'Download PDF Report'}
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                <p className="text-xs text-gray-600 mb-1">Total Applied</p>
+                <p className="text-2xl font-bold text-gray-900">{applications.length}</p>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                <p className="text-xs text-gray-600 mb-1">Approved</p>
+                <p className="text-2xl font-bold text-green-600">{applications.filter(a => a.status === 'approved').length}</p>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                <p className="text-xs text-gray-600 mb-1">Rejected</p>
+                <p className="text-2xl font-bold text-red-600">{applications.filter(a => a.status === 'rejected').length}</p>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                <p className="text-xs text-gray-600 mb-1">Pending</p>
+                <p className="text-2xl font-bold text-yellow-600">{applications.filter(a => a.status === 'pending').length}</p>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                <p className="text-xs text-gray-600 mb-1">Withdrawn</p>
+                <p className="text-2xl font-bold text-gray-600">{applications.filter(a => a.status === 'withdrawn').length}</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">By School</h3>
+              {applications.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">No applications yet.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead>
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">School</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Approved</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Rejected</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Pending</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {Array.from(new Set(applications.map(a => a.school_name || 'Unknown'))).map((schoolName) => {
+                        const schoolApps = applications.filter(a => (a.school_name || 'Unknown') === schoolName)
+                        return (
+                          <tr key={schoolName}>
+                            <td className="px-4 py-2 text-sm text-gray-900">{schoolName}</td>
+                            <td className="px-4 py-2 text-sm text-gray-600">{schoolApps.length}</td>
+                            <td className="px-4 py-2 text-sm text-green-600">{schoolApps.filter(a => a.status === 'approved').length}</td>
+                            <td className="px-4 py-2 text-sm text-red-600">{schoolApps.filter(a => a.status === 'rejected').length}</td>
+                            <td className="px-4 py-2 text-sm text-yellow-600">{schoolApps.filter(a => a.status === 'pending').length}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
