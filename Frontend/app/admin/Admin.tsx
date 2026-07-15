@@ -31,6 +31,7 @@ import { fetchAdminReportOverview, type AdminReportOverview } from "@/app/api/re
 import { BACKEND_URL as backendUrl } from "@/lib/backend"
 import jsPDF from "jspdf"
 import { autoTable, drawReportHeader, drawSignatureBlock } from "../utils/reportPdf"
+import { getImageUrl } from "@/lib/image-utils"
 
 export default function AdminDashboard() {
   const { t } = useLanguage()
@@ -2412,7 +2413,7 @@ export default function AdminDashboard() {
                             {galleryItems.map((item) => (
                               <div key={item.id} className="relative group">
                                 <img
-                                  src={`${backendUrl}${item.media_url}`}
+                                  src={getImageUrl(item.media_url)}
                                   alt={item.title || "Gallery image"}
                                   className="w-full h-48 object-cover rounded-lg"
                                 />

@@ -14,6 +14,7 @@ import SurveyAnalytics from "../components/SurveyAnalytics"
 import { fetchSurveyTemplates, deleteSurveyTemplate, type SurveyTemplate } from "@/app/api/surveyTemplates"
 import jsPDF from "jspdf"
 import { autoTable, drawReportHeader, drawSignatureBlock } from "@/app/utils/reportPdf"
+import { getImageUrl } from "@/lib/image-utils"
 
 export default function LeaderDashboard() {
   const { t } = useLanguage()
@@ -856,7 +857,7 @@ export default function LeaderDashboard() {
                         {galleryItems.map((item) => (
                           <div key={item.id} className="relative group">
                             <img
-                              src={`${BASE_URL}${item.media_url}`}
+                              src={getImageUrl(item.media_url)}
                               alt={item.title || 'Gallery image'}
                               className="w-full h-48 object-cover rounded-lg"
                             />
