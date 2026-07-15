@@ -290,7 +290,7 @@ export default function VerifyCodePage() {
                     htmlFor="answer2"
                     className="absolute left-5 top-4 text-[#8c8c8c] text-sm transition-all peer-focus:text-[11px] peer-focus:top-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#8c8c8c] peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:top-2 pointer-events-none"
                   >
-                    {t("auth.verifyCode.authorizedManageLabel")}
+                    {t("auth.verifyCode.authorizedToManageLabel")}
                   </label>
                 </div>
               </>
